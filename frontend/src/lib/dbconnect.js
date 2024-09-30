@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI =
-  process.env.MONGODB_URL || "mongodb://localhost:27017/okay_mart";
+  process.env.MONGODB_URL ||
+  "mongodb+srv://okeyinterrupt:SUVH2khm2So8WzeW@okeymart-dev.2dxat.mongodb.net/";
 
 if (!MONGODB_URI) {
   throw new Error(
