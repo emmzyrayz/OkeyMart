@@ -1,0 +1,128 @@
+.faint {
+    opacity: .5;
+}
+
+.full {
+    opacity: 1;
+}
+
+.sec-color {
+    color: var(--secondary2);
+}
+
+.profile_section {
+    padding: 20px 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile_top .profile_welcome {
+    font-size: var(--fs-14);
+    font-weight: 400;
+    color: var(--text2);
+
+    span {
+        color: var(--secondary2);
+    }
+}
+
+.profile_section .profile_container {}
+
+.profile_container .profile_menu {
+    min-height: 100%;
+    gap: 20px;
+
+    .account_list,
+    .order_list {
+        margin-left: 25px;
+        font-size: var(--fs-16);
+        font-weight: 500;
+        color: var(--text1);
+    }
+}
+
+.profile_menu h2 {
+    font-size: var(--fs-16);
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.profile_con {
+    -webkit-box-shadow: 0px 0px 5px 5px rgba(125, 129, 132, .5);
+    -moz-box-shadow: 0px 0px 5px 5px rgba(125, 129, 132, .5);
+    box-shadow: 0px 0px 5px 5px rgba(125, 129, 132, .5);
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+.profile_con h2 {
+    font-size: var(--fs-20);
+    font-weight: 600;
+}
+
+.profile_con .profile_name,
+.profile_con .profile_detail,
+.profile_con .profile_password {
+    min-height: 82px;
+    width: 100%;
+    font-size: var(--fs-16);
+    font-weight: 500;
+    color: var(--text2);
+    gap: 20px;
+    /* justify-content: space-between; */
+
+    input {
+        background: var(--secondary);
+        padding: 5px;
+        padding-left: 10px;
+        border: none;
+        outline: none;
+        border-radius: 8px;
+        min-width: 100%;
+        height: 50px;
+    }
+}
+
+.profile_con .profile_btn {
+    height: 56px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    justify-content: flex-end;
+
+    .cancel_btn {
+        width: 60px;
+
+        span {
+            font-size: var(--fs-16);
+            font-weight: 500;
+            color: var(--text2);
+        }
+    }
+
+    .cancel_btn:hover {
+       text-decoration: underline;
+    }
+
+    .save_btn {
+        width: 214px;
+        height: 100%;
+        background: var(--button2);
+        color: var(--text);
+        font-size: var(--fs-16);
+        font-weight: 500;
+        align-items: center;
+        justify-content: center;
+        display: flex;
+        border-radius: 8px;
+
+
+    }
+
+    .save_btn:hover {
+        background: var(--btn-hover);
+    }
+}

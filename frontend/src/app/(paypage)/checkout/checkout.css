@@ -1,0 +1,158 @@
+* {
+    /* outline: 1px solid red; */
+}
+
+.faint {
+    opacity: .5;
+}
+
+.full {
+    opacity: 1;
+}
+
+.price,
+.quantity,
+.subtotal {
+    text-align: center;
+}
+
+.checkout_section {
+    padding: 20px 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cart-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.cart-item {
+    flex: 1;
+    text-align: center;
+}
+
+.product-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 20px;
+}
+
+.product-info img {
+    border-radius: 5px;
+}
+
+.product-info .product_image .fa {
+    width: 24px;
+    height: 24px;
+    display: none;
+    top: -8px;
+    left: -10px;
+}
+
+.product-info:hover .product_image .fa {
+    display: flex;
+}
+
+.coupon_input {
+    width: 300px;
+    height: 56px;
+    border: 1px dotted var(--text2);
+    border-radius: 6px;
+    padding-left: 10px;
+}
+
+.coupon_btn {
+    width: 211px;
+    height: 56px;
+    color: var(--text);
+    background: var(--button2);
+    border-radius: 6px;
+    font-size: var(--fs-16);
+}
+
+.coupon_btn:hover {
+    background: var(--btn-hover);
+}
+
+.checkout_head {
+    font-size: var(--fs-36);
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.checkout_con {
+    /* padding: 0px 0px; */
+}
+
+.checkout_con .checkout_inputs {
+    /* min-height: 814px; */
+    /* min-width: 470px; */
+}
+
+.checkout_inputs .checkout_input {
+    display: flex;
+    width: 80%;
+    flex-direction: column;
+    color: var(--text2);
+    font-size: var(--fs-16);
+    font-weight: 400;
+}
+
+.checkout_input span {
+    opacity: .5;
+}
+
+.checkout_input input {
+    min-width: 470px;
+    height: 50px;
+    border-radius: 5px;
+    background: var(--secondary);
+    padding: 0px 10px;
+}
+
+input[type='checkbox'].tick-checkbox {
+    accent-color: var(--secondary2);
+}
+
+input[type='checkbox'].tick-checkbox:checked {
+    background-color: var(--secondary2);
+}
+
+input[type='radio']#dot {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    /* Set size */
+    height: 20px;
+    border: 2px solid black;
+    border-radius: 50%;
+    background-color: transparent;
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+}
+
+input[type='radio']#dot:checked {
+    background-color: black;
+    border: 2px solid white;
+    outline: 1px solid black;
+}
+
+input[type='radio']#dot:checked::before {
+    content: "";
+    display: block;
+    width: 12px;
+    /* Inner black circle size */
+    height: 12px;
+    background-color: black;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+}

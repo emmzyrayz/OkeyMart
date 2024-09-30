@@ -1,0 +1,58 @@
+.m-banner_section {
+    padding: 0px 5%;
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 120px;
+    /* background: red; */
+}
+
+span.line {
+    width: 1px;
+    /* Line width */
+    /* position: absolute; */
+    background-color: var(--text1);
+    /* Adjust color as needed */
+    min-height: 100% !important;
+    /* Full height of the container */
+    /* min-height: 100px; */
+    /* Add a minimum height */
+    margin: 0 20px;
+    /* Add some space between the components */
+}
+
+.sortcat,
+.banner {
+    margin-top: 20px;
+}
+
+.sortcat {
+    width: 20%;
+}
+
+.banner {
+    width: 80%;
+}
+
+@media (max-width: 808px) {
+    .m-banner_section{
+        flex-direction: column-reverse;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 50px;
+    }
+
+    .sortcat{
+        width: 100%;
+    }
+
+    .line {
+        display: none;
+    }
+
+    .banner {
+        min-width: 100%;
+        margin-right: 20px;
+    }
+}

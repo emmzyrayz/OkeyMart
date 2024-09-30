@@ -1,0 +1,113 @@
+/* React Slick */
+.banner_section {
+    background: var(--black);
+    color: var(--text);
+    width: 100%;
+    height: 360px;
+    padding: 10px 30px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 12px;
+    margin-left: 30px;
+}
+
+.banner_item {
+    padding: 5px 20px;
+}
+
+/* Fade-in and fade-out animations */
+.fade-in {
+    display: block;
+    opacity: 1;
+    transition: all 500ms ease-in-out;
+}
+
+.fade-out {
+    display: none;
+    opacity: 0;
+    transition: all 500ms ease-in-out;
+}
+
+/* Slide in from the bottom for text elements */
+.slide-in-bottom {
+    animation: slideInBottom 1s ease-in-out forwards;
+}
+
+.slide-in-right {
+    animation: slideInRight 1s ease-in-out forwards;
+}
+
+@keyframes slideInBottom {
+    0% {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    0% {
+        transform: translatex(100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translatex(0);
+        opacity: 1;
+    }
+}
+
+
+.top_text {
+    height: 50px;
+    align-items: left;
+}
+
+.top_text .fa {
+    width: 40px;
+    height: 50px;
+}
+
+.top_text span {
+    font-size: var(--fs-16);
+    height: 20px;
+}
+
+.bottom_text {
+    font-size: var(--fs-48);
+}
+
+.banner_count {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 10px;
+    bottom: 10px;
+    align-items: center;
+    justify-content: center;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.banner_count .elipse {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid var(--text);
+    background: var(--text1);
+    transition: background 0.3s;
+}
+
+.banner_count .elipse.active {
+    background: var(--secondary2);
+}
+
+.banner_count .elipse:hover {
+    background: var(--secondary2);
+    opacity: 0.8;
+}
