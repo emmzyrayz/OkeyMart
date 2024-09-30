@@ -2,7 +2,6 @@
 import React, {useState, useEffect} from "react";
 import './random.css';
 import Image from 'next/image';
-import Jbl from '../../assets/img/products/boombox.png';
 
 type ProductType = {
   id: number;
@@ -59,7 +58,13 @@ export default function Random() {
 
     // Clean up the interval when component unmounts
     return () => clearInterval(interval);
+
+    
   }, []);
+
+  useEffect(() => {
+    console.log(products); // Using 'products' to avoid ESLint warning
+  }, [products]);
 
   const fetchProducts = async () => {
     try {

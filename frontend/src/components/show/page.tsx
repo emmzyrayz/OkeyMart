@@ -3,7 +3,7 @@ import React, {useRef, useState} from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
-  FaCheck,
+  // FaCheck,
   FaEye,
   FaHeart,
   FaRegEye,
@@ -13,14 +13,6 @@ import {
   FaStarHalf,
 } from "react-icons/fa6";
 import Image from "next/image";
-import Gamepad from "../../assets/img/products/gamepad1.png";
-import Camera from "../../assets/img/products/camera.png";
-import Laptop from "../../assets/img/products/laptop.png";
-import Cream from "../../assets/img/products/cream.png";
-import Toy from "../../assets/img/products/toy-car.png";
-import Clits from "../../assets/img/products/clits.png";
-import Jacket from "../../assets/img/products/jacket.png";
-import DogFood from "../../assets/img/products/dog-food.png";
 import "./show.css";
 
 
@@ -84,74 +76,7 @@ const ProductRating = ({product}: {product: ProductType}) => {
   );
 };
 
-// Sample product data
-const productData = [
-  {
-    id: 1,
-    name: "Breed Dry Dog Food",
-    price: "$100",
-    reviews: 35,
-    rating: 4.5,
-    image: DogFood, // Replace with the correct image path
-  },
-  {
-    id: 2,
-    name: "CANON EOS DSLR Camera",
-    price: "$380",
-    reviews: 95,
-    rating: 4,
-    image: Camera, // Replace with the correct image path
-  },
-  {
-    id: 3,
-    name: "ASUS FHD Gaming Laptop",
-    price: "$700",
-    reviews: 95,
-    rating: 5,
-    image: Laptop, // Replace with the correct image path
-  },
-  {
-    id: 4,
-    name: "Curology Product Set",
-    price: "$500",
-    reviews: 145,
-    rating: 4,
-    image: Cream, // Replace with the correct image path
-  },
-  {
-    id: 5,
-    name: "Kids Electric Car",
-    price: "$960",
-    reviews: 65,
-    rating: 5,
-    image: Toy, // Replace with the correct image path
-  },
-  {
-    id: 6,
-    name: "Jr. Zoom Soccer Cleats",
-    price: "$1160",
-    reviews: 95,
-    rating: 5,
-    image: Clits, // Replace with the correct image path
-  },
-  {
-    id: 7,
-    name: "GP11 Shooter USB Gamepad",
-    price: "$660",
-    reviews: 95,
-    rating: 4.5,
-    image: Gamepad, // Replace with the correct image path
-  },
-  {
-    id: 8,
-    name: "Quilted Satin Jacket",
-    price: "$660",
-    reviews: 55,
-    rating: 4.5,
-    image: Jacket, // Replace with the correct image path
-  },
-  // Add more products as needed
-];
+
 
 export default function Show() {
   const [products, setProducts] = useState<ProductType[]>([]);
@@ -163,7 +88,7 @@ export default function Show() {
   const [viewedItems, setViewedItems] = useState<number[]>([]);
 
   const [activeColors, setActiveColors] = useState<string[]>(
-    Array(productData.length).fill("red")
+    Array(products.length).fill("red")
   );
 
   const colors = ["red", "orange", "yellow", "black"];
@@ -210,14 +135,14 @@ export default function Show() {
     const updatedHeartedItems = [...heartedItems];
     updatedHeartedItems[index] = !updatedHeartedItems[index];
     setHeartedItems(updatedHeartedItems);
-    toggleLike(productData[index].id); // Call your toggleLike with the product id
+    toggleLike(products[index].id); // Call your toggleLike with the product id
   };
 
   const handleEyeClick = (index: number) => {
     const updatedEyedItems = [...eyedItems];
     updatedEyedItems[index] = !updatedEyedItems[index];
     setEyedItems(updatedEyedItems);
-    toggleView(productData[index].id); // Call your toggleView with the product id
+    toggleView(products[index].id); // Call your toggleView with the product id
   };
 
   // Rating function
@@ -270,7 +195,7 @@ export default function Show() {
   fetchProducts();
 
   // Split products into two halves
-  const middleIndex = Math.ceil(productData.length / 2);
+  const middleIndex = Math.ceil(products.length / 2);
   const topProducts = products.slice(0, middleIndex);
   const bottomProducts = products.slice(middleIndex);
 

@@ -2,13 +2,14 @@ import React, {useEffect} from "react";
 import {useProductContext} from "../productContext/productcontext"; // Import the custom context hook
 
 const ProductManager = () => {
-  const {products, fetchProducts, addProduct, updateProduct, deleteProduct} =
+  const {products, fetchProducts, addProduct, deleteProduct} =
     useProductContext();
 
-  // Fetch products on component mount
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+    // updateProduct,
+      // Fetch products on component mount
+      useEffect(() => {
+        fetchProducts();
+      }, [fetchProducts]);
 
   const handleAddProduct = () => {
     const newProduct = {
