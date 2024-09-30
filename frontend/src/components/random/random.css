@@ -1,0 +1,106 @@
+.random_section {
+    margin: 0px 5%;
+    margin-bottom: 40px;
+    background: var(--black);
+    min-height: 500px;
+    border-radius: 6px;
+}
+
+.random_text {
+    height: 100% !important;
+    padding: 10px 20px;
+}
+
+.random_text h2 {
+    font-size: var(--fs-16);
+    font-weight: 600;
+    color: var(--button1);
+}
+
+.random_text .title {
+    font-size: var(--fs-48);
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media only screen and (max-width: 808px) {
+    .description {
+        -webkit-line-clamp: 1;
+        /* 1 line for mobile */
+    }
+}
+
+.random_time {
+    min-height: 62px;
+    min-width: 320px;
+}
+
+.random_time .random_hr,
+.random_time .random_minutes,
+.random_time .random_seconds {
+    display: flex;
+    flex-direction: column;
+    gap: 5px !important;
+    width: 62px;
+    height: 62px;
+    background: var(--primary);
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.random_hr .digit,
+.random_minutes .digit,
+.random_seconds .digit {
+    font-size: var(--fs-16);
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.random_hr .time,
+.random_minutes .time,
+.random_seconds .time {
+    font-size: var(--fs-11);
+    font-weight: 500;
+    color: var(--text2);
+}
+
+.random_btn {
+    background-color: var(--button1);
+    min-width: 171px;
+    min-height: 56px;
+    border-radius: 10px;
+}
+
+.random_btn span {
+    font-size: var(--fs-16);
+    font-weight: 500;
+    font-family: 'poppins', sans-serif;
+}
+
+.random_image {
+    height: 500px !important;
+    margin-right: 20px;
+}
+
+.random_image::before {
+    content: '';
+    position: absolute;
+    width: 100% !important;
+    height: 100%;
+    padding: 10px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 20%, transparent 100%);
+    z-index: 1;
+}
+
+.random_image img {
+    position: relative;
+    z-index: 2;
+    /* Ensure the image stays above the gradient */
+}

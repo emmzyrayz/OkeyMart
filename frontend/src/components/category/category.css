@@ -1,0 +1,126 @@
+.category_section {
+    padding: 0px 5%;
+    margin-bottom: 30px;
+}
+
+.category_section hr {
+    background: var(--primary1);
+    height: 1px;
+    opacity: .3;
+    margin: 30px 0px;
+    border: 1px solid var(--primary1);
+}
+
+.category_top {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.category_red {
+    width: 20px;
+    height: 40px;
+    background: var(--secondary2);
+    border-radius: 6px;
+}
+
+.category_top h2 {
+    font-size: var(--fs-16);
+    font-weight: 600;
+    color: var(--secondary2);
+}
+
+.category_header {
+    position: relative;
+    align-items: center;
+    justify-content: space-between !important;
+    height: 100px;
+}
+
+.header-title span {
+    font-size: var(--fs-36);
+    font-weight: 600;
+    color: var(--text2);
+}
+
+.header_btn {
+    align-items: center;
+    gap: 20px;
+}
+
+.header_btn .icons {
+    width: 46px;
+    height: 46px;
+    background: var(--secondary);
+    position: relative;
+    display: flex;
+    border-radius: 50%;
+}
+
+.header_btn .icons:hover {
+    background: var(--elipse);
+}
+
+.category_container {
+    overflow: auto;
+    /* Allow scroll */
+    scrollbar-width: none;
+    /* Firefox hides scrollbar */
+    -ms-overflow-style: none;
+    /* IE 10+ */
+
+    scroll-behavior: auto;
+}
+
+.category_container::-webkit-scrollbar {
+    display: none;
+}
+
+.category_container .category_item {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border-radius: 10px;
+    min-height: 145px;
+    min-width: 170px;
+    border: 1px solid var(--blur);
+    align-items: center;
+    justify-content: center;
+    transition: all .5s ease;
+}
+
+.category_container .category_item:hover {
+    background: var(--secondary2);
+    border: var(--text);
+
+    .cat_icon {
+        color: var(--text);
+
+        .icon {
+            opacity: .9;
+        }
+    }
+
+    .cat_name {
+        color: var(--text);
+    }
+}
+
+.category_item .cat_icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    min-width: 56px;
+    color: var(--button);
+}
+
+.cat_icon .icon {
+    width: 47px !important;
+    font-size: var(--fs-48);
+    opacity: .5;
+}
+
+.category_item .cat_name {
+    font-size: var(--fs-16);
+    font-weight: 500;
+}

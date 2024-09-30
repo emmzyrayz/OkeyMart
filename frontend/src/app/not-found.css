@@ -1,0 +1,51 @@
+.faint {
+    opacity: .5;
+}
+
+.full {
+    opacity: 1;
+}
+
+*{
+    /* outline: 1px solid red; */
+}
+
+.notfound_section {
+    padding: 20px 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.notfound_container {
+    width: 100vw;
+    height: 80vh;
+
+    h1.notfound_head {
+        font-size: var(--fs-110);
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    span.notfound_desc {
+        font-size: var(--fs-16);
+        font-weight: 500;
+        color: var(--black);
+    }
+
+    span.notfound_btn {
+        width: 260px;
+        height: 60px;
+        background: var(--secondary2);
+        color: var(--text);
+        font-size: var(--fs-16);
+        font-weight: 500;
+        padding: 25px;
+        margin-top: 40px;
+        border-radius: 8px;
+    }
+
+    span.notfound_btn:hover{
+        background: var(--btn-hover);
+    }
+}

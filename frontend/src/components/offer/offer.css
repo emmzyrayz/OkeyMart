@@ -1,0 +1,130 @@
+.offer_section {
+    background: var(--black);
+    color: var(--text);
+    font-size: var(--fs-14);
+    align-items: center;
+    justify-content: space-around;
+    height: 40px;
+    padding: 0px 5px;
+    overflow: hidden;
+}
+
+.offer_container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    white-space: nowrap;
+    width: 90%;
+    animation: scrollText 15s linear infinite;
+}
+
+.offer-text {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 50px;
+}
+
+@keyframes scrollText {
+    0% {
+        transform: translateX(180%);
+    }
+
+    100% {
+        transform: translateX(-180%);
+    }
+}
+
+@media (max-width: 767px) {
+    .offer_section {
+        font-size: var(--fs-10);
+        height: 30px;
+    }
+
+    .offer_container {
+        animation: scrollText 18s linear infinite;
+    }
+
+    .offer-text {
+        margin-right: 20px;
+    }
+
+    .language-dropdown {
+        top: 5px;
+        right: 10px;
+    }
+
+    .language-menu {
+        top: 35px;
+        right: 10px;
+        min-width: 100px;
+        font-size: var(--fs-12);
+    }
+}
+
+/* For tablets, adjust layout accordingly */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .offer_section {
+        font-size: var(--fs-12);
+    }
+
+    .offer_container {
+        animation: scrollText 23s linear infinite;
+    }
+}
+
+/* For larger screens, slow down the animation */
+@media (min-width: 1024px) {
+    .offer_container {
+        animation: scrollText 40s linear infinite;
+    }
+
+    @keyframes scrollText {
+        0% {
+            transform: translateX(110%);
+            /* Start position: off the screen on the right */
+        }
+
+        100% {
+            transform: translateX(-110%);
+            /* End position: fully off the screen on the left */
+        }
+    }
+}
+
+
+.language-dropdown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 999;
+    font-weight: bold;
+    right: 5%;
+    background: var(--black) !important;
+    position: absolute;
+}
+
+
+.language-menu {
+    background: rgba(102, 102, 102, 0.26);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8.8px);
+    -webkit-backdrop-filter: blur(8.8px);
+    z-index: 999;
+    top: 48px;
+    right: 5%;
+    min-width: 120px;
+    font-size: var(--fs-16);
+    font-weight: 500;
+}
+
+.language-menu span {
+    padding: 5px;
+}
+
+.language-menu span:hover {
+    background: var(--blur);
+    width: 100%;
+}
