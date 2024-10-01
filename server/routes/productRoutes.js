@@ -36,7 +36,8 @@ router.get("/:id", async (req, res) => {
 
 // Route: Add a new product
 router.post("/", async (req, res) => {
-  const {name, description, price, imageUrl, countInStock, category} = req.body;
+  const {name, description, price, mainImage, images, countInStock, category} =
+    req.body;
 
   try {
     const product = new Product({
@@ -46,13 +47,16 @@ router.post("/", async (req, res) => {
       mainImage,
       images,
       countInStock,
-      category,
+      categories: category,
     });
 
     const createdProduct = await product.save(); // Save product to the database
     res.status(201).json(createdProduct);
   } catch (error) {
-    res.status(500).json({message: "Error creating product", error});
+    console.error("Error creating product:", error);
+    res
+      .status(500)
+      .json({message: "Error creating product", error: error.message});
   }
 });
 
@@ -84,7 +88,10 @@ router.put("/:id", async (req, res) => {
       res.status(404).json({message: "Product not found"});
     }
   } catch (error) {
-    res.status(500).json({message: "Error updating product", error});
+    console.error("Error updating product:", error);
+    res
+      .status(500)
+      .json({message: "Error updating product", error: error.message});
   }
 });
 
