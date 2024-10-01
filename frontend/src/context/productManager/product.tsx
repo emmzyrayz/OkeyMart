@@ -1,26 +1,52 @@
-import React, {useEffect} from "react";
-import {useProductContext} from "../productContext/productcontext"; // Import the custom context hook
+// ProductManager.tsx
+
+import {useEffect} from "react";
+import {useProductContext} from "../productContext/productcontext";
+
+interface Product {
+  id?: string; // Optional when adding a new product
+  name: string;
+  description: string;
+  price: number;
+  countInStock: number;
+  images: string[];
+  category?: string; // Make optional if not always required
+  mainImage?: string;
+  categories?: string[];
+  filters?: string[];
+  discount?: number;
+  featured?: boolean;
+  trending?: boolean;
+  top?: boolean;
+  today?: boolean;
+  rating?: number;
+}
+
 
 const ProductManager = () => {
-  const {products, fetchProducts, addProduct, deleteProduct} =
+  const {products, fetchProducts, addProduct, updateProduct, deleteProduct} =
     useProductContext();
 
-    // updateProduct,
-      // Fetch products on component mount
-      useEffect(() => {
-        fetchProducts();
-      }, [fetchProducts]);
+  useEffect(() => {
+    fetchProducts(); // Fetch products on mount
+  }, [fetchProducts]);
 
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     const newProduct = {
-      id: "new_id",
       name: "New Product",
-      description: "Description of new product",
-      price: 100,
-      images: ["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg"],
-      category: "Category",
+      description: "This is a new product",
+      price: 10,
+      countInStock: 100,
+      images: ["newProduct.jpg"],
+      category: "Example Category",
+      // Add other fields as necessary
     };
-    addProduct(newProduct);
+
+    await addProduct(newProduct);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    await deleteProduct(id);
   };
 
   return (
@@ -29,10 +55,15 @@ const ProductManager = () => {
       <button onClick={handleAddProduct}>Add Product</button>
       <ul>
         {products.map((product) => (
-          <li key={product.id}>
+          <li key={product.id ?? "default-id"}>
+            {" "}
+            {/* Use fallback for key */}
             {product.name} - ${product.price}
-            <button onClick={() => deleteProduct(product.id)}>Delete</button>
-            {/* Add more actions like update, view details */}
+            <button onClick={() => handleDeleteProduct(product.id ?? "")}>
+              {" "}
+              {/* Fallback for delete */}
+              Delete
+            </button>
           </li>
         ))}
       </ul>

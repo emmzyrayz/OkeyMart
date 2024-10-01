@@ -67,3 +67,55 @@ export async function POST(req) {
     );
   }
 }
+
+export async function PUT(req, {params}) {
+  await dbConnect(); // Connect to the database
+  const {id} = params; // Get the product ID from params
+
+  try {
+    const body = await req.json();
+    const updatedProduct = await Product.findByIdAndUpdate(id, body, {
+      new: true,
+    });
+
+    if (!updatedProduct) {
+      return new Response(JSON.stringify({message: "Product not found"}), {
+        status: 404,
+      });
+    }
+
+    return new Response(JSON.stringify(updatedProduct), {
+      status: 200,
+      headers: {"content-type": "application/json"},
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return new Response(
+      JSON.stringify({message: "Error updating product", error}),
+      {status: 500}
+    );
+  }
+}
+
+export async function DELETE(req, {params}) {
+  await dbConnect(); // Connect to the database
+  const {id} = params; // Get the product ID from params
+
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(id);
+
+    if (!deletedProduct) {
+      return new Response(JSON.stringify({message: "Product not found"}), {
+        status: 404,
+      });
+    }
+
+    return new Response(null, {status: 204}); // No content response
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return new Response(
+      JSON.stringify({message: "Error deleting product", error}),
+      {status: 500}
+    );
+  }
+}

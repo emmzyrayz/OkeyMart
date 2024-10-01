@@ -4,7 +4,14 @@ const Product = require("./models/products"); // Adjust the path to your Product
 
 const populateProducts = async () => {
   // Connect to your MongoDB database
-  await mongoose.connect("mongodb://localhost:27017/okay_mart");
+  await mongoose.connect(
+    "mongodb+srv://okeyinterrupt:SUVH2khm2So8WzeW@okeymart-dev.2dxat.mongodb.net/okey-mart?retryWrites=true&w=majority"
+    // mongodb+srv://okeyinterrupt:SUVH2khm2So8WzeW@okeymart-dev.2dxat.mongodb.net/okay_mart?retryWrites=true&w=majority
+  );
+
+  const db = mongoose.connection;
+  console.log("Connected to database:", db.name);
+
 
   // Clear existing products
   await Product.deleteMany({});
@@ -66,8 +73,12 @@ const populateProducts = async () => {
   }
 
   // Insert the generated products into the database
-  await Product.insertMany(products);
-  console.log("Products populated successfully!");
+  try {
+    await Product.insertMany(products);
+    console.log("Products populated successfully!");
+  } catch (error) {
+    console.error("Error inserting products:", error);
+  }
 
   // Close the MongoDB connection
   await mongoose.connection.close();

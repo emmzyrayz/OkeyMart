@@ -7,6 +7,7 @@ import "./globals.css";
 import Footer from "@/components/footer/page";
 import TopBar from "@/components/top-bar/page";
 import LoadingScreen from "@/components/loadingscreen/page";
+import { ProductProvider } from "@/context/productContext/productcontext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -54,22 +55,24 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="UTF-8" />
-      </head>
-      <body>
-        {loading && <LoadingScreen />}
-        <div className={loading ? "hidden-load" : "fadeIn-load"}>
-          <div className="page-container">
-            {/* Conditionally render TopBar */}
-            {!hideLayout && <TopBar />}
-            <div className={`${inter.className} content`}>{children}</div>
+    <ProductProvider>
+      <html lang="en">
+        <head>
+          <meta charSet="UTF-8" />
+        </head>
+        <body>
+          {loading && <LoadingScreen />}
+          <div className={loading ? "hidden-load" : "fadeIn-load"}>
+            <div className="page-container">
+              {/* Conditionally render TopBar */}
+              {!hideLayout && <TopBar />}
+              <div className={`${inter.className} content`}>{children}</div>
+            </div>
+            {/* Conditionally render Footer */}
+            {!hideLayout && <Footer />}
           </div>
-          {/* Conditionally render Footer */}
-          {!hideLayout && <Footer />}
-        </div>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ProductProvider>
   );
 }
