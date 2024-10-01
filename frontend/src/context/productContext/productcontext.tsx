@@ -1,21 +1,31 @@
-import { createContext, useState, useContext, ReactNode } from "react";
+// ProductContext.tsx
+
+import {createContext, useState, useContext, ReactNode} from "react";
 import axios from "axios";
 
 // Define the types for your product data
-interface Product {
-  id: string;
+export interface Product {
+  id?: string;
   name: string;
   description: string;
   price: number;
   images: string[];
   category: string;
-  // Add any other fields
+  countInStock: number;
+  mainImage?: string;
+  categories?: string[];
+  filters?: string[];
+  discount?: number;
+  featured?: boolean;
+  trending?: boolean;
+  top?: boolean;
+  today?: boolean;
+  rating?: number;
 }
 
 interface ProductContextType {
   products: Product[];
   fetchProducts: () => Promise<void>;
-  getProduct: (id: string) => Promise<Product | null>;
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (id: string, updatedProduct: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -23,7 +33,6 @@ interface ProductContextType {
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
-// Create a custom hook to use the ProductContext
 export const useProductContext = () => {
   const context = useContext(ProductContext);
   if (!context) {
@@ -32,36 +41,26 @@ export const useProductContext = () => {
   return context;
 };
 
-// Product Provider component
-export const ProductProvider = ({ children }: { children: ReactNode }) => {
+export const ProductProvider = ({children}: {children: ReactNode}) => {
   const [products, setProducts] = useState<Product[]>([]);
+
+  const apiUrl = "https://okeymart.onrender.com/api/products"; // Your Render API URL
 
   // Fetch all products
   const fetchProducts = async () => {
     try {
-      const response = await axios.get("/api/products");
+      const response = await axios.get(apiUrl);
       setProducts(response.data);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
 
-  // Fetch a single product by ID
-  const getProduct = async (id: string) => {
-    try {
-      const response = await axios.get(`/api/products/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      return null;
-    }
-  };
-
   // Add a new product
   const addProduct = async (product: Product) => {
     try {
-      await axios.post("/api/products", product);
-      fetchProducts(); // Refresh product list after adding
+      const response = await axios.post(apiUrl, product);
+      setProducts((prev) => [...prev, response.data]); // Update state with new product
     } catch (error) {
       console.error("Error adding product:", error);
     }
@@ -70,8 +69,10 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   // Update an existing product
   const updateProduct = async (id: string, updatedProduct: Product) => {
     try {
-      await axios.put(`/api/products/${id}`, updatedProduct);
-      fetchProducts(); // Refresh product list after updating
+      const response = await axios.put(`${apiUrl}/${id}`, updatedProduct); // Ensure your route handles this
+      setProducts((prev) =>
+        prev.map((product) => (product.id === id ? response.data : product))
+      ); // Update state
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -80,8 +81,8 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   // Delete a product
   const deleteProduct = async (id: string) => {
     try {
-      await axios.delete(`/api/products/${id}`);
-      fetchProducts(); // Refresh product list after deletion
+      await axios.delete(`${apiUrl}/${id}`); // Ensure your route handles this
+      setProducts((prev) => prev.filter((product) => product.id !== id)); // Update state
     } catch (error) {
       console.error("Error deleting product:", error);
     }
@@ -89,7 +90,13 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <ProductContext.Provider
-      value={{ products, fetchProducts, getProduct, addProduct, updateProduct, deleteProduct }}
+      value={{
+        products,
+        fetchProducts,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+      }}
     >
       {children}
     </ProductContext.Provider>

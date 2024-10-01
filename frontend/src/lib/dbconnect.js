@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const MONGODB_URI =
   process.env.MONGODB_URL ||
-  "mongodb+srv://okeyinterrupt:SUVH2khm2So8WzeW@okeymart-dev.2dxat.mongodb.net/";
+  "mongodb+srv://okeyinterrupt:SUVH2khm2So8WzeW@okeymart-dev.2dxat.mongodb.net/okey-mart?retryWrites=true&w=majority";
 
 if (!MONGODB_URI) {
   throw new Error(

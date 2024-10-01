@@ -2,6 +2,31 @@ const express = require("express");
 const Product = require("../models/products");
 const mongoose = require("mongoose");
 const router = express.Router();
+import cors from "cors";
+
+// Enable CORS for all routes
+app.use(cors());
+
+// Enable CORS for specific origins (if you want to restrict it)
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://okeymart.onrender.com"], // Replace with your frontend domains
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*", // Allow any origin
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
 
 // Route: Fetch all products
 router.get("/", async (req, res) => {

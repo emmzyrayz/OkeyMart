@@ -14,25 +14,11 @@ import {
 } from "react-icons/fa6";
 import Image from "next/image";
 import "./show.css";
+import axios from "axios";
+import { useProductContext, Product } from "@/context/productContext/productcontext";
 
 
-type ProductType = {
-  id: number;
-  name: string;
-  images: [string];
-  mainImage: string;
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  trending: boolean;
-  category: string;
-  top: boolean;
-  description: string;
-  featured: boolean;
-  // Add any other properties you might have.
-};
+
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -68,10 +54,13 @@ const renderStars = (rating: number) => {
   return stars;
 };
 
-const ProductRating = ({product}: {product: ProductType}) => {
+const ProductRating = ({product}: {product: Product}) => {
+  // Provide a fallback value for product.rating
+  const rating = product.rating ?? 0;
+
   return (
     <div className="rating_icon flex flex-row items-center">
-      {renderStars(product.rating)} {/* Call the renderStars function */}
+      {renderStars(rating)} {/* Call the renderStars function */}
     </div>
   );
 };
@@ -79,7 +68,8 @@ const ProductRating = ({product}: {product: ProductType}) => {
 
 
 export default function Show() {
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const {products, fetchProducts} = useProductContext();
+
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
 
@@ -135,64 +125,47 @@ export default function Show() {
     const updatedHeartedItems = [...heartedItems];
     updatedHeartedItems[index] = !updatedHeartedItems[index];
     setHeartedItems(updatedHeartedItems);
-    toggleLike(products[index].id); // Call your toggleLike with the product id
+    const productId = Number(products[index].id || ""); // Ensure it’s a string
+    toggleLike(productId); // Call your toggleLike with the product id
   };
 
   const handleEyeClick = (index: number) => {
     const updatedEyedItems = [...eyedItems];
     updatedEyedItems[index] = !updatedEyedItems[index];
     setEyedItems(updatedEyedItems);
-    toggleView(products[index].id); // Call your toggleView with the product id
+    const productId = Number(products[index].id || ""); // Ensure it’s a string
+    toggleView(productId); // Call your toggleView with the product id
   };
 
-  // Rating function
-  // const renderRating = (rating: number) => {
-  //   const fullStars = Math.floor(rating);
-  //   const hasHalfStar = rating % 1 !== 0;
-  //   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
-  //   return (
-  //     <>
-  //       {Array(fullStars)
-  //         .fill(null)
-  //         .map((_, index) => (
-  //           <FaStar key={index} className="fa-star" />
-  //         ))}
-  //       {hasHalfStar && <FaStarHalf className="fa-star" />}
-  //       {Array(emptyStars)
-  //         .fill(null)
-  //         .map((_, index) => (
-  //           <FaRegStar key={index} className="fa-star" />
-  //         ))}
-  //     </>
-  //   );
-  // };
 
   // Fetch products from the API
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
+  // const fetchProducts = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       "https://okeymart.onrender.com/api/products"
+  //     );
+  //     if (!response.ok) throw new Error("Failed to fetch products");
+  //     const data = await response.json();
 
-      // Filter products with today set to true
-      const todayProducts = data.filter(
-        (product: ProductType) => product.featured === true
-      );
+  //     // Filter products with today set to true
+  //     const todayProducts = data.filter(
+  //       (product: ProductType) => product.featured === true
+  //     );
 
-      // Limit to 10 today products
-      const limitedTodayProducts = todayProducts.slice(0, 10);
+  //     // Limit to 10 today products
+  //     const limitedTodayProducts = todayProducts.slice(0, 10);
 
-      // Set state with only the limited products
-      setProducts(limitedTodayProducts);
-      setHeartedItems(Array(limitedTodayProducts.length).fill(false));
-      setEyedItems(Array(limitedTodayProducts.length).fill(false));
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
+  //     // Set state with only the limited products
+  //     setProducts(limitedTodayProducts);
+  //     setHeartedItems(Array(limitedTodayProducts.length).fill(false));
+  //     setEyedItems(Array(limitedTodayProducts.length).fill(false));
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   }
+  // };
 
-  fetchProducts();
+  // fetchProducts();
 
   // Split products into two halves
   const middleIndex = Math.ceil(products.length / 2);
@@ -237,7 +210,7 @@ export default function Show() {
                   alt={product.name}
                   width={200}
                   height={300}
-                  src={product.mainImage}
+                  src={product.mainImage || "/default-image.jpg"} // Ensure a default image
                 />
                 <div key={product.id} className="product_icons">
                   <div
@@ -275,7 +248,9 @@ export default function Show() {
                       {/* Render the rating */}
                     </div>
                   </div>
-                  <span className="reviews">({product.rating.toFixed(1)})</span>
+                  <span className="reviews">
+                    ({product.rating?.toFixed(1) ?? "N/A"})
+                  </span>
                 </div>
                 <div className="color-var flex flex-row gap-2 items-center relative">
                   {colors.map((color) => (
@@ -303,7 +278,7 @@ export default function Show() {
                   alt={product.name}
                   width={200}
                   height={300}
-                  src={product.mainImage}
+                  src={product.mainImage || "/default-image.jpg"} // Ensure a default image
                 />
                 <div key={product.id} className="product_icons">
                   <div
@@ -340,7 +315,9 @@ export default function Show() {
                       <ProductRating product={product} />
                     </div>
                   </div>
-                  <span className="reviews">({product.rating.toFixed(1)})</span>
+                  <span className="reviews">
+                    ({product.rating?.toFixed(1) ?? "N/A"})
+                  </span>
                 </div>
                 <div className="color-var flex flex-row gap-2 items-center relative">
                   {colors.map((color) => (

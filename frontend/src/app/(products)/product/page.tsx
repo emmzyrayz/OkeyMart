@@ -1,4 +1,4 @@
-import './prroduct';
+import './prroduct.css';
 
 export default function Product() {
     return (
