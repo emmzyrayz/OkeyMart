@@ -1,7 +1,7 @@
 const express = require("express");
 const Product = require("../models/products");
 const mongoose = require("mongoose");
-const faker = require("faker");
+const faker = require("@faker-js/faker");
 const router = express.Router();
 const cors = require("cors");
 
