@@ -1,7 +1,7 @@
 const express = require("express");
 const Product = require("../models/products");
 const mongoose = require("mongoose");
-const faker = require("faker"); // Ensure faker is installed: npm install faker
+const faker = require("@faker-js/faker"); // Ensure faker is installed: npm install faker
 
 const router = express.Router();
 
