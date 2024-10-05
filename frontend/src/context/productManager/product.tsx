@@ -45,6 +45,21 @@ const ProductManager = () => {
     await addProduct(newProduct);
   };
 
+  const handleUpdateProduct = async (id: string) => {
+    const updatedProduct = {
+      name: "Updated Product",
+      description: "This is an updated product",
+      price: 15,
+      countInStock: 150,
+      images: ["updatedProduct.jpg"],
+      category: "Updated Category",
+    };
+
+    await updateProduct(id, updatedProduct);
+  };
+
+  
+
   const handleDeleteProduct = async (id: string) => {
     await deleteProduct(id);
   };

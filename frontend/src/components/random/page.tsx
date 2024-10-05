@@ -2,29 +2,21 @@
 import React, {useState, useEffect} from "react";
 import './random.css';
 import Image from 'next/image';
+import FetchLoader from "../fetchloading/page";
+import {useProductContext} from "@/context/productContext/productcontext";
 
-type ProductType = {
-  id: number;
-  name: string;
-  images: [string];
-  mainImage: string;
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  trending: boolean;
-  category: string;
-  top: boolean;
-  description: string;
-  // Add any other properties you might have.
-};
+import {Product} from "@/types/product";
+import {ProductNotFound} from "../product-notfound/page";
+
+
 
 export default function Random() {
-  const [products, setProducts] = useState<ProductType[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(
+  const {loading: globalLoading} = useProductContext();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
     null
   );
+  const [localLoading, setLocalLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({
     hours: 23,
     minutes: 59,
@@ -68,13 +60,14 @@ export default function Random() {
 
   const fetchProducts = async () => {
     try {
+      setLocalLoading(true);
       const response = await fetch("/api/products");
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
 
       // Filter products with top set to true
       const topProducts = data.filter(
-        (product: ProductType) => product.top === true
+        (product: Product) => product.top === true
       );
 
       // Set filtered top products
@@ -88,6 +81,8 @@ export default function Random() {
       }
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -96,12 +91,20 @@ export default function Random() {
     fetchProducts();
   }, []);
 
+  if (globalLoading || localLoading) {
+    return <FetchLoader />; // Display loading component while fetching
+  }
+
+  if (products.length === 0) {
+    return <ProductNotFound />;
+  }
+
   return (
     <div className="random_section flex flex-row items-center justify-around relative">
       <div className="random_text flex flex-col items-start justify-center gap-4 w-2/4">
         {selectedProduct ? (
           <>
-            <h2>{selectedProduct.category}</h2>
+            <h2>{selectedProduct.categories.length > 0 ? selectedProduct.categories[0].name : 'No Category'}</h2>
             <span className="title">{selectedProduct.description}</span>
             <div className="random_time flex flex-row gap-3">
               <div className="random_hr">

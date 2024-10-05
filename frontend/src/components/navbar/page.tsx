@@ -3,7 +3,7 @@ import {usePathname} from "next/navigation";
 import Link from "next/link";
 import React, { useState} from "react";
 import "./navbar.css";
-import {FaSearch, FaRegHeart} from "react-icons/fa";
+import {FaSearch, FaRegHeart, FaRegUserCircle} from "react-icons/fa";
 import {TiShoppingCart} from "react-icons/ti";
 import {FiShoppingBag, FiUser, FiBell} from "react-icons/fi";
 import {ImCancelCircle} from "react-icons/im";
@@ -79,8 +79,8 @@ export const HomeNav = () => {
             <span className="absolute">5</span>
           </div>
         </Link>
-        <div className="user relative" onClick={toggleMenu}>
-          <FiUser className="nav-icon" />
+        <div className="user relative online" onClick={toggleMenu}>
+          <FaRegUserCircle className="nav-icon" />
           <span className="absolute"></span>
         </div>
       </div>
@@ -90,7 +90,7 @@ export const HomeNav = () => {
           isMenuOpen ? "open" : "hidden"
         } flex navbar_menu absolute flex-col items-center justify-center`}
       >
-        <Link href="/profile" >
+        <Link href="/profile">
           <div className="profile">
             <FiUser className="wh" />
             <span>Manage My Account</span>

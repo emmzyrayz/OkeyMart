@@ -1,0 +1,25 @@
+.faint {
+    opacity: .5;
+}
+
+.full {
+    opacity: 1;
+}
+
+.sec-color {
+    color: var(--secondary2);
+}
+
+.productgrid_section {
+    padding: 2% 5%;
+    padding-bottom: 30px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: auto;
+}
+
+.productgrid_section::-webkit-scrollbar {
+    display: none;
+}

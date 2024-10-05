@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState} from "react";
+import React, {useRef, useState, useEffect} from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -14,8 +14,9 @@ import {
 } from "react-icons/fa6";
 import Image from "next/image";
 import "./show.css";
-import axios from "axios";
+import FetchLoader from "../fetchloading/page";
 import { useProductContext, Product } from "@/context/productContext/productcontext";
+import { ProductNotFound } from "../product-notfound/page";
 
 
 
@@ -68,8 +69,7 @@ const ProductRating = ({product}: {product: Product}) => {
 
 
 export default function Show() {
-  const {products, fetchProducts} = useProductContext();
-
+  const {products, fetchProducts, loading: globalLoading} = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
 
@@ -86,6 +86,36 @@ export default function Show() {
   // Create two separate refs for each grid
   const topGridRef = useRef<HTMLDivElement>(null);
   const bottomGridRef = useRef<HTMLDivElement>(null);
+
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts(); 
+    console.log("Products fetched: ", products);
+  }, [fetchProducts]);
+
+  if (globalLoading) {
+    return <FetchLoader />; // Display loading component while fetching
+  }
+
+  if (products.length === 0 ) {
+    return <ProductNotFound />;
+  }
+
+  console.log("Products in component:", products);
+
+  const topFilProducts = products.filter((product) => product.top === true);
+  console.log("Top Products: ", topFilProducts);
+
+  // Filter products with 'top' set to true and limit to 16 products
+  const topDisProducts = topFilProducts.slice(0, 16);
+  console.log("Displayed Products: ", topDisProducts);
+
+  products.forEach((product, index) => {
+    console.log(`Product ${index}: `, product); // Log individual products
+    console.log("Product ID: ", product.id); // Ensure product has an ID
+    console.log("Product Name: ", product.name); // Ensure product has a name
+    console.log("Product Top: ", product.top); // Ensure product has 'top' property
+  });
 
   const toggleLike = (productId: number) => {
     if (likedItems.includes(productId)) {
@@ -138,39 +168,10 @@ export default function Show() {
   };
 
 
-
-  // Fetch products from the API
-  // const fetchProducts = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       "https://okeymart.onrender.com/api/products"
-  //     );
-  //     if (!response.ok) throw new Error("Failed to fetch products");
-  //     const data = await response.json();
-
-  //     // Filter products with today set to true
-  //     const todayProducts = data.filter(
-  //       (product: ProductType) => product.featured === true
-  //     );
-
-  //     // Limit to 10 today products
-  //     const limitedTodayProducts = todayProducts.slice(0, 10);
-
-  //     // Set state with only the limited products
-  //     setProducts(limitedTodayProducts);
-  //     setHeartedItems(Array(limitedTodayProducts.length).fill(false));
-  //     setEyedItems(Array(limitedTodayProducts.length).fill(false));
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   }
-  // };
-
-  // fetchProducts();
-
   // Split products into two halves
-  const middleIndex = Math.ceil(products.length / 2);
-  const topProducts = products.slice(0, middleIndex);
-  const bottomProducts = products.slice(middleIndex);
+  const middleIndex = Math.ceil(topDisProducts.length / 2);
+  const topProducts = topDisProducts.slice(0, middleIndex);
+  const bottomProducts = topDisProducts.slice(middleIndex);
 
   return (
     <div className="show_section w-full flex flex-col">
@@ -203,140 +204,148 @@ export default function Show() {
           className="top_grid flex flex-row overflow-x-auto"
           ref={topGridRef}
         >
-          {topProducts.map((product, index) => (
-            <div className="top_item" key={product.id}>
-              <div className="product_image">
-                <Image
-                  alt={product.name}
-                  width={200}
-                  height={300}
-                  src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                />
-                <div key={product.id} className="product_icons">
-                  <div
-                    className="icon-heart"
-                    onClick={() => handleHeartClick(index)}
-                  >
-                    {heartedItems[index] ? (
-                      <FaHeart className="fas" />
-                    ) : (
-                      <FaRegHeart className="fa" />
-                    )}
-                  </div>
-                  <div
-                    className="icon-eye"
-                    onClick={() => handleEyeClick(index)}
-                  >
-                    {eyedItems[index] ? (
-                      <FaEye className="fas" />
-                    ) : (
-                      <FaRegEye className="fa" />
-                    )}
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detal flex flex-col">
-                <h3>{product.name}</h3>
-                <div className="info flex flex-row gap-1 items-center">
-                  <span className="price">{product.price}</span>
-                  <div className="rating">
-                    <div className="rating_icon flex flex-row items-center">
-                      <ProductRating product={product} />{" "}
-                      {/* Render the rating */}
+          {topProducts.map((product, index) => {
+            console.log("Rendering product: ", product);
+
+            return (
+              <div className="top_item" key={product.id}>
+                <div className="product_image">
+                  <Image
+                    alt={product.name}
+                    width={200}
+                    height={300}
+                    src={product.mainImage || "/default-image.jpg"} // Ensure a default image
+                  />
+                  <div key={product.id} className="product_icons">
+                    <div
+                      className="icon-heart"
+                      onClick={() => handleHeartClick(index)}
+                    >
+                      {heartedItems[index] ? (
+                        <FaHeart className="fas" />
+                      ) : (
+                        <FaRegHeart className="fa" />
+                      )}
+                    </div>
+                    <div
+                      className="icon-eye"
+                      onClick={() => handleEyeClick(index)}
+                    >
+                      {eyedItems[index] ? (
+                        <FaEye className="fas" />
+                      ) : (
+                        <FaRegEye className="fa" />
+                      )}
                     </div>
                   </div>
-                  <span className="reviews">
-                    ({product.rating?.toFixed(1) ?? "N/A"})
-                  </span>
+                  <div className="product_btn">
+                    <span>Add To Cart</span>
+                  </div>
                 </div>
-                <div className="color-var flex flex-row gap-2 items-center relative">
-                  {colors.map((color) => (
-                    <div
-                      key={color}
-                      className={`color-item ${color} ${
-                        activeColors[index] === color ? "active" : ""
-                      }`}
-                      onClick={() => handleColorChange(index, color)}
-                    ></div>
-                  ))}
+                <div className="product_detal flex flex-col">
+                  <h3>{product.name}</h3>
+                  <div className="info flex flex-row gap-1 items-center">
+                    <span className="price">{product.price}</span>
+                    <div className="rating">
+                      <div className="rating_icon flex flex-row items-center">
+                        <ProductRating product={product} />{" "}
+                        {/* Render the rating */}
+                      </div>
+                    </div>
+                    <span className="reviews">
+                      ({product.rating?.toFixed(1) ?? "N/A"})
+                    </span>
+                  </div>
+                  <div className="color-var flex flex-row gap-2 items-center relative">
+                    {colors.map((color) => (
+                      <div
+                        key={color}
+                        className={`color-item ${color} ${
+                          activeColors[index] === color ? "active" : ""
+                        }`}
+                        onClick={() => handleColorChange(index, color)}
+                      ></div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div
           className="bottom_grid flex flex-row overflow-x-auto"
           ref={bottomGridRef}
         >
-          {bottomProducts.map((product, index) => (
-            <div className="top_item" key={product.id}>
-              <div className="product_image">
-                <Image
-                  alt={product.name}
-                  width={200}
-                  height={300}
-                  src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                />
-                <div key={product.id} className="product_icons">
-                  <div
-                    className="icon-heart"
-                    onClick={() => handleHeartClick(index + middleIndex)}
-                  >
-                    {heartedItems[index + middleIndex] ? (
-                      <FaHeart className="fas" />
-                    ) : (
-                      <FaRegHeart className="fa" />
-                    )}
-                  </div>
-                  <div
-                    className="icon-eye"
-                    onClick={() => handleEyeClick(index + middleIndex)}
-                  >
-                    {eyedItems[index + middleIndex] ? (
-                      <FaEye className="fas" />
-                    ) : (
-                      <FaRegEye className="fa" />
-                    )}
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detal flex flex-col">
-                <h3>{product.name}</h3>
-                <div className="info flex flex-row gap-1 items-center">
-                  <span className="price">{product.price}</span>
-                  <div className="rating">
-                    <div className="rating_icon flex flex-row items-center">
-                      <ProductRating product={product} />
+          {bottomProducts.map((product, index) => {
+            console.log("Rendering product: ", product);
+
+            return (
+              <div className="top_item" key={product.id}>
+                <div className="product_image">
+                  <Image
+                    alt={product.name}
+                    width={200}
+                    height={300}
+                    src={product.mainImage || "/default-image.jpg"} // Ensure a default image
+                  />
+                  <div key={product.id} className="product_icons">
+                    <div
+                      className="icon-heart"
+                      onClick={() => handleHeartClick(index + middleIndex)}
+                    >
+                      {heartedItems[index + middleIndex] ? (
+                        <FaHeart className="fas" />
+                      ) : (
+                        <FaRegHeart className="fa" />
+                      )}
+                    </div>
+                    <div
+                      className="icon-eye"
+                      onClick={() => handleEyeClick(index + middleIndex)}
+                    >
+                      {eyedItems[index + middleIndex] ? (
+                        <FaEye className="fas" />
+                      ) : (
+                        <FaRegEye className="fa" />
+                      )}
                     </div>
                   </div>
-                  <span className="reviews">
-                    ({product.rating?.toFixed(1) ?? "N/A"})
-                  </span>
+                  <div className="product_btn">
+                    <span>Add To Cart</span>
+                  </div>
                 </div>
-                <div className="color-var flex flex-row gap-2 items-center relative">
-                  {colors.map((color) => (
-                    <div
-                      key={color}
-                      className={`color-item ${color} ${
-                        activeColors[index + middleIndex] === color
-                          ? "active"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        handleColorChange(index + middleIndex, color)
-                      }
-                    ></div>
-                  ))}
+                <div className="product_detal flex flex-col">
+                  <h3>{product.name}</h3>
+                  <div className="info flex flex-row gap-1 items-center">
+                    <span className="price">{product.price}</span>
+                    <div className="rating">
+                      <div className="rating_icon flex flex-row items-center">
+                        <ProductRating product={product} />
+                      </div>
+                    </div>
+                    <span className="reviews">
+                      ({product.rating?.toFixed(1) ?? "N/A"})
+                    </span>
+                  </div>
+                  <div className="color-var flex flex-row gap-2 items-center relative">
+                    {colors.map((color) => (
+                      <div
+                        key={color}
+                        className={`color-item ${color} ${
+                          activeColors[index + middleIndex] === color
+                            ? "active"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          handleColorChange(index + middleIndex, color)
+                        }
+                      ></div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

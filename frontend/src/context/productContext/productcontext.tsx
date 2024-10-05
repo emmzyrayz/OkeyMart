@@ -1,7 +1,7 @@
 // ProductContext.tsx
 
 import {createContext, useState, useContext, ReactNode} from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 // Define the types for your product data
 export interface Product {
@@ -26,6 +26,7 @@ export interface Product {
 interface ProductContextType {
   products: Product[];
   fetchProducts: () => Promise<void>;
+  loading: boolean;
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (id: string, updatedProduct: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -43,24 +44,48 @@ export const useProductContext = () => {
 
 export const ProductProvider = ({children}: {children: ReactNode}) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLocalLoading] = useState(true);
 
   const apiUrl = "https://okeymart.onrender.com/api/products"; // Your Render API URL
 
   // Fetch all products
   const fetchProducts = async () => {
+
     try {
+      setLocalLoading(true);
+      await new Promise((resolve) => 
+        setTimeout(resolve, 3000));
+
       const response = await axios.get(apiUrl);
+      console.log("API response:", response.data);
       setProducts(response.data);
-    } catch (error) {
-      console.error("Error fetching products:", error);
+      console.log("Products state after setting:", response.data);
+    } catch (error: any) {
+
+      if(axios.isAxiosError(error)) {
+        console.error("Error fetching products:", error.response?.data);
+      } else {
+        console.error("An unexpected error occured:", error);
+        if (!error.response) {
+          console.error(
+            "Network error: Please check your internet connection."
+          );
+        }
+      }
+      
+      
+    } finally {
+      setLocalLoading(false); // Set loading to false once fetching is done
     }
   };
 
   // Add a new product
   const addProduct = async (product: Product) => {
+
     try {
       const response = await axios.post(apiUrl, product);
-      setProducts((prev) => [...prev, response.data]); // Update state with new product
+      setProducts((prev) => [...prev, response.data]); 
+      console.log("Product added successfully:", response.data);
     } catch (error) {
       console.error("Error adding product:", error);
     }
@@ -73,6 +98,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
       setProducts((prev) =>
         prev.map((product) => (product.id === id ? response.data : product))
       ); // Update state
+      console.log("Product updated successfully:", response.data);
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -83,6 +109,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
     try {
       await axios.delete(`${apiUrl}/${id}`); // Ensure your route handles this
       setProducts((prev) => prev.filter((product) => product.id !== id)); // Update state
+      console.log("Product deleted successfully:", id);
     } catch (error) {
       console.error("Error deleting product:", error);
     }
@@ -92,6 +119,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
     <ProductContext.Provider
       value={{
         products,
+        loading,
         fetchProducts,
         addProduct,
         updateProduct,

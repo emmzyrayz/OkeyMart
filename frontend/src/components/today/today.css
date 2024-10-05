@@ -159,6 +159,8 @@
     /* Firefox hides scrollbar */
     -ms-overflow-style: none;
     /* IE 10+ */
+    min-height: 260px;
+    width: 100%;
 
     scroll-behavior: auto;
 }

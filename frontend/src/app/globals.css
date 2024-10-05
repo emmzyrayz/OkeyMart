@@ -198,6 +198,7 @@
   scrollbar-width: none;
   /* Firefox hides scrollbar */
   -ms-overflow-style: none;
+  /* outline: 1px solid red; */
   /* IE 10+ */
 }
 
@@ -218,9 +219,6 @@
 }
 
 /* styles/globals.css */
-.hidden-load {
-  visibility: hidden;
-}
 
 .fadeIn-load {
   opacity: 0;

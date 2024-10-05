@@ -7,49 +7,82 @@ import { FaPlus, FaMinus, FaRegHeart,
     FaStarHalf, FaRegStar, FaStar, FaRegEye } from 'react-icons/fa6';
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
-import Havic1 from '../../assets/img/products/havic-gamepad/havic-1.png';
-import Havic2 from '../../assets/img/products/havic-gamepad/havic-2.png';
-import Havic3 from '../../assets/img/products/havic-gamepad/havic-3.png';
-import Havic4 from '../../assets/img/products/havic-gamepad/havic-4.png';
-import Havic5 from '../../assets/img/products/havic-gamepad/havic-5.png';
+import { useEffect, useState } from 'react';
+import RelatedProductsList from '../related-product/page';
+import {Product, ProductType} from "@/types/product";
 
-import Redgamepad from '../../assets/img/products/gamepad.png';
-import Keyboard from '../../assets/img/products/keyboard.png';
-import Monitor from "../../assets/img/products/monitor.png";
-import Cooler from '../../assets/img/products/cooling-fan.png';
 
-export const ProductInfo = () => {
+
+
+const renderStars = (rating: number) => {
+  const fullStars = Math.floor(rating); // Full stars
+  const halfStars = rating % 1 >= 0.5 ? 1 : 0; // Half star if applicable
+  const emptyStars = 5 - fullStars - halfStars; // Remaining empty stars
+
+  const stars = [];
+
+  // Add full stars
+  for (let i = 0; i < fullStars; i++) {
+    stars.push(<FaStar key={`full-${i}`} className="fa-star" />);
+  }
+
+  // Add half star
+  if (halfStars) {
+    stars.push(
+      <div key="half" className="half-star-container">
+        <FaStarHalf className="fa-star" />
+        <FaRegStar className="half-fill" />
+      </div>
+    );
+  }
+
+  // Add empty stars
+  for (let i = 0; i < emptyStars; i++) {
+    stars.push(<FaRegStar key={`empty-${i}`} className="fa-star" />);
+  }
+
+  return stars;
+};
+
+const ProductRating = ({rating}: {rating: number}) => {
+  const ratting = rating ?? 0;
+
+  return (
+    <div className="rating_icon flex flex-row items-center">
+      {renderStars(ratting)}
+    </div>
+  );
+};
+
+export const ProductInfo = ({product}: { product: ProductType }) => {
+  const { name, rating, images, description, price, categories  } = product;
+  const currentCategory = categories[0]?.name || '';
+
     return (
       <div className="product-info_section">
         <div className="productinfo_top">
           <div className="profile_nav flex flex-row gap-1 items-start justify-start">
             <span className="faint">Home</span>
             <span className="faint">/</span>
-            <span className="faint">Gaming</span>
+            <span className="faint">{categories.join(', ')}</span>
             <span className="faint">/</span>
-            <span className="full">Havic HV G-92 Gamepad</span>
+            <span className="full">{product.name}</span>
           </div>
         </div>
         <div className="product-info_container flex flex-row items-center justify-center gap-5">
           <div className="product-info_image flex flex-row w-2/3">
             <div className="image_items flex flex-col items-center justify-center w-1/3 gap-3">
-              <div className="image_item">
-                <Image src={Havic2} alt="" width={100} height={100} />
+              {product.images.map((img, index) => (
+                <div key={index} className='image_item'>
+                  <div className="image_item">
+                <Image src={img} alt={product.name} width={100} height={100} />
               </div>
-              <div className="image_item">
-                <Image src={Havic3} alt="" width={100} height={100} />
-              </div>
-              <div className="image_item">
-                <Image src={Havic4} alt="" width={100} height={100} />
-              </div>
-              <div className="image_item">
-                <Image src={Havic5} alt="" width={100} height={100} />
-              </div>
-            </div>
+                </div>
+              ))}
             <div className="product_disp flex items-center justify-center w-2/3 ">
               <Image
-                src={Havic1}
-                alt=""
+                src={product.images[0]}
+                alt={product.name}
                 width={500}
                 height={300}
                 className="display_image"
@@ -58,29 +91,20 @@ export const ProductInfo = () => {
           </div>
           <div className="product-info_det flex flex-col items-center justify-start w-1/3 gap-1">
             <div className="det_top flex flex-col items-start justify-center">
-              <h1 className="det_name">Havic HV G-92 Gamepad</h1>
+              <h1 className="det_name">{product.name}</h1>
               <span className="det_rating-con flex flex-row items-center justify-center gap-1">
                 <span className="det_rating flex flex-row items-center justify-center gap-1">
                   <div className="rating_icon flex flex-row items-center">
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <div className="half-star-container">
-                      <FaStarHalf className="fa-star" />
-                      <FaRegStar className="half-fill" />
-                    </div>
-                    <FaRegStar className="fa-star" />
+                    <ProductRating rating={product.rating} />
                   </div>
-                  <p>(150 Reviews)</p>
+                  <p>({product.rating?.toFixed(1) ?? 'N/A'}) Reviews</p>
                 </span>
                 <p>|</p>
                 <span className="det_stock">In Stock</span>
               </span>
-              <span className="det_price">$192.00</span>
+              <span className="det_price">${product.price}</span>
               <div className="det_sum">
-                PlayStation 5 Controller Skin High quality vinyl with air
-                channel adhesive for easy bubble free install & mess free
-                removal Pressure sensitive.
+                {product.description}
               </div>
             </div>
             <hr />
@@ -152,170 +176,9 @@ export const ProductInfo = () => {
             <div className="today_red"></div>
             <h2>Related Item</h2>
           </div>
-          <div className="related_items flex flex-row overflow-x-auto mb-8">
-            <div className="related_item">
-              <div className="product_image">
-                <span className="discount">-40%</span>
-                <Image
-                  alt="product 1"
-                  width={200}
-                  height={300}
-                  src={Redgamepad}
-                />
-                <div className="product_icons">
-                  <div className="icon-heart">
-                    <FaRegHeart className="fa" />
-                  </div>
-                  <div className="icon-eye">
-                    <FaRegEye className="fa" />
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">HAVIT HV-G92 Gampad</div>
-                <div className="product_price">
-                  <div className="dscount_price">$120</div>
-                  <div className="actual_price">$160</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <div className="half-star-container">
-                      <FaStarHalf className="fa-star" />
-                      <FaRegStar className="half-fill" />
-                    </div>
-                    <FaRegStar className="fa-star" />
-                  </div>
-                  <div className="rating_number">(88)</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="related_item">
-              <div className="product_image">
-                <span className="discount">-40%</span>
-                <Image
-                  alt="product 1"
-                  width={200}
-                  height={300}
-                  src={Keyboard}
-                />
-                <div className="product_icons">
-                  <div className="icon-heart">
-                    <FaRegHeart className="fa" />
-                  </div>
-                  <div className="icon-eye">
-                    <FaRegEye className="fa" />
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">AK-900 Wired Keyboard</div>
-                <div className="product_price">
-                  <div className="dscount_price">$960</div>
-                  <div className="actual_price">$1160</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <div className="half-star-container">
-                      <FaStarHalf className="fa-star" />
-                      <FaRegStar className="half-fill" />
-                    </div>
-                    <FaRegStar className="fa-star" />
-                  </div>
-                  <div className="rating_number">(88)</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="related_item">
-              <div className="product_image">
-                <span className="discount">-40%</span>
-                <Image alt="product 1" width={200} height={300} src={Monitor} />
-                <div className="product_icons">
-                  <div className="icon-heart">
-                    <FaRegHeart className="fa" />
-                  </div>
-                  <div className="icon-eye">
-                    <FaRegEye className="fa" />
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">IPS LCD Gaming Monitor</div>
-                <div className="product_price">
-                  <div className="dscount_price">$370</div>
-                  <div className="actual_price">$400</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <div className="half-star-container">
-                      <FaStarHalf className="fa-star" />
-                      <FaRegStar className="half-fill" />
-                    </div>
-                    <FaRegStar className="fa-star" />
-                  </div>
-                  <div className="rating_number">(88)</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="related_item">
-              <div className="product_image">
-                <span className="discount">-40%</span>
-                <Image alt="product 1" width={200} height={300} src={Cooler} />
-                <div className="product_icons">
-                  <div className="icon-heart">
-                    <FaRegHeart className="fa" />
-                  </div>
-                  <div className="icon-eye">
-                    <FaRegEye className="fa" />
-                  </div>
-                </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">RGB liquid CPU Cooler</div>
-                <div className="product_price">
-                  <div className="dscount_price">$120</div>
-                  <div className="actual_price">$160</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <FaStar className="fa-star" />
-                    <div className="half-star-container">
-                      <FaStarHalf className="fa-star" />
-                      <FaRegStar className="half-fill" />
-                    </div>
-                    <FaRegStar className="fa-star" />
-                  </div>
-                  <div className="rating_number">(88)</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <RelatedProductsList currentCategory={currentCategory} />
         </div>
+      </div>
       </div>
     );
 }
