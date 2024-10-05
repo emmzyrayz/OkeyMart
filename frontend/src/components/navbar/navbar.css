@@ -99,7 +99,8 @@
     padding: 1px;
     justify-content: center;
     align-items: center;
-    width: 26px;
+    width: 28px;
+    height: 28px;
     position: relative;
     cursor: pointer;
 }
@@ -125,23 +126,29 @@
     color: var(--text2);
     -webkit-text-stroke: 3px white !important;
     opacity: 0.8;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
 }
 
 .user {
-    border: 2px solid var(--black);
+    border: 1px solid var(--text);
     border-radius: 50%;
+    /* background: var(--text); */
+    outline: 3px solid var(--error-600);
 }
+
+.online {
+    outline: 3px solid var(--green-500);
+}
+
 
 .user:hover {
-    border: 2px solid var(--text);
-    /* background: var(--secondary2) 5%; */
-    color: var(--text) !important;
-}
+    background: var(--text);
 
-.user:hover .nav-icon {
-    color: var(--text) !important;
+    .nav-icon {
+        color: var(--btn-hover) !important;
+        border-radius: 50%;
+    }
 }
 
 .user.active {

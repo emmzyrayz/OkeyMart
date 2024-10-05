@@ -67,7 +67,7 @@
 
 .featured_grid .grid_detail {
     height: 122px;
-    min-width: 242px;
+    max-width: 80%;
     color: var(--text);
     bottom: 0px;
     margin-left: 20px;
@@ -81,9 +81,10 @@
 }
 
 .grid_detail span.grid_det {
+    flex-wrap: wrap;
     font-size: var(--fs-14);
     font-weight: 500;
-    width: 245px;
+    /* width: 245px; */
 }
 
 .grid_detail .grid-btn {

@@ -1,0 +1,37 @@
+.loading_section {
+    padding: 20px 0;
+    position: relative;
+    background: #fff;
+    min-width: 100%;
+    min-height: 100%;
+}
+
+.blob {
+    width: 144px;
+    height: 144px;
+    display: grid;
+    background: #fff;
+    filter: blur(7.2px) contrast(10);
+    padding: 14.4px;
+    mix-blend-mode: darken;
+}
+
+.blob:before,
+.blob:after {
+    content: "";
+    grid-area: 1/1;
+    margin: 43.2px 0;
+    border-radius: 144px;
+    background: #000000;
+    animation: bo4 2s infinite linear;
+}
+
+.blob:after {
+    --s: -1;
+}
+
+@keyframes bo4 {
+    100% {
+        transform: rotate(calc(var(--s, 1)*1turn));
+    }
+}

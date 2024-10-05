@@ -2,6 +2,14 @@
 import React, {useState, useEffect, useRef} from "react";
 import "./today.css";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import FetchLoader from "../fetchloading/page";
+import {
+  useProductContext,
+} from "@/context/productContext/productcontext";
+
+import { ProductType } from "@/types/product";
+import { ProductNotFound } from "../product-notfound/page";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -14,18 +22,6 @@ import {
   FaStarHalf,
 } from "react-icons/fa6";
 
-type ProductType = {
-  id: number;
-  name: string;
-  mainImage: string;
-  images: [string];
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  // Add any other properties you might have.
-};
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -70,10 +66,13 @@ const ProductRating = ({product}: {product: ProductType}) => {
 };
 
 export default function Today() {
+  const router = useRouter();
+  const { loading: globalLoading } = useProductContext();
 
   const [products, setProducts] = useState<ProductType[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+  const [localLoading, setLocalLoading] = useState(true);
 
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = new Date("2024-12-31T23:59:59").getTime();
@@ -85,9 +84,11 @@ export default function Today() {
     minutes: 0,
     seconds: 0,
   });
+
   // Fetch products from the API
   const fetchProducts = async () => {
     try {
+      setLocalLoading(true);
       const response = await fetch("/api/products");
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
@@ -106,15 +107,16 @@ export default function Today() {
       setEyedItems(Array(limitedTodayProducts.length).fill(false));
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
 
-  //  const discountPrice = product.price * (1 - product.discount / 100);
-
-  
 
   useEffect(() => {
+    fetchProducts();
+
     // Update countdown every second
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -150,7 +152,14 @@ export default function Today() {
     return () => clearInterval(timer); // Clean up the interval on component unmount
   }, [endDate]);
 
-  fetchProducts();
+  if (globalLoading || localLoading) {
+    return <FetchLoader />; // Display loading component while fetching
+  }
+
+  if (products.length === 0) {
+    return <ProductNotFound />;
+  }
+
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -239,7 +248,7 @@ export default function Today() {
         ref={scrollContainerRef}
       >
         {products.map((product, index) => {
-          const discountPrice = product.price * (1 - parseFloat(product.discount) / 100);
+          const discountPrice = product.price * (1 - (product.discount) / 100);
           
           return(
             <div className="product_item" key={index}>
@@ -294,7 +303,7 @@ export default function Today() {
                   })}
       </div>
       <div className="today_btn flex items-center justify-center">
-        <span>View All Products</span>
+        <span onClick={() => router.push('/product/today')}>View All Products</span>
       </div>
       <hr />
     </div>

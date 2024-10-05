@@ -62,15 +62,15 @@ export default function RootLayout({
         </head>
         <body>
           {loading && <LoadingScreen />}
-          <div className={loading ? "hidden-load" : "fadeIn-load"}>
-            <div className="page-container">
-              {/* Conditionally render TopBar */}
-              {!hideLayout && <TopBar />}
-              <div className={`${inter.className} content`}>{children}</div>
+          {!loading && (
+            <div className="fadeIn-load">
+              <div className="page-container">
+                {!hideLayout && <TopBar />}
+                <div className={`${inter.className} content`}>{children}</div>
+              </div>
+              {!hideLayout && <Footer />}
             </div>
-            {/* Conditionally render Footer */}
-            {!hideLayout && <Footer />}
-          </div>
+          )}
         </body>
       </html>
     </ProductProvider>

@@ -1,5 +1,5 @@
 "use client";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
   FaEye,
   FaHeart,
@@ -11,20 +11,11 @@ import {
 } from "react-icons/fa";
 import Image from "next/image";
 import "./best-selling.css";
+import FetchLoader from "../fetchloading/page";
+import {useProductContext} from "@/context/productContext/productcontext";
 
-type ProductType = {
-  id: number;
-  name: string;
-  mainImage: string;
-  images: [string];
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  trending: boolean;
-  // Add any other properties you might have.
-};
+import {ProductType} from "@/types/product";
+
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -69,9 +60,11 @@ const ProductRating = ({product}: {product: ProductType}) => {
 };
 
 export const BestSelling = () => {
+  const {loading: globalLoading} = useProductContext();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+  const [localLoading, setLocalLoading] = useState(true);
 
   const handleHeartClick = (index: number) => {
     const updatedHeartedItems = [...heartedItems];
@@ -88,6 +81,7 @@ export const BestSelling = () => {
   // Fetch products from the API
   const fetchProducts = async () => {
     try {
+      setLocalLoading(true);
       const response = await fetch("/api/products");
       if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
@@ -106,10 +100,22 @@ export const BestSelling = () => {
       setEyedItems(Array(limitedTodayProducts.length).fill(false));
     } catch (error) {
       console.error("Error fetching products:", error);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
-   fetchProducts();
+  useEffect(() => {
+    fetchProducts();
+  }, [])
+
+   if (globalLoading || localLoading) {
+     return <FetchLoader />; // Display loading component while fetching
+   }
+
+   if (products.length === 0) {
+     return <div>No Product Found</div>;
+   }
 
   return (
     <div className="best_section">
@@ -128,7 +134,7 @@ export const BestSelling = () => {
       <div className="best_product flex flex-row overflow-x-auto">
         {products.map((product, index) => {
           const discountPrice =
-            product.price * (1 - parseFloat(product.discount) / 100);
+            product.price * (1 - (product.discount) / 100);
 
           return (
             <div className="product_item" key={index}>
