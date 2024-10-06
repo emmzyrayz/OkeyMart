@@ -58,6 +58,8 @@ export default function Random() {
     console.log(products); // Using 'products' to avoid ESLint warning
   }, [products]);
 
+  const isLoading = globalLoading || localLoading;
+
   const fetchProducts = async () => {
     try {
       setLocalLoading(true);
@@ -91,7 +93,7 @@ export default function Random() {
     fetchProducts();
   }, []);
 
-  if (globalLoading || localLoading) {
+  if (isLoading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 
