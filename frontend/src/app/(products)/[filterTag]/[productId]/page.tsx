@@ -1,12 +1,11 @@
 "use client";
-
-import {ProductInfo} from "@/components/product-info/page";
 import "./prod-info.css";
 import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import FetchLoader from "@/components/fetchloading/page";
 import type {ProductType} from "@/types/product";
 import RelatedProductsList from "@/components/related-product/page";
+import { ProductInfo } from "@/components/product-info/page";
 
 export default function Products() {
   const params = useParams();
@@ -78,14 +77,12 @@ export default function Products() {
     <div>
       <ProductInfo product={productData} />
 
-      <div className="related_product flex flex-col mt-4 w-full h-full">
+      <div className="related_product flex flex-col mt-4 w-full h-full px-[5%] pb-[30px] mb-[20px] border-box">
         <div className="related_top flex flex-row items-center gap-2">
           <div className="today_red"></div>
           <h2>Related Item</h2>
         </div>
-        <RelatedProductsList
-          currentCategory={filterTag}
-        />
+        <RelatedProductsList />
       </div>
     </div>
   );

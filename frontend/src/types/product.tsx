@@ -34,7 +34,6 @@ export type Product = {
   top?: boolean; // Optional field for top products
   today?: boolean; // Optional field for today's products
   rating: number; // Optional rating field
-  tags: string;
 };
 
 // ProductType can also represent a more specific version of the Product type
@@ -56,5 +55,4 @@ export type ProductType = {
   top?: boolean; // Optional field for top products
   today?: boolean; // Optional field for today's products
   rating: number; // Optional rating field
-  tags: string;
 };

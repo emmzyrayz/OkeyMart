@@ -1,17 +1,14 @@
-import {useEffect, useMemo, useState} from "react";
-import { FaStar, FaStarHalf, FaRegStar, FaRegHeart, FaRegEye } from "react-icons/fa6";
+import {useEffect, useState} from "react";
+import { FaStar, FaStarHalf, FaRegStar, FaRegHeart, FaRegEye, FaEye, FaHeart } from "react-icons/fa6";
 import Image from "next/image";
 import FetchLoader from "../fetchloading/page";
 import { ProductType } from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { ProductNotFound } from "../product-notfound/page";
 
-interface RelatedProductsListProps {
-  currentCategory: string;
-}
-
-
-
+// interface RelatedProductsListProps {
+//   currentCategory: string;
+// }
 
 
 const renderStars = (rating: number) => {
@@ -54,47 +51,47 @@ const ProductRating = ({rating}: {rating: number}) => {
   );
 };
 
-const RelatedProductsList = ({currentCategory}: RelatedProductsListProps) => {
+const RelatedProductsList = () => {
+  const {products, loading} = useProductContext();
   const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
+  const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+
 
   useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      try {
-        const response = await fetch(
-          `/api/products?category=${currentCategory}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch related products");
-        }
-        const data = await response.json();
-
-        // Filter and limit the related products to 10 items
-        const filteredProducts = data.filter((product: ProductType) =>
-          product.categories.some(
-            (category) => category.name === currentCategory
-          )
-        );
-        setRelatedProducts(filteredProducts.slice(0, 10)); // Limit to 10 products
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (currentCategory) {
-      fetchRelatedProducts();
+    if (!loading && products.length > 0) {
+      // Filter the products with `top = true` and randomly pick 10
+      const topProducts = products
+        .filter((product) => product.top === true)
+        .sort(() => 0.5 - Math.random()) // Shuffle array
+        .slice(0, 10); // Pick the first 10 items after shuffle
+      setRelatedProducts(topProducts);
     }
-  }, [currentCategory]);
+  }, [products, loading]);
+
+  useEffect(() => {
+    setHeartedItems(new Array(relatedProducts.length).fill(false));
+    setEyedItems(new Array(relatedProducts.length).fill(false));
+  }, [relatedProducts.length]);
+
+  const handleHeartClick = (index: number) => {
+    setHeartedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
+
+  const handleEyeClick = (index: number) => {
+    setEyedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
 
   if (loading) {
     return <FetchLoader />; // Display loading component while fetching
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
   }
 
   if (!relatedProducts.length) {
@@ -102,8 +99,8 @@ const RelatedProductsList = ({currentCategory}: RelatedProductsListProps) => {
   }
 
   return (
-    <div className="related_items flex flex-row overflow-x-auto mb-8">
-      {relatedProducts.map((product) => (
+    <div className="related_items flex flex-row overflow-x-auto mb-8 px-4">
+      {relatedProducts.map((product, index) => (
         <div key={product.id} className="related_item">
           <div className="product_image">
             <span className="discount">
@@ -116,11 +113,22 @@ const RelatedProductsList = ({currentCategory}: RelatedProductsListProps) => {
               src={product.mainImage}
             />
             <div className="product_icons">
-              <div className="icon-heart">
-                <FaRegHeart className="fa" />
+              <div
+                className="icon-heart"
+                onClick={() => handleHeartClick(index)}
+              >
+                {heartedItems[index] ? (
+                  <FaHeart className="fas" />
+                ) : (
+                  <FaRegHeart className="fa" />
+                )}
               </div>
-              <div className="icon-eye">
-                <FaRegEye className="fa" />
+              <div className="icon-eye" onClick={() => handleEyeClick(index)}>
+                {eyedItems[index] ? (
+                  <FaEye className="fas" />
+                ) : (
+                  <FaRegEye className="fa" />
+                )}
               </div>
             </div>
             <div className="product_btn">

@@ -4,9 +4,7 @@ import {useEffect} from "react";
 import {useProductContext} from "../productContext/productcontext";
 import type { Product } from "@/types/product";
 
-type Products = {
-  id: number,
-};
+
 
 const ProductManager = () => {
   const {products, fetchProducts, addProduct, updateProduct, deleteProduct} =
