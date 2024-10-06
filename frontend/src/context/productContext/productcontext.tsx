@@ -41,8 +41,12 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
       // console.log("API response:", response.data);
       setProducts(response.data);
       // console.log("Products state after setting:", response.data);
-    } catch (error: any) {
-      console.error('Error fetching products:', error);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error("Error fetching products:", error.response?.data || error.message);
+      } else {
+        console.error('Unexpected error:', error);
+      }
     } finally {
       setLoading(false); // Set loading to false once fetching is done
     }

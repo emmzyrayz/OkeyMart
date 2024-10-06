@@ -17,6 +17,7 @@ export type ProductFilters = {
 
 // Main Product type based on your database schema
 export type Product = {
+  _id: string;
   id: string; // This will typically be a string in MongoDB
   name: string;
   description: string;
@@ -33,10 +34,12 @@ export type Product = {
   top?: boolean; // Optional field for top products
   today?: boolean; // Optional field for today's products
   rating: number; // Optional rating field
+  tags: string;
 };
 
 // ProductType can also represent a more specific version of the Product type
 export type ProductType = {
+  _id: string;
   id: string; // This will typically be a string in MongoDB
   name: string;
   description: string;
@@ -53,4 +56,5 @@ export type ProductType = {
   top?: boolean; // Optional field for top products
   today?: boolean; // Optional field for today's products
   rating: number; // Optional rating field
+  tags: string;
 };

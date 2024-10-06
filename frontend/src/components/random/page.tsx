@@ -4,13 +4,14 @@ import './random.css';
 import Image from 'next/image';
 import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
-
+import {useRouter} from "next/navigation";
 import {Product} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
 
 
 
 export default function Random() {
+  const router = useRouter();
   const {loading: globalLoading} = useProductContext();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(
@@ -128,7 +129,7 @@ export default function Random() {
                 <span className="time">Seconds</span>
               </div>
             </div>
-            <div className="random_btn flex items-center justify-center">
+            <div className="random_btn flex items-center justify-center" onClick={() => router.push("/top")}>
               <span>Buy Now</span>
             </div>
           </>

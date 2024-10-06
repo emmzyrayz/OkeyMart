@@ -2,10 +2,11 @@
 
 import {ProductInfo} from "@/components/product-info/page";
 import "./prod-info.css";
-import {useParams, useRouter} from "next/navigation";
+import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import FetchLoader from "@/components/fetchloading/page";
 import type {ProductType} from "@/types/product";
+import RelatedProductsList from "@/components/related-product/page";
 
 export default function Products() {
     const params = useParams();
@@ -13,52 +14,42 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const filterTag = Array.isArray(params.filterTag)
+    ? params.filterTag[0]
+    : params.filterTag;
+  const productId = Array.isArray(params.productId)
+    ? params.productId[0]
+    : params.productId;
+
+
   
     useEffect(() => {
-      const fetchProduct = async () => {
-        if (!params.filterTag || !params.productId) {
-          setError("Invalid route parameters");
-          setLoading(false);
-          return;
-        }
-
+      const fetchProductData = async () => {
         try {
-          const filterTag = Array.isArray(params.filterTag)
-            ? params.filterTag[0]
-            : params.filterTag;
-
-          const productId = Array.isArray(params.productId)
-            ? params.productId[0]
-            : params.productId;
-
           const response = await fetch(
             `/api/products/${filterTag}/${productId}`
           );
 
           if (!response.ok) {
-            throw new Error(`Failed to fetch product: ${response.statusText}`);
+            throw new Error("Failed to fetch product data");
           }
 
           const data = await response.json();
-
-          if (!data) {
-            throw new Error("Product not found");
-          }
-
           setProductData(data);
-          setError(null);
-        } catch (err) {
-          console.error("Failed to fetch product data:", err);
+        } catch (error) {
           setError(
-            err instanceof Error ? err.message : "Failed to fetch product"
+            error instanceof Error ? error.message : "An error occurred"
           );
+          console.error("Failed to fetch product data:", error);
         } finally {
           setLoading(false);
         }
       };
 
-      fetchProduct();
-    }, [params.filterTag, params.productId]);
+      if (filterTag && productId) {
+        fetchProductData();
+      }
+    }, [filterTag, productId]);
 
   
   if (loading) {
@@ -86,6 +77,17 @@ export default function Products() {
   return (
     <div>
       <ProductInfo product={productData} />
+
+      <div className="related_product flex flex-col mt-4 w-full h-full">
+        <div className="related_top flex flex-row items-center gap-2">
+          <div className="today_red"></div>
+          <h2>Related Item</h2>
+        </div>
+        <RelatedProductsList
+          currentCategory={filterTag}
+          filterTag={filterTag}
+        />
+      </div>
     </div>
   );
 }
