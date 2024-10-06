@@ -1,15 +1,13 @@
-'use client'
+"use client";
 import React, {useState, useEffect, useRef, useMemo} from "react";
 import "./today.css";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import {useRouter} from "next/navigation";
 import FetchLoader from "../fetchloading/page";
-import {
-  useProductContext,
-} from "@/context/productContext/productcontext";
-
-import { ProductType } from "@/types/product";
-import { ProductNotFound } from "../product-notfound/page";
+import {useProductContext} from "@/context/productContext/productcontext";
+import { FilterButton } from "../filterbtn";
+import {ProductType} from "@/types/product";
+import {ProductNotFound} from "../product-notfound/page";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -21,7 +19,6 @@ import {
   FaEye,
   FaStarHalf,
 } from "react-icons/fa6";
-
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -67,20 +64,17 @@ const ProductRating = ({product}: {product: ProductType}) => {
 
 export default function Today() {
   const router = useRouter();
-  const { products, loading } = useProductContext();
+  const {products, loading} = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-   const filteredProducts = useMemo(() => {
-    return products
-      .filter(product => product.today === true)
-      .slice(0, 12);
-   }, []);
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => product.today === true).slice(0, 12);
+  }, []);
 
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
- 
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -94,10 +88,7 @@ export default function Today() {
     setEyedItems(new Array(filteredProducts.length).fill(false));
   }, [filteredProducts.length]);
 
-
   useEffect(() => {
-    
-
     // Update countdown every second
     const timer = setInterval(() => {
       const now = new Date().getTime();
@@ -140,7 +131,6 @@ export default function Today() {
   if (products.length === 0) {
     return <ProductNotFound />;
   }
-
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -233,62 +223,71 @@ export default function Today() {
         ref={scrollContainerRef}
       >
         {filteredProducts.map((product, index) => {
-          const discountPrice = product.price * (1 - (product.discount) / 100);
-          
-          return(
+          const discountPrice = product.price * (1 - product.discount / 100);
+
+          return (
             <div className="product_item" key={index}>
-            <div className="product_image">
-              <span className="discount">{product.discount}%</span>
-              <Image
-                alt={`product ${index + 1}`}
-                width={200}
-                height={300}
-                src={product.mainImage}
-              />
-              <div className="product_icons">
-                <div
-                  className="icon-heart"
-                  onClick={() => handleHeartClick(index)}
-                >
-                  {heartedItems[index] ? (
-                    <FaHeart className="fas" />
-                  ) : (
-                    <FaRegHeart className="fa" />
-                  )}
+              <div className="product_image">
+                <span className="discount">{product.discount}%</span>
+                <Image
+                  alt={`product ${index + 1}`}
+                  width={200}
+                  height={300}
+                  src={product.mainImage}
+                />
+                <div className="product_icons">
+                  <div
+                    className="icon-heart"
+                    onClick={() => handleHeartClick(index)}
+                  >
+                    {heartedItems[index] ? (
+                      <FaHeart className="fas" />
+                    ) : (
+                      <FaRegHeart className="fa" />
+                    )}
+                  </div>
+                  <div
+                    className="icon-eye"
+                    onClick={() => handleEyeClick(index)}
+                  >
+                    {eyedItems[index] ? (
+                      <FaEye className="fas" />
+                    ) : (
+                      <FaRegEye className="fa" />
+                    )}
+                  </div>
                 </div>
-                <div className="icon-eye" onClick={() => handleEyeClick(index)}>
-                  {eyedItems[index] ? (
-                    <FaEye className="fas" />
-                  ) : (
-                    <FaRegEye className="fa" />
-                  )}
+                <div className="product_btn">
+                  <span>Add To Cart</span>
                 </div>
               </div>
-              <div className="product_btn">
-                <span>Add To Cart</span>
+              <div className="product_detail">
+                <div className="product_name">{product.name}</div>
+                <div className="product_price">
+                  <div className="dscount_price">
+                    ${discountPrice.toFixed(2)}
+                  </div>
+                  <div className="actual_price">${product.price}</div>
+                </div>
+                <div className="rating">
+                  <div className="rating_icon flex flex-row items-center">
+                    <ProductRating product={product} />{" "}
+                    {/* Render the rating */}
+                  </div>
+                  <div className="rating_number">
+                    ({product.rating.toFixed(1)})
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="product_detail">
-              <div className="product_name">{product.name}</div>
-              <div className="product_price">
-                <div className="dscount_price">${discountPrice.toFixed(2)}</div>
-                <div className="actual_price">${product.price}</div>
-              </div>
-              <div className="rating">
-                <div className="rating_icon flex flex-row items-center">
-                  <ProductRating product={product} /> {/* Render the rating */}
-                </div>
-                <div className="rating_number">
-                  ({product.rating.toFixed(1)})
-                </div>
-              </div>
-            </div>
-          </div>
           );
-                  })}
+        })}
       </div>
-      <div className="today_btn flex items-center justify-center">
-        <span onClick={() => router.push('/product/today')}>View All Products</span>
+      <div
+        className="today_btn flex items-center justify-center"
+        onClick={() => router.push("/today")}
+      >
+        <FilterButton tag="today" />
       </div>
       <hr />
     </div>

@@ -13,23 +13,14 @@ import {
 import "./prod-card.css";
 import {useState} from "react";
 import React from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
+import { ProductType } from "@/types/product";
+import Link from "next/link";
 
-type ProductType = {
-  id: number;
-  name: string;
-  mainImage: string;
-  images: [string];
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  // Add any other properties you might have.
-};
 
 type ProductCardProps = {
   product: ProductType;
+  filterTag: string;
 }
 
 const renderStars = (rating: number) => {
@@ -72,7 +63,7 @@ const ProductRating = ({rating}: {rating: number}) => {
   );
 };
 
-export const ProductCard = ({product}: ProductCardProps) => {
+export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   const [hearted, setHearted] = useState(false); // Single state for heart icon
   const [eyed, setEyed] = useState(false); // Single state for eye icon
   const router = useRouter();
@@ -86,13 +77,13 @@ export const ProductCard = ({product}: ProductCardProps) => {
     setEyed(!eyed);
   };
 
-  const handleViewItemClick = (id: number) => {
-    router.push('/products/${id}');
+  const handleViewItemClick = (id: string) => {
+    router.push(`/${filterTag}/${id}`);
   };
 
   return (
     <>
-      <div className="product_item key={product.id}" key={product.id}>
+      <div className="product_item mb-6" key={product.id}>
         <div className="product_image">
           <span className="discount">{product.discount}%</span>
           <Image
@@ -121,13 +112,9 @@ export const ProductCard = ({product}: ProductCardProps) => {
           <div className="product_name">{product.name}</div>
           <div className="product_price">
             <div className="dscount_price">
-              $
-              {(
-                product.price *
-                (1 - parseFloat(product.discount) / 100)
-              ).toFixed(2)}
+              ${(product.price * (1 - product.discount / 100)).toFixed(2)}
             </div>
-            <div className="actual_price">${product.originalPrice}</div>
+            <div className="actual_price">${product.price}</div>
           </div>
           <div className="rating">
             <div className="rating_icon flex flex-row items-center">

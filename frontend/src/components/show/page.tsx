@@ -1,5 +1,6 @@
 "use client";
 import React, {useRef, useState, useEffect, useMemo} from "react";
+import {useRouter} from "next/navigation";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -18,6 +19,7 @@ import FetchLoader from "../fetchloading/page";
 import { useProductContext } from "@/context/productContext/productcontext";
 import { Product } from "@/types/product";
 import { ProductNotFound } from "../product-notfound/page";
+import { FilterButton } from "../filterbtn";
 
 
 
@@ -70,6 +72,7 @@ const ProductRating = ({product}: {product: Product}) => {
 
 
 export default function Show() {
+  const router = useRouter();
   const {products, loading } = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
@@ -219,7 +222,7 @@ export default function Show() {
                     height={300}
                     src={product.mainImage || "/default-image.jpg"} // Ensure a default image
                   />
-                  <div key={product.id} className="product_icons">
+                  <div key={`icons-${product.id}`} className="product_icons">
                     <div
                       className="icon-heart"
                       onClick={() => handleHeartClick(index)}
@@ -291,10 +294,12 @@ export default function Show() {
                     height={300}
                     src={product.mainImage || "/default-image.jpg"} // Ensure a default image
                   />
-                  <div key={product.id} className="product_icons">
+                  <div key={`icons-${product.id}`} className="product_icons">
                     <div
                       className="icon-heart"
-                      onClick={() => handleHeartClick(index + topProducts.top.length)}
+                      onClick={() =>
+                        handleHeartClick(index + topProducts.top.length)
+                      }
                     >
                       {heartedItems[index + topProducts.top.length] ? (
                         <FaHeart className="fas" />
@@ -304,7 +309,9 @@ export default function Show() {
                     </div>
                     <div
                       className="icon-eye"
-                      onClick={() => handleEyeClick(index + topProducts.top.length)}
+                      onClick={() =>
+                        handleEyeClick(index + topProducts.top.length)
+                      }
                     >
                       {eyedItems[index + topProducts.top.length] ? (
                         <FaEye className="fas" />
@@ -340,7 +347,10 @@ export default function Show() {
                             : ""
                         }`}
                         onClick={() =>
-                          handleColorChange(index + topProducts.top.length, color)
+                          handleColorChange(
+                            index + topProducts.top.length,
+                            color
+                          )
                         }
                       ></div>
                     ))}
@@ -352,8 +362,11 @@ export default function Show() {
         </div>
       </div>
 
-      <div className="category_btn flex items-center justify-center">
-        <span>View All Products</span>
+      <div
+        className="category_btn flex items-center justify-center"
+        onClick={() => router.push("/today")}
+      >
+        <FilterButton tag="top" />
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
 
 import {ProductType} from "@/types/product";
+import {useRouter} from "next/navigation";
 
 
 const renderStars = (rating: number) => {
@@ -60,6 +61,7 @@ const ProductRating = ({product}: {product: ProductType}) => {
 };
 
 export const BestSelling = () => {
+  const router = useRouter();
   const {loading: globalLoading} = useProductContext();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
@@ -127,14 +129,16 @@ export const BestSelling = () => {
         <div className="best-title">
           <span>Best Selling Products</span>
         </div>
-        <div className="best_btn flex flex-row items-center justify-center">
+        <div
+          className="best_btn flex flex-row items-center justify-center"
+          onClick={() => router.push("/product/trending")}
+        >
           <span>View All</span>
         </div>
       </div>
       <div className="best_product flex flex-row overflow-x-auto">
         {products.map((product, index) => {
-          const discountPrice =
-            product.price * (1 - (product.discount) / 100);
+          const discountPrice = product.price * (1 - product.discount / 100);
 
           return (
             <div className="product_item" key={index}>
