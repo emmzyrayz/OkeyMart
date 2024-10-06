@@ -1,17 +1,15 @@
-
 import Image from 'next/image';
 // import Link from 'next/link';
 import './product.css';
 import { FaPlus, FaMinus, FaRegHeart,
   //  FaHeart,
-    FaStarHalf, FaRegStar, FaStar, FaRegEye } from 'react-icons/fa6';
+    FaStarHalf, FaRegStar, FaStar,
+    //  FaRegEye 
+    } from 'react-icons/fa6';
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
-import { useEffect, useState } from 'react';
 import RelatedProductsList from '../related-product/page';
-import {Product, ProductType} from "@/types/product";
-
-
+import { ProductType} from "@/types/product";
 
 
 const renderStars = (rating: number) => {
@@ -55,30 +53,34 @@ const ProductRating = ({rating}: {rating: number}) => {
 };
 
 export const ProductInfo = ({product}: { product: ProductType }) => {
-  const { name, rating, images, description, price, categories  } = product;
+  const {  categories  } = product;
   const currentCategory = categories[0]?.name || '';
 
     return (
-      <div className="product-info_section">
-        <div className="productinfo_top">
+      <div className="product-info_section flex flex-col items-center justify-center w-full h-full">
+        <div className="productinfo_top flex flex-row mb-2 items-start justify-start w-full h-full outline-red-400">
           <div className="profile_nav flex flex-row gap-1 items-start justify-start">
             <span className="faint">Home</span>
             <span className="faint">/</span>
-            <span className="faint">{categories.join(', ')}</span>
+            <span className="faint">{categories.join(", ")}</span>
             <span className="faint">/</span>
             <span className="full">{product.name}</span>
           </div>
         </div>
         <div className="product-info_container flex flex-row items-center justify-center gap-5">
-          <div className="product-info_image flex flex-row w-2/3">
+          <div className="product-info_image flex flex-row items-center justify-center mr-2 w-2/3">
             <div className="image_items flex flex-col items-center justify-center w-1/3 gap-3">
               {product.images.map((img, index) => (
-                <div key={index} className='image_item'>
-                  <div className="image_item">
-                <Image src={img} alt={product.name} width={100} height={100} />
-              </div>
+                <div key={index} className="image_item">
+                  <Image
+                    src={img}
+                    alt={product.name}
+                    width={100}
+                    height={100}
+                  />
                 </div>
               ))}
+            </div>
             <div className="product_disp flex items-center justify-center w-2/3 ">
               <Image
                 src={product.images[0]}
@@ -97,15 +99,13 @@ export const ProductInfo = ({product}: { product: ProductType }) => {
                   <div className="rating_icon flex flex-row items-center">
                     <ProductRating rating={product.rating} />
                   </div>
-                  <p>({product.rating?.toFixed(1) ?? 'N/A'}) Reviews</p>
+                  <p>({product.rating?.toFixed(1) ?? "N/A"}) Reviews</p>
                 </span>
                 <p>|</p>
                 <span className="det_stock">In Stock</span>
               </span>
               <span className="det_price">${product.price}</span>
-              <div className="det_sum">
-                {product.description}
-              </div>
+              <div className="det_sum">{product.description}</div>
             </div>
             <hr />
             <div className="det_bottom flex flex-col items-start justify-center">
@@ -171,14 +171,7 @@ export const ProductInfo = ({product}: { product: ProductType }) => {
           </div>
         </div>
 
-        <div className="related_product">
-          <div className="related_top flex flex-row items-center gap-2">
-            <div className="today_red"></div>
-            <h2>Related Item</h2>
-          </div>
-          <RelatedProductsList currentCategory={currentCategory} />
-        </div>
-      </div>
+        
       </div>
     );
 }

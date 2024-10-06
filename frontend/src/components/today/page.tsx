@@ -71,7 +71,7 @@ export default function Today() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => product.today === true).slice(0, 12);
-  }, []);
+  }, [products]);
 
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);

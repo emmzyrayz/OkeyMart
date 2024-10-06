@@ -10,6 +10,14 @@ type ProductGridProps = {
 };
 
 export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
+  // Add debug logging
+  console.log('ProductGrid rendered with:', {
+    productsCount: products.length,
+    filterTag,
+    firstProduct: products[0]
+  });
+
+
   return (
     <div className="productgrid_section flex flex-col items-start justify-center w-full h-full gap-4">
       <div className="productgrid_nav flex flex-row gap-1 items-center justify-center">
@@ -73,13 +81,21 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
 
       <div className="productgrid_container flex flex-row flex-wrap items-start justify-center gap-2">
         {products.length > 0 ? (
-          products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              filterTag={filterTag}
-            />
-          ))
+          products.map((product) => {
+            // Add debug logging for each product
+            console.log("Rendering product:", {
+              productId: product._id,
+              productName: product.name,
+            });
+
+            return (
+              <ProductCard
+                key={product._id}
+                product={product}
+                filterTag={filterTag}
+              />
+            );
+          })
         ) : (
           <p>No products available</p>
         )}

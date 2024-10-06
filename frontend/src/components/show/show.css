@@ -99,7 +99,7 @@
     background: var(--btn-hover);
 }
 
-.category_btn>span {
+.category_btn span {
     font-size: var(--fs-16);
     font-weight: 500;
     color: var(--text);

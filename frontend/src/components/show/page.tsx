@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState, useEffect, useMemo} from "react";
+import React, {useRef, useState, useMemo} from "react";
 import {useRouter} from "next/navigation";
 import {
   FaArrowLeft,
@@ -76,9 +76,6 @@ export default function Show() {
   const {products, loading } = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-  const [likedItems, setLikedItems] = useState<number[]>([]);
-  const [viewedItems, setViewedItems] = useState<number[]>([]);
-
   
 
 
@@ -115,29 +112,6 @@ export default function Show() {
     return <ProductNotFound />;
   }
 
-  const topFilProducts = products.filter((product) => product.top === true);
-  
-
-  // Filter products with 'top' set to true and limit to 16 products
-  const topDisProducts = topFilProducts.slice(0, 16);
-  
-
-  const toggleLike = (productId: number) => {
-    setLikedItems((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
-  const toggleView = (productId: number) => {
-    setViewedItems((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
   const handleColorChange = (index: number, color: string) => {
     setActiveColors((prev) => {
       const updated = [...prev];
@@ -145,6 +119,9 @@ export default function Show() {
       return updated;
     });
   };
+  
+
+  
 
   // Scroll functions for both grids
   const scrollLeft = () => {
@@ -163,8 +140,6 @@ export default function Show() {
       updated[index] = !updated[index];
       return updated;
     });
-    const productId = Number(products[index].id || "");
-    toggleLike(productId);
   };
 
   const handleEyeClick = (index: number) => {
@@ -173,8 +148,6 @@ export default function Show() {
       updated[index] = !updated[index];
       return updated;
     });
-    const productId = Number(products[index].id || "");
-    toggleView(productId);
   };
 
 

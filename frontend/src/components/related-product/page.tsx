@@ -1,13 +1,14 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import { FaStar, FaStarHalf, FaRegStar, FaRegHeart, FaRegEye } from "react-icons/fa6";
 import Image from "next/image";
 import FetchLoader from "../fetchloading/page";
-import { Product, ProductType } from "@/types/product";
+import { ProductType } from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { ProductNotFound } from "../product-notfound/page";
 
-
-
+type Product = {
+  tags: string;
+}
 
 
 
@@ -53,50 +54,34 @@ const ProductRating = ({rating}: {rating: number}) => {
   );
 };
 
-const RelatedProductsList = ({currentCategory}: {currentCategory: string}) => {
+const RelatedProductsList = ({currentCategory, filterTag}: {currentCategory: string, filterTag:string}) => {
   const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
+  const {loading, products} = useProductContext();
 
-  const {loading: globalLoading} = useProductContext();
-  const [localLoading, setLocalLoading] = useState(true);
-
-  const fetchRelatedProducts = async (
-    category: string
-  ): Promise<ProductType[]> => {
-    try {
-      setLocalLoading(true);
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-
-      // Filter products with related set to true
-      const RelatedProducts = data.filter((product: Product) =>
-        product.categories.some((cat) => cat.name === category)
-      );
-
-      // Limit to 10 related products
-      return RelatedProducts.slice(0, 10).map((product: Product) => ({
-        ...product,
-        categories: product.categories.map((cat) => cat.name).join(", "),
-      }));
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      return [];
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+  const filteredProductsMemo = useMemo(() => {
+    return products.filter(
+      (product: ProductType) =>
+        product.categories.some((cat) => cat.name === currentCategory) &&
+        product.tags.includes(filterTag)
+    );
+  }, [products, filterTag]);
+  
 
   useEffect(() => {
-    const getRelatedProducts = async () => {
-        setLocalLoading(true);
-      const products = await fetchRelatedProducts(currentCategory);
-      setRelatedProducts(products);
-      setLocalLoading(false);
-    };
-    getRelatedProducts();
-  }, [currentCategory]);
+    if (products.length > 0 && currentCategory) {
+      setFilteredProducts(filteredProductsMemo);
+    }
+  }, [currentCategory, filteredProductsMemo, products]);
 
-  if (globalLoading || localLoading) {
+  useEffect(() => {
+    if (filteredProducts.length > 0) {
+      const relatedProducts = filteredProducts.slice(0, 10);
+      setRelatedProducts(relatedProducts);
+    }
+  }, [filteredProducts]);
+
+  if (loading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 

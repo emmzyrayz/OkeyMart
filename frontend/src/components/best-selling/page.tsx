@@ -131,7 +131,7 @@ export const BestSelling = () => {
         </div>
         <div
           className="best_btn flex flex-row items-center justify-center"
-          onClick={() => router.push("/product/trending")}
+          onClick={() => router.push("/trending")}
         >
           <span>View All</span>
         </div>
