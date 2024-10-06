@@ -6,8 +6,8 @@ import { ProductType } from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { ProductNotFound } from "../product-notfound/page";
 
-type Product = {
-  tags: string;
+interface RelatedProductsListProps {
+  currentCategory: string;
 }
 
 
@@ -54,38 +54,50 @@ const ProductRating = ({rating}: {rating: number}) => {
   );
 };
 
-const RelatedProductsList = ({currentCategory, filterTag}: {currentCategory: string, filterTag:string}) => {
+const RelatedProductsList = ({currentCategory}: RelatedProductsListProps) => {
   const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
-  const {loading, products} = useProductContext();
-
-  const filteredProductsMemo = useMemo(() => {
-    return products.filter(
-      (product: ProductType) =>
-        product.categories.some((cat) => cat.name === currentCategory) &&
-        product.tags.includes(filterTag)
-    );
-  }, [products, filterTag]);
-  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (products.length > 0 && currentCategory) {
-      setFilteredProducts(filteredProductsMemo);
-    }
-  }, [currentCategory, filteredProductsMemo, products]);
+    const fetchRelatedProducts = async () => {
+      try {
+        const response = await fetch(
+          `/api/products?category=${currentCategory}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch related products");
+        }
+        const data = await response.json();
 
-  useEffect(() => {
-    if (filteredProducts.length > 0) {
-      const relatedProducts = filteredProducts.slice(0, 10);
-      setRelatedProducts(relatedProducts);
+        // Filter and limit the related products to 10 items
+        const filteredProducts = data.filter((product: ProductType) =>
+          product.categories.some(
+            (category) => category.name === currentCategory
+          )
+        );
+        setRelatedProducts(filteredProducts.slice(0, 10)); // Limit to 10 products
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentCategory) {
+      fetchRelatedProducts();
     }
-  }, [filteredProducts]);
+  }, [currentCategory]);
 
   if (loading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 
-  if (relatedProducts.length === 0) {
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  if (!relatedProducts.length) {
     return <ProductNotFound />;
   }
 
