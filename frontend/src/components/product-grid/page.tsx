@@ -2,24 +2,14 @@ import {ProductCard} from "../product-card/page";
 // import { ProductType } from '@/types/product';
 import "./prod-grid.css";
 
-type ProductType = {
-  id: number;
-  name: string;
-  mainImage: string;
-  images: [string];
-  price: number;
-  originalPrice: number;
-  discount: string;
-  rating: number;
-  today: boolean;
-  // Add any other properties you might have.
-};
+import {ProductType} from "@/types/product";
 
 type ProductGridProps = {
   products: ProductType[];
+  filterTag: string;
 };
 
-export const ProductGrid = ({ products }: ProductGridProps) => {
+export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
   return (
     <div className="productgrid_section flex flex-col items-start justify-center w-full h-full gap-4">
       <div className="productgrid_nav flex flex-row gap-1 items-center justify-center">
@@ -83,7 +73,13 @@ export const ProductGrid = ({ products }: ProductGridProps) => {
 
       <div className="productgrid_container flex flex-row flex-wrap items-start justify-center gap-2">
         {products.length > 0 ? (
-          products.map((product) => <ProductCard key={product.id} product={product} />)
+          products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              filterTag={filterTag}
+            />
+          ))
         ) : (
           <p>No products available</p>
         )}
