@@ -1,32 +1,15 @@
 // ProductContext.tsx
 
-import {createContext, useState, useContext, ReactNode} from "react";
-import axios, { AxiosError } from "axios";
+import {createContext, useState, useContext, ReactNode, useEffect, useCallback} from "react";
+import axios from "axios";
+import { Product } from "@/types/product";
 
 // Define the types for your product data
-export interface Product {
-  id?: string;
-  name: string;
-  description: string;
-  price: number;
-  images: string[];
-  category: string;
-  countInStock: number;
-  mainImage?: string;
-  categories?: string[];
-  filters?: string[];
-  discount?: number;
-  featured?: boolean;
-  trending?: boolean;
-  top?: boolean;
-  today?: boolean;
-  rating?: number;
-}
 
 interface ProductContextType {
   products: Product[];
-  fetchProducts: () => Promise<void>;
   loading: boolean;
+  fetchProducts: () => Promise<void>;
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (id: string, updatedProduct: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -44,40 +27,52 @@ export const useProductContext = () => {
 
 export const ProductProvider = ({children}: {children: ReactNode}) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLocalLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const apiUrl = "https://okeymart.onrender.com/api/products"; // Your Render API URL
 
   // Fetch all products
-  const fetchProducts = async () => {
+   const fetchProducts = useCallback(async () => {
 
     try {
-      setLocalLoading(true);
-      await new Promise((resolve) => 
-        setTimeout(resolve, 3000));
-
+      setLoading(true);
+    
       const response = await axios.get(apiUrl);
-      console.log("API response:", response.data);
+      // console.log("API response:", response.data);
       setProducts(response.data);
-      console.log("Products state after setting:", response.data);
+      // console.log("Products state after setting:", response.data);
     } catch (error: any) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false); // Set loading to false once fetching is done
+    }
+  }, []);
 
-      if(axios.isAxiosError(error)) {
-        console.error("Error fetching products:", error.response?.data);
-      } else {
-        console.error("An unexpected error occured:", error);
-        if (!error.response) {
-          console.error(
-            "Network error: Please check your internet connection."
-          );
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const initFetch = async () => {
+      try{
+        const response = await axios.get(apiUrl);
+        if (isSubscribed) {
+          setProducts(response.data)
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        if (isSubscribed) {
+          setLoading(false);
         }
       }
-      
-      
-    } finally {
-      setLocalLoading(false); // Set loading to false once fetching is done
-    }
-  };
+    };
+
+    initFetch();
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
 
   // Add a new product
   const addProduct = async (product: Product) => {
@@ -85,7 +80,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
     try {
       const response = await axios.post(apiUrl, product);
       setProducts((prev) => [...prev, response.data]); 
-      console.log("Product added successfully:", response.data);
+      // console.log("Product added successfully:", response.data);
     } catch (error) {
       console.error("Error adding product:", error);
     }
@@ -98,7 +93,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
       setProducts((prev) =>
         prev.map((product) => (product.id === id ? response.data : product))
       ); // Update state
-      console.log("Product updated successfully:", response.data);
+      // console.log("Product updated successfully:", response.data);
     } catch (error) {
       console.error("Error updating product:", error);
     }
@@ -109,7 +104,7 @@ export const ProductProvider = ({children}: {children: ReactNode}) => {
     try {
       await axios.delete(`${apiUrl}/${id}`); // Ensure your route handles this
       setProducts((prev) => prev.filter((product) => product.id !== id)); // Update state
-      console.log("Product deleted successfully:", id);
+      // console.log("Product deleted successfully:", id);
     } catch (error) {
       console.error("Error deleting product:", error);
     }

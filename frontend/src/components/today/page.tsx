@@ -1,5 +1,5 @@
 'use client'
-import React, {useState, useEffect, useRef} from "react";
+import React, {useState, useEffect, useRef, useMemo} from "react";
 import "./today.css";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -67,16 +67,20 @@ const ProductRating = ({product}: {product: ProductType}) => {
 
 export default function Today() {
   const router = useRouter();
-  const { loading: globalLoading } = useProductContext();
-
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const { products, loading } = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-  const [localLoading, setLocalLoading] = useState(true);
+   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+   const filteredProducts = useMemo(() => {
+    return products
+      .filter(product => product.today === true)
+      .slice(0, 12);
+   }, []);
 
   // Set the end date here (e.g., Dec 31, 2024)
-  const endDate = new Date("2024-12-31T23:59:59").getTime();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
+ 
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -85,37 +89,14 @@ export default function Today() {
     seconds: 0,
   });
 
-  // Fetch products from the API
-  const fetchProducts = async () => {
-    try {
-      setLocalLoading(true);
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-
-      // Filter products with today set to true
-      const todayProducts = data.filter(
-        (product: ProductType) => product.today === true
-      );
-
-      // Limit to 10 today products
-      const limitedTodayProducts = todayProducts.slice(0, 10);
-
-      // Set state with only the limited products
-      setProducts(limitedTodayProducts);
-      setHeartedItems(Array(limitedTodayProducts.length).fill(false));
-      setEyedItems(Array(limitedTodayProducts.length).fill(false));
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
+  useEffect(() => {
+    setHeartedItems(new Array(filteredProducts.length).fill(false));
+    setEyedItems(new Array(filteredProducts.length).fill(false));
+  }, [filteredProducts.length]);
 
 
   useEffect(() => {
-    fetchProducts();
+    
 
     // Update countdown every second
     const timer = setInterval(() => {
@@ -152,7 +133,7 @@ export default function Today() {
     return () => clearInterval(timer); // Clean up the interval on component unmount
   }, [endDate]);
 
-  if (globalLoading || localLoading) {
+  if (loading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 
@@ -174,15 +155,19 @@ export default function Today() {
   };
 
   const handleHeartClick = (index: number) => {
-    const updatedHeartedItems = [...heartedItems];
-    updatedHeartedItems[index] = !updatedHeartedItems[index];
-    setHeartedItems(updatedHeartedItems);
+    setHeartedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
   };
 
   const handleEyeClick = (index: number) => {
-    const updatedEyedItems = [...eyedItems];
-    updatedEyedItems[index] = !updatedEyedItems[index];
-    setEyedItems(updatedEyedItems);
+    setEyedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
   };
 
   return (
@@ -247,7 +232,7 @@ export default function Today() {
         className="today_product flex flex-row overflow-x-auto mb-8"
         ref={scrollContainerRef}
       >
-        {products.map((product, index) => {
+        {filteredProducts.map((product, index) => {
           const discountPrice = product.price * (1 - (product.discount) / 100);
           
           return(

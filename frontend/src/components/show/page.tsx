@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState, useEffect} from "react";
+import React, {useRef, useState, useEffect, useMemo} from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -15,7 +15,8 @@ import {
 import Image from "next/image";
 import "./show.css";
 import FetchLoader from "../fetchloading/page";
-import { useProductContext, Product } from "@/context/productContext/productcontext";
+import { useProductContext } from "@/context/productContext/productcontext";
+import { Product } from "@/types/product";
 import { ProductNotFound } from "../product-notfound/page";
 
 
@@ -69,75 +70,77 @@ const ProductRating = ({product}: {product: Product}) => {
 
 
 export default function Show() {
-  const {products, fetchProducts, loading: globalLoading} = useProductContext();
+  const {products, loading } = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-
-  // Handle click on heart or eye icons
   const [likedItems, setLikedItems] = useState<number[]>([]);
   const [viewedItems, setViewedItems] = useState<number[]>([]);
 
-  const [activeColors, setActiveColors] = useState<string[]>(
-    Array(products.length).fill("red")
-  );
+  
 
-  const colors = ["red", "orange", "yellow", "black"];
+
+  
 
   // Create two separate refs for each grid
   const topGridRef = useRef<HTMLDivElement>(null);
   const bottomGridRef = useRef<HTMLDivElement>(null);
 
-  // Fetch products on mount
-  useEffect(() => {
-    fetchProducts(); 
-    console.log("Products fetched: ", products);
-  }, [fetchProducts]);
+  // Memoize filtered products
+  const topProducts = useMemo(() => {
+    const topFilProducts = products.filter((product) => product.top === true);
+    const topDisProducts = topFilProducts.slice(0, 16);
+    const middleIndex = Math.ceil(topDisProducts.length / 2);
+    
+    return {
+      top: topDisProducts.slice(0, middleIndex),
+      bottom: topDisProducts.slice(middleIndex)
+    };
+  }, [products]);
 
-  if (globalLoading) {
+  const colors = ["red", "orange", "yellow", "black"];
+  const [activeColors, setActiveColors] = useState<string[]>(
+    Array(16).fill("red")
+  );
+
+  
+
+  if (loading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 
-  if (products.length === 0 ) {
+  if (!products || products.length === 0 ) {
     return <ProductNotFound />;
   }
 
-  console.log("Products in component:", products);
-
   const topFilProducts = products.filter((product) => product.top === true);
-  console.log("Top Products: ", topFilProducts);
+  
 
   // Filter products with 'top' set to true and limit to 16 products
   const topDisProducts = topFilProducts.slice(0, 16);
-  console.log("Displayed Products: ", topDisProducts);
-
-  products.forEach((product, index) => {
-    console.log(`Product ${index}: `, product); // Log individual products
-    console.log("Product ID: ", product.id); // Ensure product has an ID
-    console.log("Product Name: ", product.name); // Ensure product has a name
-    console.log("Product Top: ", product.top); // Ensure product has 'top' property
-  });
+  
 
   const toggleLike = (productId: number) => {
-    if (likedItems.includes(productId)) {
-      setLikedItems(likedItems.filter((id) => id !== productId));
-    } else {
-      setLikedItems([...likedItems, productId]);
-    }
+    setLikedItems((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
   };
 
   const toggleView = (productId: number) => {
-    if (viewedItems.includes(productId)) {
-      setViewedItems(viewedItems.filter((id) => id !== productId));
-    } else {
-      setViewedItems([...viewedItems, productId]);
-      // You can handle modal view or any other logic here for viewing
-    }
+    setViewedItems((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
   };
 
   const handleColorChange = (index: number, color: string) => {
-    const updatedColors = [...activeColors];
-    updatedColors[index] = color; // Set the selected color for the product
-    setActiveColors(updatedColors); // Update the state
+    setActiveColors((prev) => {
+      const updated = [...prev];
+      updated[index] = color;
+      return updated;
+    });
   };
 
   // Scroll functions for both grids
@@ -152,26 +155,26 @@ export default function Show() {
   };
 
   const handleHeartClick = (index: number) => {
-    const updatedHeartedItems = [...heartedItems];
-    updatedHeartedItems[index] = !updatedHeartedItems[index];
-    setHeartedItems(updatedHeartedItems);
-    const productId = Number(products[index].id || ""); // Ensure it’s a string
-    toggleLike(productId); // Call your toggleLike with the product id
+    setHeartedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+    const productId = Number(products[index].id || "");
+    toggleLike(productId);
   };
 
   const handleEyeClick = (index: number) => {
-    const updatedEyedItems = [...eyedItems];
-    updatedEyedItems[index] = !updatedEyedItems[index];
-    setEyedItems(updatedEyedItems);
-    const productId = Number(products[index].id || ""); // Ensure it’s a string
-    toggleView(productId); // Call your toggleView with the product id
+    setEyedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      return updated;
+    });
+    const productId = Number(products[index].id || "");
+    toggleView(productId);
   };
 
 
-  // Split products into two halves
-  const middleIndex = Math.ceil(topDisProducts.length / 2);
-  const topProducts = topDisProducts.slice(0, middleIndex);
-  const bottomProducts = topDisProducts.slice(middleIndex);
 
   return (
     <div className="show_section w-full flex flex-col">
@@ -204,8 +207,8 @@ export default function Show() {
           className="top_grid flex flex-row overflow-x-auto"
           ref={topGridRef}
         >
-          {topProducts.map((product, index) => {
-            console.log("Rendering product: ", product);
+          {topProducts.top.map((product, index) => {
+            // console.log("Rendering product: ", product);
 
             return (
               <div className="top_item" key={product.id}>
@@ -276,8 +279,8 @@ export default function Show() {
           className="bottom_grid flex flex-row overflow-x-auto"
           ref={bottomGridRef}
         >
-          {bottomProducts.map((product, index) => {
-            console.log("Rendering product: ", product);
+          {topProducts.bottom.map((product, index) => {
+            // console.log("Rendering product: ", product);
 
             return (
               <div className="top_item" key={product.id}>
@@ -291,9 +294,9 @@ export default function Show() {
                   <div key={product.id} className="product_icons">
                     <div
                       className="icon-heart"
-                      onClick={() => handleHeartClick(index + middleIndex)}
+                      onClick={() => handleHeartClick(index + topProducts.top.length)}
                     >
-                      {heartedItems[index + middleIndex] ? (
+                      {heartedItems[index + topProducts.top.length] ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -301,9 +304,9 @@ export default function Show() {
                     </div>
                     <div
                       className="icon-eye"
-                      onClick={() => handleEyeClick(index + middleIndex)}
+                      onClick={() => handleEyeClick(index + topProducts.top.length)}
                     >
-                      {eyedItems[index + middleIndex] ? (
+                      {eyedItems[index + topProducts.top.length] ? (
                         <FaEye className="fas" />
                       ) : (
                         <FaRegEye className="fa" />
@@ -332,12 +335,12 @@ export default function Show() {
                       <div
                         key={color}
                         className={`color-item ${color} ${
-                          activeColors[index + middleIndex] === color
+                          activeColors[index + topProducts.top.length] === color
                             ? "active"
                             : ""
                         }`}
                         onClick={() =>
-                          handleColorChange(index + middleIndex, color)
+                          handleColorChange(index + topProducts.top.length, color)
                         }
                       ></div>
                     ))}
