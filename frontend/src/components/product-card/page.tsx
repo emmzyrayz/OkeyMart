@@ -79,11 +79,11 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
 
   const handleViewItemClick = () => {
     // Add console.log to debug the values
-    console.log("Clicking product:", {
-      filterTag,
-      productId: product._id, // or product.id depending on your data structure
-      product,
-    });
+    // console.log("Clicking product:", {
+    //   filterTag,
+    //   productId: product._id, // or product.id depending on your data structure
+    //   product,
+    // });
 
     if (!product._id) {
       console.error("Product ID is undefined:", product);
@@ -98,11 +98,11 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   };
 
   // Add console.log to check product data when component renders
-  console.log("ProductCard rendered with:", {
-    filterTag,
-    productId: product._id,
-    product,
-  });
+  // console.log("ProductCard rendered with:", {
+  //   filterTag,
+  //   productId: product._id,
+  //   product,
+  // });
 
   return (
     <>

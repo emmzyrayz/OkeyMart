@@ -83,10 +83,10 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
         {products.length > 0 ? (
           products.map((product) => {
             // Add debug logging for each product
-            console.log("Rendering product:", {
-              productId: product._id,
-              productName: product.name,
-            });
+            // console.log("Rendering product:", {
+            //   productId: product._id,
+            //   productName: product.name,
+            // });
 
             return (
               <ProductCard

@@ -9,7 +9,7 @@ import type {ProductType} from "@/types/product";
 import RelatedProductsList from "@/components/related-product/page";
 
 export default function Products() {
-    const params = useParams();
+  const params = useParams();
   const [productData, setProductData] = useState<ProductType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +85,6 @@ export default function Products() {
         </div>
         <RelatedProductsList
           currentCategory={filterTag}
-          filterTag={filterTag}
         />
       </div>
     </div>
