@@ -4,62 +4,49 @@ import "./cart.css";
 import Image from "next/image";
 import {FaAngleUp, FaAngleDown} from "react-icons/fa";
 import {MdCancel} from "react-icons/md";
-import Monitor from "../../../assets/img/products/monitor.png";
-import RedGampad from "../../../assets/img/products/gamepad.png";
+import Link from "next/link";
+import { CartItem, useCart } from "@/context/commerce logic/cartcontext";
 
 // Example product data, this can come from state or props
-const cartItemsData = [
-  {
-    id: 1,
-    name: "LCD Monitor",
-    price: 960,
-    quantity: 1,
-    image: Monitor, // Update with actual image path
-  },
-  {
-    id: 2,
-    name: "H1 Gamepad",
-    price: 1960,
-    quantity: 2,
-    image: RedGampad, // Update with actual image path
-  },
-];
+
 
 export default function Cart() {
-  const [cartItems, setCartItems] = useState(cartItemsData);
+  const {cartState, updateQuantity, removeFromCart} = useCart();
+  const {items} = cartState;
 
   // Function to handle quantity change
-  const handleQuantityChange = (id: number, action: string) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantity:
-                action === "increment"
-                  ? item.quantity + 1
-                  : Math.max(1, item.quantity - 1),
-            }
-          : item
-      )
-    );
+  const handleQuantityChange = (id: string, action: string) => {
+    const item: CartItem | undefined = items.find((item) => item.id === id);
+    if (!item) return;
+
+    const newQuantity =
+      action === "increment"
+        ? item.quantity + 1
+        : Math.max(1, item.quantity - 1);
+
+    updateQuantity(String(id), newQuantity);
   };
 
-  const calculateSubtotal = (price: number, quantity: number) => {
-    return price * quantity;
+  const calculateSubtotal = (
+    price: number,
+    quantity: number,
+    discount: number = 0
+  ) => {
+    const discountedPrice = price * (1 - discount / 100);
+    return discountedPrice * quantity;
   };
 
   return (
-    <div className="cart_section">
+    <div className="cart_section flex flex-col gap-2 mt-3">
       <div className="cart_nav flex flex-row gap-1">
-        <span className="faint">Home</span>
+        <Link href="/">
+          <span className="faint">Home</span>
+        </Link>
         <span className="faint">/</span>
         <span className="full">Cart</span>
       </div>
       <div className="cart_table">
         <div className="cart-container">
-          <h1>Your Shopping Cart</h1>
-
           {/* Table Headers */}
           <div className="cart-header">
             <div className="cart-header-item">Product</div>
@@ -69,27 +56,32 @@ export default function Cart() {
           </div>
 
           {/* Product Rows */}
-          {cartItems.map((item) => (
+          {items.map((item: CartItem) => (
             <div className="cart-row" key={item.id}>
               {/* Product Info */}
               <div className="cart-item product-info flex flex-row items-center justify-center">
                 <div className="product_image flex items-center justify-center relative">
                   <Image
-                    src={item.image}
+                    src={item.mainImage}
                     alt={item.name}
                     width={80}
                     height={80}
                   />
-                  <MdCancel className="absolute text-red-500 fa" />
+                  <MdCancel
+                    className="absolute text-red-500 fa"
+                    onClick={() => removeFromCart(item.id)}
+                  />
                 </div>
                 <p>{item.name}</p>
               </div>
 
               {/* Price */}
-              <div className="cart-item price">${item.price}</div>
+              <div className="cart-item price">
+                ${(item.price * (1 - item.discount / 100)).toFixed(2)}
+              </div>
 
               {/* Quantity with Up/Down Arrows */}
-              <div className="cart-item quantity ">
+              <div className="cart-item quantity flex flex-row relative h-full">
                 <div className="quantity-control flex flex-row items-center justify-center relative w-full h-full">
                   <span className="quantity-value w-1/2 h-full items-center justify-center">
                     {String(item.quantity).padStart(2, "0")}
@@ -113,7 +105,12 @@ export default function Cart() {
 
               {/* Subtotal */}
               <div className="cart-item subtotal">
-                ${calculateSubtotal(item.price, item.quantity)}
+                $
+                {calculateSubtotal(
+                  item.price,
+                  item.quantity,
+                  item.discount
+                ).toFixed(2)}
               </div>
             </div>
           ))}
@@ -123,8 +120,8 @@ export default function Cart() {
         <div className="return">Return To Shop</div>
         <div className="update">Update Cart</div>
       </div>
-      <div className="cart_checkout flex flex-row items-start justify-between w-full">
-        <div className="coupon flex flex-row gap-2">
+      <div className="cart_checkout flex flex-row items-start justify-between w-full gap-5">
+        <div className="coupon flex flex-row gap-2 w-3/5">
           <input
             type="text"
             className="coupon_input"
@@ -132,16 +129,16 @@ export default function Cart() {
           />
           <button className="coupon_btn">Apply Coupon</button>
         </div>
-        <div className="cart_total w-full relative">
+        <div className="cart_total w-2/5 relative mb-6">
           {/* Add a total section or checkout button */}
-          <div className="cart-footer w-full h-full flex flex-col">
+          <div className="cart-footer w-full h-full flex flex-col justify-center">
             <h2 className="total_head">Cart Total</h2>
             <div className="total_con gap-4">
               <div className="sub_total flex flex-row justify-between border-bottom-line">
                 <p className="sub_total_head">Subtotal:</p>
                 <p className="sub_total_price">
                   $
-                  {cartItems.reduce(
+                  {items.reduce(
                     (acc, item) =>
                       acc + calculateSubtotal(item.price, item.quantity),
                     0
@@ -156,15 +153,19 @@ export default function Cart() {
                 <p>Total: </p>
                 <span>
                   $
-                  {cartItems.reduce(
-                    (acc, item) =>
+                  {items.reduce(
+                    (acc: number, item: CartItem) =>
                       acc + calculateSubtotal(item.price, item.quantity),
                     0
-                  ) + 0 }
+                  ) + 0}
                 </span>
               </div>
             </div>
-            <button className="checkout-btn flex flex-row items-center justify-center">Proceed to Checkout</button>
+            <Link href="/checkout">
+              <button className="checkout-btn flex flex-row items-center justify-center">
+                <span>Proceed to Checkout</span>
+              </button>
+            </Link>
           </div>
         </div>
       </div>

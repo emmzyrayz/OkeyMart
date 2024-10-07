@@ -133,11 +133,11 @@ export const ProductInfo = ({product}: {product: ProductType}) => {
                   <FaPlus className="quant_icon" />
                 </div>
               </div>
-              <div className="det_btn flex flex-row">
-                <Link href='/checkout'>
+              <Link href="/checkout" className="cursor-pointer block">
+                <div className="det_btn flex flex-row">
                   <span>Buy Now</span>
-                </Link>
-              </div>
+                </div>
+              </Link>
               <div className="det_fav flex flex-row">
                 <FaRegHeart className="quant_icon" />
               </div>

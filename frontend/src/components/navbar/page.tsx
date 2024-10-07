@@ -1,7 +1,7 @@
 "use client";
 import {usePathname} from "next/navigation";
 import Link from "next/link";
-import React, { useState} from "react";
+import React, {useState} from "react";
 import "./navbar.css";
 import {FaSearch, FaRegHeart, FaRegUserCircle} from "react-icons/fa";
 import {TiShoppingCart} from "react-icons/ti";
@@ -9,12 +9,15 @@ import {FiShoppingBag, FiUser, FiBell} from "react-icons/fi";
 import {ImCancelCircle} from "react-icons/im";
 import {CiStar} from "react-icons/ci";
 import {TbLogout2} from "react-icons/tb";
-import { HamburgerMenu } from "../hamburger/page";
+import {HamburgerMenu} from "../hamburger/page";
+import { useCart } from "@/context/commerce logic/cartcontext";
 
 export const HomeNav = () => {
   const pathname = usePathname();
+  const { cartState } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -76,7 +79,9 @@ export const HomeNav = () => {
         <Link href="/cart">
           <div className="cart relative">
             <TiShoppingCart className="nav-icon" />
-            <span className="absolute">5</span>
+            {cartState.itemCount > 0 && (
+              <span className="cart-count absolute">{cartState.itemCount}</span>
+            )}
           </div>
         </Link>
         <div className="user relative online" onClick={toggleMenu}>

@@ -1,8 +1,6 @@
 import "./wish.css";
 import Image from "next/image";
 import {FaStar,
-  //  FaRegStar, 
-  //  FaStarHalf
   } from "react-icons/fa6";
 import {RiDeleteBinLine} from "react-icons/ri";
 import {CiShoppingCart} from "react-icons/ci";
@@ -17,11 +15,11 @@ import Keyboard from "../../../assets/img/products/keyboard.png";
 
 export default function WishList() {
   return (
-    <div className="wishlist_section flex flex-col items-center w-full h-full">
+    <div className="wishlist_section flex flex-col items-center w-full h-full mb-9">
       <div className="wishlist_container flex flex-col items-start justify-center gap-5 w-full">
         <div className="wish_head flex flex-row w-full items-center justify-between">
           <h2>Wishlist (4)</h2>
-          <div className="btn_w flex items-center justify-center">
+          <div className="btn_w flex items-center justify-center hover:bg-[--text1] hover:text-[--text] cursor-pointer">
             Move All To Bag
           </div>
         </div>
@@ -137,7 +135,9 @@ export default function WishList() {
             <div className="today_red"></div>
             <h2 className="h2">Today&apos;s</h2>
           </div>
-          <div className="btn_w flex items-center justify-center">See All</div>
+          <div className="btn_w flex items-center justify-center hover:bg-[--text1] hover:text-[--text] cursor-pointer">
+            See All
+          </div>
         </div>
         <div className="wish_items flex flex-row overflow-x-auto gap-5">
           <div className="wish_item flex flex-col gap-3">
@@ -170,11 +170,6 @@ export default function WishList() {
                   <FaStar className="fa-star" />
                   <FaStar className="fa-star" />
                   <FaStar className="fa-star" />
-                  {/* <div className="half-star-container">
-                    <FaStarHalf className="fa-star" />
-                    <FaRegStar className="half-fill" />
-                  </div>
-                  <FaRegStar className="fa-star" /> */}
                 </div>
                 <div className="rating_number">(99)</div>
               </div>
