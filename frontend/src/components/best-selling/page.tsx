@@ -13,9 +13,10 @@ import Image from "next/image";
 import "./best-selling.css";
 import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
-
+import {useCart} from "@/context/commerce logic/cartcontext";
 import {ProductType} from "@/types/product";
 import {useRouter} from "next/navigation";
+import { ProductNotFound } from "../product-notfound/page";
 
 
 const renderStars = (rating: number) => {
@@ -62,6 +63,7 @@ const ProductRating = ({product}: {product: ProductType}) => {
 
 export const BestSelling = () => {
   const router = useRouter();
+   const {addToCart} = useCart();
   const {loading: globalLoading} = useProductContext();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
@@ -116,8 +118,14 @@ export const BestSelling = () => {
    }
 
    if (products.length === 0) {
-     return <div>No Product Found</div>;
+     return <ProductNotFound />;
    }
+
+   const handleAddToCart = (product: ProductType) => {
+     addToCart(product);
+     alert(`${product.name} added to cart!`);
+     // You can add a notification here to show the item was added
+   };
 
   return (
     <div className="best_section">

@@ -8,6 +8,7 @@ import Footer from "@/components/footer/page";
 import TopBar from "@/components/top-bar/page";
 import LoadingScreen from "@/components/loadingscreen/page";
 import { ProductProvider } from "@/context/productContext/productcontext";
+import { CartProvider } from "@/context/commerce logic/cartcontext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -56,23 +57,25 @@ export default function RootLayout({
 
   return (
     <ProductProvider>
-      <html lang="en">
-        <head>
-          <meta charSet="UTF-8" />
-        </head>
-        <body>
-          {loading && <LoadingScreen />}
-          {!loading && (
-            <div className="fadeIn-load">
-              <div className="page-container">
-                {!hideLayout && <TopBar />}
-                <div className={`${inter.className} content`}>{children}</div>
+      <CartProvider>
+        <html lang="en">
+          <head>
+            <meta charSet="UTF-8" />
+          </head>
+          <body>
+            {loading && <LoadingScreen />}
+            {!loading && (
+              <div className="fadeIn-load">
+                <div className="page-container">
+                  {!hideLayout && <TopBar />}
+                  <div className={`${inter.className} content`}>{children}</div>
+                </div>
+                {!hideLayout && <Footer />}
               </div>
-              {!hideLayout && <Footer />}
-            </div>
-          )}
-        </body>
-      </html>
+            )}
+          </body>
+        </html>
+      </CartProvider>
     </ProductProvider>
   );
 }

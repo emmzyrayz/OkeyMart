@@ -8,6 +8,7 @@ import {useProductContext} from "@/context/productContext/productcontext";
 import { FilterButton } from "../filterbtn";
 import {ProductType} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
+import { useCart } from "@/context/commerce logic/cartcontext";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -64,6 +65,7 @@ const ProductRating = ({product}: {product: ProductType}) => {
 
 export default function Today() {
   const router = useRouter();
+  const { addToCart } = useCart();
   const {products, loading} = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
@@ -158,6 +160,12 @@ export default function Today() {
       updated[index] = !updated[index];
       return updated;
     });
+  };
+
+  const handleAddToCart = (product: ProductType) => {
+    addToCart(product);
+    alert(`${product.name} added to cart!`);
+    // You can add a notification here to show the item was added
   };
 
   return (
@@ -257,7 +265,10 @@ export default function Today() {
                     )}
                   </div>
                 </div>
-                <div className="product_btn">
+                <div
+                  className="product_btn"
+                  onClick={() => handleAddToCart(product)}
+                >
                   <span>Add To Cart</span>
                 </div>
               </div>

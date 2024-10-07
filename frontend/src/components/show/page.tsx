@@ -1,6 +1,7 @@
 "use client";
 import React, {useRef, useState, useMemo} from "react";
 import {useRouter} from "next/navigation";
+import {useCart} from "@/context/commerce logic/cartcontext";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -73,6 +74,7 @@ const ProductRating = ({product}: {product: Product}) => {
 
 export default function Show() {
   const router = useRouter();
+  const {addToCart} = useCart();
   const {products, loading } = useProductContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
@@ -150,6 +152,12 @@ export default function Show() {
     });
   };
 
+  const handleAddToCart = (product: Product) => {
+    addToCart(product);
+    alert(`${product.name} added to cart!`);
+    // You can add a notification here to show the item was added
+  };
+
 
 
   return (
@@ -217,7 +225,10 @@ export default function Show() {
                       )}
                     </div>
                   </div>
-                  <div className="product_btn">
+                  <div
+                    className="product_btn"
+                    onClick={() => handleAddToCart(product)}
+                  >
                     <span>Add To Cart</span>
                   </div>
                 </div>

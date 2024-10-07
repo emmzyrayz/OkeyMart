@@ -15,6 +15,7 @@ import {useState} from "react";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { ProductType } from "@/types/product";
+import {useCart} from "@/context/commerce logic/cartcontext";
 // import Link from "next/link";
 
 
@@ -64,6 +65,7 @@ const ProductRating = ({rating}: {rating: number}) => {
 };
 
 export const ProductCard = ({product, filterTag}: ProductCardProps) => {
+  const {addToCart} = useCart();
   const [hearted, setHearted] = useState(false); // Single state for heart icon
   const [eyed, setEyed] = useState(false); // Single state for eye icon
   const router = useRouter();
@@ -97,6 +99,12 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
     router.push(url);
   };
 
+  const handleAddToCart = (product: ProductType) => {
+    addToCart(product);
+    alert(`${product.name} added to cart!`);
+    // You can add a notification here to show the item was added
+  };
+
   // Add console.log to check product data when component renders
   // console.log("ProductCard rendered with:", {
   //   filterTag,
@@ -127,7 +135,7 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
               {eyed ? <FaEye className="fas" /> : <FaRegEye className="fa" />}
             </div>
           </div>
-          <div className="product_btn">
+          <div className="product_btn" onClick={() => handleAddToCart(product)}>
             <span>Add To Cart</span>
           </div>
         </div>

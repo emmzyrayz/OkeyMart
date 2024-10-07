@@ -5,10 +5,8 @@ import FetchLoader from "../fetchloading/page";
 import { ProductType } from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { ProductNotFound } from "../product-notfound/page";
+import {useCart} from "@/context/commerce logic/cartcontext";
 
-// interface RelatedProductsListProps {
-//   currentCategory: string;
-// }
 
 
 const renderStars = (rating: number) => {
@@ -52,6 +50,7 @@ const ProductRating = ({rating}: {rating: number}) => {
 };
 
 const RelatedProductsList = () => {
+  const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
@@ -98,6 +97,12 @@ const RelatedProductsList = () => {
     return <ProductNotFound />;
   }
 
+  const handleAddToCart = (product: ProductType) => {
+    addToCart(product);
+    alert(`${product.name} added to cart!`);
+    // You can add a notification here to show the item was added
+  };
+
   return (
     <div className="related_items flex flex-row overflow-x-auto mb-8 px-4">
       {relatedProducts.map((product, index) => (
@@ -131,7 +136,10 @@ const RelatedProductsList = () => {
                 )}
               </div>
             </div>
-            <div className="product_btn">
+            <div
+              className="product_btn"
+              onClick={() => handleAddToCart(product)}
+            >
               <span>Add To Cart</span>
             </div>
           </div>
