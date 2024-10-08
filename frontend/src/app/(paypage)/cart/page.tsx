@@ -16,7 +16,8 @@ export default function Cart() {
 
   // Function to handle quantity change
   const handleQuantityChange = (id: string, action: string) => {
-    const item: CartItem | undefined = items.find((item) => item.id === id);
+    console.log(`Quantity change: ${action} for item ${id}`);
+    const item: CartItem | undefined = items.find((item) => item._id === id);
     if (!item) return;
 
     const newQuantity =
@@ -77,7 +78,7 @@ export default function Cart() {
 
               {/* Price */}
               <div className="cart-item price">
-                ${(item.price * (1 - item.discount / 100)).toFixed(2)}
+                ${(item.price * (1 - (item.discount ?? 0) / 100)).toFixed(2)}
               </div>
 
               {/* Quantity with Up/Down Arrows */}
@@ -89,13 +90,17 @@ export default function Cart() {
                   <div className="quantity-btns flex flex-col items-center relative w-1/2 h-full">
                     <button
                       className="quantity-btn"
-                      onClick={() => handleQuantityChange(item.id, "increment")}
+                      onClick={() =>
+                        handleQuantityChange(item._id, "increment")
+                      }
                     >
                       <FaAngleUp />
                     </button>
                     <button
                       className="quantity-btn"
-                      onClick={() => handleQuantityChange(item.id, "decrement")}
+                      onClick={() =>
+                        handleQuantityChange(item._id, "decrement")
+                      }
                     >
                       <FaAngleDown />
                     </button>
@@ -138,11 +143,13 @@ export default function Cart() {
                 <p className="sub_total_head">Subtotal:</p>
                 <p className="sub_total_price">
                   $
-                  {items.reduce(
-                    (acc, item) =>
-                      acc + calculateSubtotal(item.price, item.quantity),
-                    0
-                  )}
+                  {items
+                    .reduce(
+                      (acc, item) =>
+                        acc + calculateSubtotal(item.price, item.quantity),
+                      0
+                    )
+                    .toFixed(2)}
                 </p>
               </div>
               <div className="shipping_total flex flex-row justify-between border-bottom-line">
@@ -153,11 +160,13 @@ export default function Cart() {
                 <p>Total: </p>
                 <span>
                   $
-                  {items.reduce(
-                    (acc: number, item: CartItem) =>
-                      acc + calculateSubtotal(item.price, item.quantity),
-                    0
-                  ) + 0}
+                  {items
+                    .reduce(
+                      (acc, item) =>
+                        acc + calculateSubtotal(item.price, item.quantity),
+                      0
+                    )
+                    .toFixed(2)}
                 </span>
               </div>
             </div>

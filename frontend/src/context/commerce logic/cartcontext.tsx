@@ -1,3 +1,4 @@
+"use client";
 import React, {createContext, useContext, useReducer, ReactNode} from "react";
 import {Product} from "@/types/product";
 
@@ -44,7 +45,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case "ADD_TO_CART": {
       const existingItemIndex = state.items.findIndex(
-        (item) => item.id === action.payload.id
+        (item) => item._id === action.payload._id
       );
 
       let newItems;
@@ -63,7 +64,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         (count, item) => count + item.quantity,
         0
       );
-      
+
       return {
         ...state,
         items: newItems,
@@ -73,7 +74,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case "REMOVE_FROM_CART": {
-      const newItems = state.items.filter((item) => item.id !== action.payload);
+      const newItems = state.items.filter((item) => item._id !== action.payload);
       const totalItems = newItems.reduce(
         (count, item) => count + item.quantity,
         0
@@ -88,7 +89,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case "UPDATE_QUANTITY": {
       const newItems = state.items.map((item) =>
-        item.id === action.payload.id
+        item._id === action.payload.id
           ? {...item, quantity: action.payload.quantity}
           : item
       );
@@ -121,6 +122,7 @@ export const CartProvider: React.FC<{children: ReactNode}> = ({children}) => {
   const [cartState, dispatch] = useReducer(cartReducer, {
     items: [],
     total: 0,
+    itemCount: 0,
   });
 
   const addToCart = (product: Product) => {
@@ -132,6 +134,9 @@ export const CartProvider: React.FC<{children: ReactNode}> = ({children}) => {
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
+    console.log(
+      `Dispatching UPDATE_QUANTITY for productId: ${productId}, quantity: ${quantity}`
+    );
     dispatch({type: "UPDATE_QUANTITY", payload: {id: productId, quantity}});
   };
 

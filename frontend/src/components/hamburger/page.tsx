@@ -9,9 +9,13 @@ import { FiBell, FiShoppingBag, FiUser } from "react-icons/fi";
 import { CiStar } from "react-icons/ci";
 import { ImCancelCircle } from "react-icons/im";
 import { TbLogout2 } from "react-icons/tb";
+import {useCart} from "@/context/commerce logic/cartcontext";
+import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 
 export const HamburgerMenu = () => {
   const pathname = usePathname();
+  const {cartState} = useCart();
+  const {wishlist} = useWishContext();
   const [isOpen, setIsOpen] = useState(false);
 
   // Toggle menu open/close state
@@ -54,13 +58,21 @@ export const HamburgerMenu = () => {
               <Link href="/wishlist">
                 <div className="liked relative">
                   <FaRegHeart className="nav-icon" />
-                  <span className="absolute">2</span>
+                  {wishlist.length > 0 && (
+                    <span className="absolute wishlist-count">
+                      {wishlist.length}
+                    </span>
+                  )}
                 </div>
               </Link>
               <Link href="/cart">
                 <div className="cart relative">
                   <TiShoppingCart className="nav-icon" />
-                  <span className="absolute">5</span>
+                  {cartState.itemCount > 0 && (
+                    <span className="cart-count absolute">
+                      {cartState.itemCount}
+                    </span>
+                  )}
                 </div>
               </Link>
               <Link href="/profile">
