@@ -6,9 +6,10 @@ import {useRouter} from "next/navigation";
 import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { FilterButton } from "../filterbtn";
-import {ProductType} from "@/types/product";
+import {Product} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
 import { useCart } from "@/context/commerce logic/cartcontext";
+import { useWishContext } from "@/context/commerce logic/view-wishcontext";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -20,6 +21,7 @@ import {
   FaEye,
   FaStarHalf,
 } from "react-icons/fa6";
+import Link from "next/link";
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -55,7 +57,7 @@ const renderStars = (rating: number) => {
   return stars;
 };
 
-const ProductRating = ({product}: {product: ProductType}) => {
+const ProductRating = ({product}: {product: Product}) => {
   return (
     <div className="rating_icon flex flex-row items-center">
       {renderStars(product.rating)} {/* Call the renderStars function */}
@@ -67,6 +69,14 @@ export default function Today() {
   const router = useRouter();
   const { addToCart } = useCart();
   const {products, loading} = useProductContext();
+  const {
+    wishlist,
+    viewedProducts,
+    addToWishlist,
+    addToViewed,
+    removeFromViewlist,
+    removeFromWishlist,
+  } = useWishContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -86,9 +96,17 @@ export default function Today() {
   });
 
   useEffect(() => {
-    setHeartedItems(new Array(filteredProducts.length).fill(false));
-    setEyedItems(new Array(filteredProducts.length).fill(false));
-  }, [filteredProducts.length]);
+    // Initialize heartedItems and eyedItems based on the context (wishlist and viewedProducts)
+    const updatedHeartedItems = filteredProducts.map((product) =>
+      wishlist.some((wishItem) => wishItem._id === product._id)
+    );
+    const updatedEyedItems = filteredProducts.map((product) =>
+      viewedProducts.some((viewedItem) => viewedItem._id === product._id)
+    );
+
+    setHeartedItems(updatedHeartedItems);
+    setEyedItems(updatedEyedItems);
+  }, [filteredProducts, wishlist, viewedProducts]);
 
   useEffect(() => {
     // Update countdown every second
@@ -134,6 +152,45 @@ export default function Today() {
     return <ProductNotFound />;
   }
 
+
+  const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
+    e.preventDefault(); // Prevent navigation when clicking icons
+    e.stopPropagation(); // Prevent event bubbling
+    callback();
+  };
+
+  const handleHeartClick = (index: number, product: Product) => {
+    setHeartedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      if (updated[index]) {
+        addToWishlist(product); // Add to wishlist if liked
+      } else {
+        removeFromWishlist(product._id); // Remove from wishlist if unliked
+      }
+      return updated;
+    });
+  };
+
+  const handleEyeClick = (index: number, product: Product) => {
+    setEyedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = !updated[index];
+      if (updated[index]) {
+        addToViewed(product); // Add to viewed products
+      } else {
+        removeFromViewlist(product._id); // Remove from wishlist if unliked
+      }
+      return updated;
+    });
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault(); // Prevent navigation when adding to cart
+    addToCart(product);
+    alert(`${product.name} added to cart!`);
+  };
+
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({left: -200, behavior: "smooth"});
@@ -144,28 +201,6 @@ export default function Today() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({left: 200, behavior: "smooth"});
     }
-  };
-
-  const handleHeartClick = (index: number) => {
-    setHeartedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
-
-  const handleEyeClick = (index: number) => {
-    setEyedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
-
-  const handleAddToCart = (product: ProductType) => {
-    addToCart(product);
-    alert(`${product.name} added to cart!`);
-    // You can add a notification here to show the item was added
   };
 
   return (
@@ -231,65 +266,73 @@ export default function Today() {
         ref={scrollContainerRef}
       >
         {filteredProducts.map((product, index) => {
-          const discountPrice = product.price * (1 - product.discount / 100);
+          const discountPrice = product.price * (1 - (product.discount ?? 0) / 100);
 
           return (
             <div className="product_item" key={index}>
-              <div className="product_image">
-                <span className="discount">{product.discount}%</span>
-                <Image
-                  alt={`product ${index + 1}`}
-                  width={200}
-                  height={300}
-                  src={product.mainImage}
-                />
-                <div className="product_icons">
-                  <div
-                    className="icon-heart"
-                    onClick={() => handleHeartClick(index)}
-                  >
-                    {heartedItems[index] ? (
-                      <FaHeart className="fas" />
-                    ) : (
-                      <FaRegHeart className="fa" />
-                    )}
+              <Link href={`/today/${product._id}`}>
+                <div className="product_image">
+                  <span className="discount">{product.discount}%</span>
+                  <Image
+                    alt={`product ${index + 1}`}
+                    width={200}
+                    height={300}
+                    src={product.mainImage}
+                  />
+                  <div className="product_icons">
+                    <div
+                      className="icon-heart"
+                      onClick={(e) =>
+                        handleIconClick(e, () =>
+                          handleHeartClick(index, product)
+                        )
+                      }
+                    >
+                      {heartedItems[index] ? (
+                        <FaHeart className="fas" />
+                      ) : (
+                        <FaRegHeart className="fa" />
+                      )}
+                    </div>
+                    <div
+                      className="icon-eye"
+                      onClick={(e) =>
+                        handleIconClick(e, () => handleEyeClick(index, product))
+                      }
+                    >
+                      {eyedItems[index] ? (
+                        <FaEye className="fas" />
+                      ) : (
+                        <FaRegEye className="fa" />
+                      )}
+                    </div>
                   </div>
                   <div
-                    className="icon-eye"
-                    onClick={() => handleEyeClick(index)}
+                    className="product_btn"
+                    onClick={(e) => handleAddToCart(e, product)}
                   >
-                    {eyedItems[index] ? (
-                      <FaEye className="fas" />
-                    ) : (
-                      <FaRegEye className="fa" />
-                    )}
+                    <span>Add To Cart</span>
                   </div>
                 </div>
-                <div
-                  className="product_btn"
-                  onClick={() => handleAddToCart(product)}
-                >
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">{product.name}</div>
-                <div className="product_price">
-                  <div className="dscount_price">
-                    ${discountPrice.toFixed(2)}
+                <div className="product_detail">
+                  <div className="product_name">{product.name}</div>
+                  <div className="product_price">
+                    <div className="dscount_price">
+                      ${discountPrice.toFixed(2)}
+                    </div>
+                    <div className="actual_price">${product.price}</div>
                   </div>
-                  <div className="actual_price">${product.price}</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <ProductRating product={product} />{" "}
-                    {/* Render the rating */}
-                  </div>
-                  <div className="rating_number">
-                    ({product.rating.toFixed(1)})
+                  <div className="rating">
+                    <div className="rating_icon flex flex-row items-center">
+                      <ProductRating product={product} />{" "}
+                      {/* Render the rating */}
+                    </div>
+                    <div className="rating_number">
+                      ({product.rating.toFixed(1)})
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           );
         })}

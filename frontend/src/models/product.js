@@ -1,5 +1,7 @@
+// models/product.js
 import mongoose from "mongoose";
 
+// Define the schema
 const ProductSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -19,44 +21,64 @@ const ProductSchema = new mongoose.Schema({
     default: 0,
   },
   images: {
-    type: [String], // Array of image URLs
+    type: [String],
     required: true,
     validate: {
       validator: function (value) {
-        return value.length === 5; // Ensure there are exactly 5 images
+        return value.length === 5;
       },
       message: "There must be exactly 5 images",
     },
   },
   mainImage: {
-    type: String, // This will store the URL of the main image
+    type: String,
     required: true,
     validate: {
       validator: function (value) {
-        return this.images.includes(value); // Ensure the mainImage is one of the 5 images
+        return this.images.includes(value);
       },
       message: "Main image must be one of the product images",
     },
   },
-  categories: {
-    type: [
-      {
-        name: {type: String, required: true}, // e.g., Electronics, Mobile Device, etc.
-        subcategories: [String], // e.g., Gadgets, Apple (brand), etc.
-      },
+  category: {
+    type: String,
+    required: true,
+    enum: [
+      "Agriculture & Food",
+      "Babies & Kid",
+      "Commercial Equipment & Tools",
+      "Electronics",
+      "Fashion",
+      "Health & Beauty",
+      "Home Appliances & Furniture",
+      "Jobs",
+      "Pets",
+      "Phones & Tablets",
+      "Property",
+      "Repair & Construction",
+      "Seeking Work CVs",
+      "Services",
+      "Sports, Arts and Outdoors",
+      "Vehicles",
     ],
+  },
+  subcategory: {
+    type: String,
     required: true,
   },
   filters: {
-    color: {type: [String], required: false}, // e.g., ["Black", "White"]
-    ram: {type: [String], required: false}, // e.g., ["8GB", "16GB"]
-    rom: {type: [String], required: false}, // e.g., ["128GB", "256GB"]
+    color: {type: [String], required: false},
+    ram: {type: [String], required: false},
+    rom: {type: [String], required: false},
     condition: {
-      type: String, // e.g., "New", "Refurbished", "Used"
+      type: String,
       enum: ["New", "Refurbished", "Used"],
       required: false,
     },
-    otherFeatures: [String], // Add any other filterable options (optional)
+    type: {type: [String], required: false},
+    brand: {type: [String], required: false},
+    material: {type: [String], required: false},
+    otherFeatures: [String],
   },
   createdAt: {
     type: Date,
@@ -84,10 +106,21 @@ const ProductSchema = new mongoose.Schema({
   },
   rating: {
     type: Number,
+    min: 0,
+    max: 5,
     default: 0,
+  },
+  liked: {
+    type: Boolean,
+    default: false,
+  },
+  viewed: {
+    type: Boolean,
+    default: false,
   },
 });
 
+// Use mongoose.models.Product if it exists, otherwise create a new model
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);
 

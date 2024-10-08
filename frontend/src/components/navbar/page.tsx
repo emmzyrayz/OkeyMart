@@ -11,13 +11,16 @@ import {CiStar} from "react-icons/ci";
 import {TbLogout2} from "react-icons/tb";
 import {HamburgerMenu} from "../hamburger/page";
 import { useCart } from "@/context/commerce logic/cartcontext";
+import {useWishContext} from "@/context/commerce logic/view-wishcontext";
+
 
 export const HomeNav = () => {
   const pathname = usePathname();
   const { cartState } = useCart();
+  const {wishlist} = useWishContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
+  // const [cartCount, setCartCount] = useState(0);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -73,7 +76,9 @@ export const HomeNav = () => {
         <Link href="/wishlist">
           <div className="liked relative">
             <FaRegHeart className="nav-icon" />
-            <span className="absolute">2</span>
+            {wishlist.length > 0 && (
+              <span className="absolute wishlist-count">{wishlist.length}</span>
+            )}
           </div>
         </Link>
         <Link href="/cart">

@@ -3,13 +3,13 @@ import "./prod-info.css";
 import {useParams} from "next/navigation";
 import {useEffect, useState} from "react";
 import FetchLoader from "@/components/fetchloading/page";
-import type {ProductType} from "@/types/product";
+import type {Product} from "@/types/product";
 import RelatedProductsList from "@/components/related-product/page";
 import { ProductInfo } from "@/components/product-info/page";
 
 export default function Products() {
   const params = useParams();
-  const [productData, setProductData] = useState<ProductType | null>(null);
+  const [productData, setProductData] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -10,28 +10,40 @@ if (!MONGODB_URI) {
   );
 }
 
-let cached = global.mongo;
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development. This prevents connections growing exponentially
+ * during API Route usage.
+ */
+let cached = global.mongoose;
 
 if (!cached) {
-  cached = global.mongo = {conn: null, promise: null};
+  cached = global.mongoose = {conn: null, promise: null};
 }
 
 async function dbConnect() {
-  if (cached.conn) {
+  try {
+    if (cached.conn) {
+      return cached.conn;
+    }
+
+    if (!cached.promise) {
+      const opts = {
+        bufferCommands: false,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+      };
+
+      cached.promise = mongoose.connect(MONGODB_URI, opts);
+    }
+
+    cached.conn = await cached.promise;
     return cached.conn;
+  } catch (error) {
+    cached.promise = null;
+    throw error;
   }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
 }
 
 export default dbConnect;

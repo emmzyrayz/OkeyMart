@@ -103,7 +103,7 @@ export default function Random() {
   }
 
   return (
-    <div className="random_section flex flex-row items-center justify-around relative">
+    <div className="random_section flex flex-row items-center justify-around relative gap-5">
       <div className="random_text flex flex-col items-start justify-center gap-4 w-2/4">
         {selectedProduct ? (
           <>
@@ -129,7 +129,7 @@ export default function Random() {
                 <span className="time">Seconds</span>
               </div>
             </div>
-            <div className="random_btn flex items-center justify-center" onClick={() => router.push("/top")}>
+            <div className="random_btn flex items-center justify-center" onClick={() => router.push("/top/${product._id}")}>
               <span>Buy Now</span>
             </div>
           </>

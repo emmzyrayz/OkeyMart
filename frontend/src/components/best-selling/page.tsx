@@ -14,9 +14,11 @@ import "./best-selling.css";
 import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
 import {useCart} from "@/context/commerce logic/cartcontext";
-import {ProductType} from "@/types/product";
+import {Product} from "@/types/product";
 import {useRouter} from "next/navigation";
 import { ProductNotFound } from "../product-notfound/page";
+import {useWishContext} from "@/context/commerce logic/view-wishcontext";
+import Link from "next/link";
 
 
 const renderStars = (rating: number) => {
@@ -53,7 +55,7 @@ const renderStars = (rating: number) => {
   return stars;
 };
 
-const ProductRating = ({product}: {product: ProductType}) => {
+const ProductRating = ({product}: {product: Product}) => {
   return (
     <div className="rating_icon flex flex-row items-center">
       {renderStars(product.rating)} {/* Call the renderStars function */}
@@ -65,23 +67,13 @@ export const BestSelling = () => {
   const router = useRouter();
    const {addToCart} = useCart();
   const {loading: globalLoading} = useProductContext();
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const {addToWishlist, addToViewed} = useWishContext();
+  const [products, setProducts] = useState<Product[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
   const [localLoading, setLocalLoading] = useState(true);
 
-  const handleHeartClick = (index: number) => {
-    const updatedHeartedItems = [...heartedItems];
-    updatedHeartedItems[index] = !updatedHeartedItems[index];
-    setHeartedItems(updatedHeartedItems);
-  };
-
-  const handleEyeClick = (index: number) => {
-    const updatedEyedItems = [...eyedItems];
-    updatedEyedItems[index] = !updatedEyedItems[index];
-    setEyedItems(updatedEyedItems);
-  };
-
+  
   // Fetch products from the API
   const fetchProducts = async () => {
     try {
@@ -92,7 +84,7 @@ export const BestSelling = () => {
 
       // Filter products with today set to true
       const todayProducts = data.filter(
-        (product: ProductType) => product.trending === true
+        (product: Product) => product.trending === true
       );
 
       // Limit to 10 today products
@@ -102,11 +94,19 @@ export const BestSelling = () => {
       setProducts(limitedTodayProducts);
       setHeartedItems(Array(limitedTodayProducts.length).fill(false));
       setEyedItems(Array(limitedTodayProducts.length).fill(false));
+      
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setLocalLoading(false);
     }
+  };
+
+
+  const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
+    e.preventDefault(); // Prevent navigation when clicking icons
+    e.stopPropagation(); // Prevent event bubbling
+    callback();
   };
 
   useEffect(() => {
@@ -121,10 +121,52 @@ export const BestSelling = () => {
      return <ProductNotFound />;
    }
 
-   const handleAddToCart = (product: ProductType) => {
+   const removeFromViewlist = (index: number, listType: "heart" | "eye") => {
+     if (listType === "heart") {
+       setHeartedItems((prev) => {
+         const updated = [...prev];
+         updated[index] = false; // Unset heart (remove from wishlist)
+         return updated;
+       });
+     } else if (listType === "eye") {
+       setEyedItems((prev) => {
+         const updated = [...prev];
+         updated[index] = false; // Unset eye (remove from viewed products)
+         return updated;
+       });
+     }
+   };
+
+   const handleHeartClick = (index: number, product: Product) => {
+     setHeartedItems((prev) => {
+       const updated = [...prev];
+       updated[index] = !updated[index]; // Toggle the heart state
+       if (updated[index]) {
+         addToWishlist(product); // Add to wishlist if liked
+       } else {
+         removeFromViewlist(index, "heart"); // Remove from wishlist
+       }
+       return updated;
+     });
+   };
+
+   const handleEyeClick = (index: number, product: Product) => {
+     setEyedItems((prev) => {
+       const updated = [...prev];
+       updated[index] = !updated[index]; // Toggle the eye state
+       if (updated[index]) {
+         addToViewed(product); // Add to viewed products if viewed
+       } else {
+         removeFromViewlist(index, "eye"); // Remove from viewed products
+       }
+       return updated;
+     });
+   };
+
+   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+     e.preventDefault(); // Prevent navigation when adding to cart
      addToCart(product);
      alert(`${product.name} added to cart!`);
-     // You can add a notification here to show the item was added
    };
 
   return (
@@ -150,58 +192,69 @@ export const BestSelling = () => {
 
           return (
             <div className="product_item" key={index}>
-              <div className="product_image">
-                <span className="discount hidden">{product.discount}</span>
-                <Image
-                  alt={`product ${index + 1}`}
-                  width={200}
-                  height={300}
-                  src={product.mainImage}
-                />
-                <div className="product_icons">
-                  <div
-                    className="icon-heart"
-                    onClick={() => handleHeartClick(index)}
-                  >
-                    {heartedItems[index] ? (
-                      <FaHeart className="fas" />
-                    ) : (
-                      <FaRegHeart className="fa" />
-                    )}
+              <Link href={`/trending/${product._id}`}>
+                <div className="product_image">
+                  <span className="discount hidden">{product.discount}</span>
+                  <Image
+                    alt={`product ${index + 1}`}
+                    width={200}
+                    height={300}
+                    src={product.mainImage}
+                  />
+                  <div className="product_icons">
+                    <div
+                      className="icon-heart"
+                      onClick={(e) =>
+                        handleIconClick(e, () =>
+                          handleHeartClick(index, product)
+                        )
+                      }
+                    >
+                      {heartedItems[index] ? (
+                        <FaHeart className="fas" />
+                      ) : (
+                        <FaRegHeart className="fa" />
+                      )}
+                    </div>
+                    <div
+                      className="icon-eye"
+                      onClick={(e) =>
+                        handleIconClick(e, () => handleEyeClick(index, product))
+                      }
+                    >
+                      {eyedItems[index] ? (
+                        <FaEye className="fas" />
+                      ) : (
+                        <FaRegEye className="fa" />
+                      )}
+                    </div>
                   </div>
                   <div
-                    className="icon-eye"
-                    onClick={() => handleEyeClick(index)}
+                    className="product_btn"
+                    onClick={(e) => handleAddToCart(e, product)}
                   >
-                    {eyedItems[index] ? (
-                      <FaEye className="fas" />
-                    ) : (
-                      <FaRegEye className="fa" />
-                    )}
+                    <span>Add To Cart</span>
                   </div>
                 </div>
-                <div className="product_btn">
-                  <span>Add To Cart</span>
-                </div>
-              </div>
-              <div className="product_detail">
-                <div className="product_name">{product.name}</div>
-                <div className="product_price">
-                  <div className="dscount_price">
-                    ${discountPrice.toFixed(2)}
+                <div className="product_detail">
+                  <div className="product_name">{product.name}</div>
+                  <div className="product_price">
+                    <div className="dscount_price">
+                      ${discountPrice.toFixed(2)}
+                    </div>
+                    <div className="actual_price">${product.price}</div>
                   </div>
-                  <div className="actual_price">${product.price}</div>
-                </div>
-                <div className="rating">
-                  <div className="rating_icon flex flex-row items-center">
-                    <ProductRating product={product} />{" "}
-                    {/* Render the rating */}
-                  </div>
-                  <div className="rating_number">
-                    ({product.rating.toFixed(1)})
+                  <div className="rating">
+                    <div className="rating_icon flex flex-row items-center">
+                      <ProductRating product={product} />{" "}
+                      {/* Render the rating */}
+                    </div>
+                    <div className="rating_number">
+                      ({product.rating.toFixed(1)})
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </div>
           );
         })}
