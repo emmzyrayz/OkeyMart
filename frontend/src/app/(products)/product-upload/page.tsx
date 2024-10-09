@@ -64,6 +64,7 @@ export default function ProdUplink() {
             </div>
 
             <div className="category_uplink_ dark-glass flex flex-col w-full p-2 gap-2">
+              <span className="text">Product Details</span>
               <div className="uplink_name flex flex-row items-center justify-start gap-1 w-full">
                 <WaveInput
                   label="Name*"
