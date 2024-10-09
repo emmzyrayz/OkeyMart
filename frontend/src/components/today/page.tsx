@@ -1,5 +1,5 @@
 "use client";
-import React, {useState, useEffect, useRef, useMemo} from "react";
+import React, {useState, useEffect, useRef, useMemo, useCallback} from "react";
 import "./today.css";
 import Image from "next/image";
 import {useRouter} from "next/navigation";
@@ -67,7 +67,7 @@ const ProductRating = ({product}: {product: Product}) => {
 
 export default function Today() {
   const router = useRouter();
-  const { addToCart } = useCart();
+  const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
     wishlist,
@@ -77,13 +77,18 @@ export default function Today() {
     removeFromViewlist,
     removeFromWishlist,
   } = useWishContext();
-  const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
-  const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => product.today === true).slice(0, 12);
   }, [products]);
+
+  // Initialize state based on memoized filtered products
+  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>(
+    {}
+  );
+  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
 
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
@@ -95,17 +100,22 @@ export default function Today() {
     seconds: 0,
   });
 
+  // Update hearts and eyes based on wishlist and viewed products
   useEffect(() => {
-    // Initialize heartedItems and eyedItems based on the context (wishlist and viewedProducts)
-    const updatedHeartedItems = filteredProducts.map((product) =>
-      wishlist.some((wishItem) => wishItem._id === product._id)
-    );
-    const updatedEyedItems = filteredProducts.map((product) =>
-      viewedProducts.some((viewedItem) => viewedItem._id === product._id)
-    );
+    const newHeartedItems: {[key: string]: boolean} = {};
+    const newEyedItems: {[key: string]: boolean} = {};
 
-    setHeartedItems(updatedHeartedItems);
-    setEyedItems(updatedEyedItems);
+    filteredProducts.forEach((product) => {
+      newHeartedItems[product._id] = wishlist.some(
+        (item) => item._id === product._id
+      );
+      newEyedItems[product._id] = viewedProducts.some(
+        (item) => item._id === product._id
+      );
+    });
+
+    setHeartedItems(newHeartedItems);
+    setEyedItems(newEyedItems);
   }, [filteredProducts, wishlist, viewedProducts]);
 
   useEffect(() => {
@@ -152,56 +162,63 @@ export default function Today() {
     return <ProductNotFound />;
   }
 
+  
 
-  const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
-    e.preventDefault(); // Prevent navigation when clicking icons
-    e.stopPropagation(); // Prevent event bubbling
-    callback();
-  };
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const handleHeartClick = (index: number, product: Product) => {
-    setHeartedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      if (updated[index]) {
-        addToWishlist(product); // Add to wishlist if liked
-      } else {
-        removeFromWishlist(product._id); // Remove from wishlist if unliked
-      }
-      return updated;
-    });
-  };
+      setHeartedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToWishlist(product);
+        } else {
+          removeFromWishlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToWishlist, removeFromWishlist]
+  );
 
-  const handleEyeClick = (index: number, product: Product) => {
-    setEyedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      if (updated[index]) {
-        addToViewed(product); // Add to viewed products
-      } else {
-        removeFromViewlist(product._id); // Remove from wishlist if unliked
-      }
-      return updated;
-    });
-  };
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
-    e.preventDefault(); // Prevent navigation when adding to cart
-    addToCart(product);
-    alert(`${product.name} added to cart!`);
-  };
+      setEyedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToViewed(product);
+        } else {
+          removeFromViewlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToViewed, removeFromViewlist]
+  );
 
-  const scrollLeft = () => {
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      addToCart(product);
+    },
+    [addToCart]
+  );
+
+  const scrollLeft = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({left: -200, behavior: "smooth"});
     }
-  };
+  }, []);
 
-  const scrollRight = () => {
+  const scrollRight = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({left: 200, behavior: "smooth"});
     }
-  };
+  }, []);
 
   return (
     <div className="today_section w-full flex flex-col">
@@ -266,7 +283,8 @@ export default function Today() {
         ref={scrollContainerRef}
       >
         {filteredProducts.map((product, index) => {
-          const discountPrice = product.price * (1 - (product.discount ?? 0) / 100);
+          const discountPrice =
+            product.price * (1 - (product.discount ?? 0) / 100);
 
           return (
             <div className="product_item" key={index}>
@@ -282,11 +300,7 @@ export default function Today() {
                   <div className="product_icons">
                     <div
                       className="icon-heart"
-                      onClick={(e) =>
-                        handleIconClick(e, () =>
-                          handleHeartClick(index, product)
-                        )
-                      }
+                      onClick={(e) => handleHeartClick(product, e)}
                     >
                       {heartedItems[index] ? (
                         <FaHeart className="fas" />
@@ -296,9 +310,7 @@ export default function Today() {
                     </div>
                     <div
                       className="icon-eye"
-                      onClick={(e) =>
-                        handleIconClick(e, () => handleEyeClick(index, product))
-                      }
+                      onClick={(e) => handleEyeClick(product, e)}
                     >
                       {eyedItems[index] ? (
                         <FaEye className="fas" />

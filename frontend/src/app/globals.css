@@ -65,7 +65,8 @@
 
   --rating: #FFAD33;
 
-  --blur: rgba(0, 0, 0, 0.3);
+  --glass-bl: rgba(0, 0, 0, 0.3);
+  --blur: rgba(0, 0, 0, 0.5);
   --light-blur: rgba(255, 255, 255, 0.5);
 
 
@@ -204,6 +205,19 @@
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+.dark-glass {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(6.4px);
+  -webkit-backdrop-filter: blur(6.4px);
+  border: 1px solid rgba(0, 0, 0, 0.13);
+}
+
+.border-bottom-black{
+  border-bottom: 1px solid black;
 }
 
 .page-container {
