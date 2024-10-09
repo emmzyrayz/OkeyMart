@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState, useMemo, useEffect} from "react";
+import React, {useRef, useState, useMemo, useEffect, useCallback} from "react";
 import {useRouter} from "next/navigation";
 import {useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
@@ -88,6 +88,9 @@ export default function Show() {
   } = useWishContext();
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+  const [activeColors, setActiveColors] = useState<string[]>(
+    Array(16).fill("red")
+  );
 
   // Create two separate refs for each grid
   const topGridRef = useRef<HTMLDivElement>(null);
@@ -106,15 +109,7 @@ export default function Show() {
   }, [products]);
 
   const colors = ["red", "orange", "yellow", "black"];
-  const [activeColors, setActiveColors] = useState<string[]>(
-    Array(16).fill("red")
-  );
-
-  // useEffect(() => {
-  //   setHeartedItems(new Array(topProducts.length).fill(false));
-  //   setEyedItems(new Array(topProducts.length).fill(false));
-  // }, [topProducts.length]);
-
+  
 
   useEffect(() => {
     if (wishlist && viewedProducts) {
