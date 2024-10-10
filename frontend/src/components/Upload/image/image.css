@@ -82,5 +82,6 @@
 }
 
 .crop-container {
+    z-index: 9999;
     margin-top: 20px;
 }
