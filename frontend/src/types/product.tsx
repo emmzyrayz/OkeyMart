@@ -31,7 +31,6 @@ export type ProductFilters = {
 
 // Main Product type based on your database schema
 export type Product = {
-  category: any;
   _id: string;
   id: string; // This will typically be a string in MongoDB
   name: string;

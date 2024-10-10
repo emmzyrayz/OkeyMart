@@ -80,6 +80,63 @@ export default function Today() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setHeartedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToWishlist(product);
+        } else {
+          removeFromWishlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToWishlist, removeFromWishlist]
+  );
+
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setEyedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToViewed(product);
+        } else {
+          removeFromViewlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToViewed, removeFromViewlist]
+  );
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      addToCart(product);
+    },
+    [addToCart]
+  );
+
+  const scrollLeft = useCallback(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({left: -200, behavior: "smooth"});
+    }
+  }, []);
+
+  const scrollRight = useCallback(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({left: 200, behavior: "smooth"});
+    }
+  }, []);
+
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => product.today === true).slice(0, 12);
   }, [products]);
@@ -164,62 +221,7 @@ export default function Today() {
 
   
 
-  const handleHeartClick = useCallback(
-    (product: Product, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      setHeartedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToWishlist(product);
-        } else {
-          removeFromWishlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
-    },
-    [addToWishlist, removeFromWishlist]
-  );
-
-  const handleEyeClick = useCallback(
-    (product: Product, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      setEyedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToViewed(product);
-        } else {
-          removeFromViewlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
-    },
-    [addToViewed, removeFromViewlist]
-  );
-
-  const handleAddToCart = useCallback(
-    (e: React.MouseEvent, product: Product) => {
-      e.preventDefault();
-      addToCart(product);
-    },
-    [addToCart]
-  );
-
-  const scrollLeft = useCallback(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({left: -200, behavior: "smooth"});
-    }
-  }, []);
-
-  const scrollRight = useCallback(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({left: 200, behavior: "smooth"});
-    }
-  }, []);
-
+  
   return (
     <div className="today_section w-full flex flex-col">
       <div className="today_top flex flex-row items-center gap-2">
@@ -302,7 +304,7 @@ export default function Today() {
                       className="icon-heart"
                       onClick={(e) => handleHeartClick(product, e)}
                     >
-                      {heartedItems[index] ? (
+                      {heartedItems[product._id] ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -312,7 +314,7 @@ export default function Today() {
                       className="icon-eye"
                       onClick={(e) => handleEyeClick(product, e)}
                     >
-                      {eyedItems[index] ? (
+                      {eyedItems[product._id] ? (
                         <FaEye className="fas" />
                       ) : (
                         <FaRegEye className="fa" />

@@ -1,22 +1,21 @@
 import {ProductCard} from "../product-card/page";
-// import { ProductType } from '@/types/product';
+// import { Product } from '@/types/product';
 import "./prod-grid.css";
 
-import {ProductType} from "@/types/product";
+import {Product} from "@/types/product";
 
 type ProductGridProps = {
-  products: ProductType[];
+  products: Product[];
   filterTag: string;
 };
 
 export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
   // Add debug logging
-  console.log('ProductGrid rendered with:', {
+  console.log("ProductGrid rendered with:", {
     productsCount: products.length,
     filterTag,
-    firstProduct: products[0]
+    firstProduct: products[0],
   });
-
 
   return (
     <div className="productgrid_section flex flex-col items-start justify-center w-full h-full gap-4">

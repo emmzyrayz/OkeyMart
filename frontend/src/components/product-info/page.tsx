@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa6";
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
-import {ProductType} from "@/types/product";
+import {Product} from "@/types/product";
 import Link from "next/link";
 
 const renderStars = (rating: number) => {
@@ -53,7 +53,7 @@ const ProductRating = ({rating}: {rating: number}) => {
   );
 };
 
-export const ProductInfo = ({product}: {product: ProductType}) => {
+export const ProductInfo = ({product}: {product: Product}) => {
   const {categories} = product;
 
   return (

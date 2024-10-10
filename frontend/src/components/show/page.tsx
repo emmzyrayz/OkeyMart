@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState, useMemo, useEffect, useCallback} from "react";
+import React, {useRef, useState, useMemo, useEffect} from "react";
 import {useRouter} from "next/navigation";
 import {useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
@@ -111,38 +111,45 @@ export default function Show() {
   const colors = ["red", "orange", "yellow", "black"];
   
 
-  useEffect(() => {
-    if (wishlist && viewedProducts) {
-      const updatedHeartedItemsTop = topProducts.top.map((product) =>
-        wishlist.some((wishItem) => wishItem._id === product._id)
-      );
-      const updatedEyedItemsTop = topProducts.top.map((product) =>
-        viewedProducts.some((viewedItem) => viewedItem._id === product._id)
-      );
+ useEffect(() => {
+   if (wishlist && viewedProducts) {
+     const updatedHeartedItemsTop = topProducts.top.map((product) =>
+       wishlist.some((wishItem) => wishItem._id === product._id)
+     );
+     const updatedEyedItemsTop = topProducts.top.map((product) =>
+       viewedProducts.some((viewedItem) => viewedItem._id === product._id)
+     );
 
-      const updatedHeartedItemsBottom = topProducts.bottom.map((product) =>
-        wishlist.some((wishItem) => wishItem._id === product._id)
-      );
-      const updatedEyedItemsBottom = topProducts.bottom.map((product) =>
-        viewedProducts.some((viewedItem) => viewedItem._id === product._id)
-      );
+     const updatedHeartedItemsBottom = topProducts.bottom.map((product) =>
+       wishlist.some((wishItem) => wishItem._id === product._id)
+     );
+     const updatedEyedItemsBottom = topProducts.bottom.map((product) =>
+       viewedProducts.some((viewedItem) => viewedItem._id === product._id)
+     );
 
-      const allHeartedItems = [
-        ...updatedHeartedItemsTop,
-        ...updatedHeartedItemsBottom,
-      ];
-      const allEyedItems = [...updatedEyedItemsTop, ...updatedEyedItemsBottom];
+     const allHeartedItems = [
+       ...updatedHeartedItemsTop,
+       ...updatedHeartedItemsBottom,
+     ];
+     const allEyedItems = [...updatedEyedItemsTop, ...updatedEyedItemsBottom];
 
-      // Only update the state if there is a change
-      if (JSON.stringify(allHeartedItems) !== JSON.stringify(heartedItems)) {
-        setHeartedItems(allHeartedItems);
-      }
+     setHeartedItems((prevHeartedItems: boolean[]) => {
+       if (
+         JSON.stringify(allHeartedItems) !== JSON.stringify(prevHeartedItems)
+       ) {
+         return allHeartedItems;
+       }
+       return prevHeartedItems;
+     });
 
-      if (JSON.stringify(allEyedItems) !== JSON.stringify(eyedItems)) {
-        setEyedItems(allEyedItems);
-      }
-    }
-  }, [topProducts, wishlist, viewedProducts]);
+     setEyedItems((prevEyedItems: boolean[]) => {
+       if (JSON.stringify(allEyedItems) !== JSON.stringify(prevEyedItems)) {
+         return allEyedItems;
+       }
+       return prevEyedItems;
+     });
+   }
+ }, [topProducts, wishlist, viewedProducts]);
 
   const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
     e.preventDefault(); // Prevent navigation when clicking icons
@@ -169,26 +176,26 @@ export default function Show() {
   
 
   const handleHeartClick = (index: number, product: Product) => {
-    setHeartedItems((prev) => {
+    setHeartedItems((prev: boolean[]) => {
       const updated = [...prev];
       updated[index] = !updated[index];
       if (updated[index]) {
-        addToWishlist(product); // Add to wishlist if liked
+        addToWishlist(product);
       } else {
-        removeFromWishlist(product._id); // Remove from wishlist if unliked
+        removeFromWishlist(product._id);
       }
       return updated;
     });
   };
 
   const handleEyeClick = (index: number, product: Product) => {
-    setEyedItems((prev) => {
+    setEyedItems((prev: boolean[]) => {
       const updated = [...prev];
       updated[index] = !updated[index];
       if (updated[index]) {
-        addToViewed(product); // Add to viewed products
+        addToViewed(product);
       } else {
-        removeFromViewlist(product._id); // Remove from wishlist if unliked
+        removeFromViewlist(product._id);
       }
       return updated;
     });
