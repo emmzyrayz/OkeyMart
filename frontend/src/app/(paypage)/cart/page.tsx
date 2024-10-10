@@ -1,5 +1,5 @@
 "use client";
-import React, {useState} from "react";
+import React from "react";
 import "./cart.css";
 import Image from "next/image";
 import {FaAngleUp, FaAngleDown} from "react-icons/fa";

@@ -1,13 +1,19 @@
 import {useEffect, useState} from "react";
-import { FaStar, FaStarHalf, FaRegStar, FaRegHeart, FaRegEye, FaEye, FaHeart } from "react-icons/fa6";
+import {
+  FaStar,
+  FaStarHalf,
+  FaRegStar,
+  FaRegHeart,
+  FaRegEye,
+  FaEye,
+  FaHeart,
+} from "react-icons/fa6";
 import Image from "next/image";
 import FetchLoader from "../fetchloading/page";
-import { ProductType } from "@/types/product";
+import {Product} from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
-import { ProductNotFound } from "../product-notfound/page";
+import {ProductNotFound} from "../product-notfound/page";
 import {useCart} from "@/context/commerce logic/cartcontext";
-
-
 
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
@@ -52,10 +58,9 @@ const ProductRating = ({rating}: {rating: number}) => {
 const RelatedProductsList = () => {
   const {addToCart} = useCart();
   const {products, loading} = useProductContext();
-  const [relatedProducts, setRelatedProducts] = useState<ProductType[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
   const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-
 
   useEffect(() => {
     if (!loading && products.length > 0) {
@@ -97,7 +102,7 @@ const RelatedProductsList = () => {
     return <ProductNotFound />;
   }
 
-  const handleAddToCart = (product: ProductType) => {
+  const handleAddToCart = (product: Product) => {
     addToCart(product);
     alert(`${product.name} added to cart!`);
     // You can add a notification here to show the item was added

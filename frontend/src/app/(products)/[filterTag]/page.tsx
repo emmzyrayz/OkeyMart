@@ -2,14 +2,14 @@
 import "./prroduct.css";
 import {useEffect, useState} from "react";
 import {ProductGrid} from "@/components/product-grid/page";
-import type {Product, ProductType} from "@/types/product";
+import type {Product} from "@/types/product";
 import FetchLoader from "@/components/fetchloading/page";
 
 // type FilterTag = "today" | "trending" | "top" | "featured";
 
 export default function Product({params}: {params: {filterTag: string}}) {
   console.log("Current filter tag:", params.filterTag);
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,14 +24,14 @@ export default function Product({params}: {params: {filterTag: string}}) {
          throw new Error("Failed to fetch products");
        }
 
-       const data: ProductType[] = await response.json();
+       const data: Product[] = await response.json();
 
        // Filter products based on the tag in the URL
        // Filter products based on the tag in the URL
        let filteredProducts = data; // Default to all products
 
        if (params.filterTag) {
-         filteredProducts = data.filter((product: ProductType) => {
+         filteredProducts = data.filter((product: Product) => {
            switch (params.filterTag) {
              case "today":
                return product.today === true;

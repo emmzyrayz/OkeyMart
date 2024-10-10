@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import ReactCrop, { PixelCrop } from 'react-image-crop';
 import { TiDelete } from 'react-icons/ti';
 import {RiImageAddFill} from "react-icons/ri";
@@ -74,7 +75,7 @@ export const UploadProductImage: React.FC = () => {
         <div className="image-preview-container">
           {selectedImages.map((src, index) => (
             <div key={index} className="image-preview">
-              <img src={src} alt={`preview-${index}`} />
+              <Image src={src} width={100} height={100} alt={`preview-${index}`} />
               <div className="image-preview-btn items-center justify-center w-full gap-5">
                 <button className='' onClick={() => removeImage(index)}>
                   <TiDelete className="fa" />
@@ -95,7 +96,7 @@ export const UploadProductImage: React.FC = () => {
               onChange={(newCrop) => setCropConfig(newCrop)}
               onComplete={onCropComplete}
             >
-              <img className="rounded-md" src={croppingImage} alt="cropping" />
+              <Image className="rounded-md" width={100} height={100} src={croppingImage} alt="cropping" />
             </ReactCrop>
             <button
               className="bg-[--secondary2] hover:bg-[--btn-hover] hover:text-[--text1] p-2 rounded text-[--text] font-medium text-[18px] w-fit right-2"

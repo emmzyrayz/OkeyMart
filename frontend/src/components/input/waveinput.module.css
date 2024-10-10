@@ -90,7 +90,7 @@ select.input::-ms-expand {
 }
 
 /* Add a custom dropdown arrow */
-.waveGroup select::after {
+.waveGroup .input::after {
     content: '▼';
     font-size: 12px;
     color: #999;

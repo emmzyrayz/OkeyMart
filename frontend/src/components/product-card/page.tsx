@@ -13,16 +13,15 @@ import {
 import "./prod-card.css";
 import {useState} from "react";
 import React from "react";
-import { useRouter } from "next/navigation";
-import { ProductType } from "@/types/product";
+import {useRouter} from "next/navigation";
+import {Product} from "@/types/product";
 import {useCart} from "@/context/commerce logic/cartcontext";
 // import Link from "next/link";
 
-
 type ProductCardProps = {
-  product: ProductType;
+  product: Product;
   filterTag: string;
-}
+};
 
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
@@ -99,7 +98,7 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
     router.push(url);
   };
 
-  const handleAddToCart = (product: ProductType) => {
+  const handleAddToCart = (product: Product) => {
     addToCart(product);
     alert(`${product.name} added to cart!`);
     // You can add a notification here to show the item was added
