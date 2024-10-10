@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
+import ReactCrop, { PixelCrop } from 'react-image-crop';
 import { TiDelete } from 'react-icons/ti';
 import {RiImageAddFill} from "react-icons/ri";
 import {FaCropSimple} from "react-icons/fa6";

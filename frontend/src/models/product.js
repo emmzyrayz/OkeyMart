@@ -1,7 +1,17 @@
 // models/product.js
 import mongoose from "mongoose";
 
-// Define the schema
+const DynamicFieldsSchema = new mongoose.Schema(
+  {
+    // This will store category-specific fields
+    fieldValues: {
+      type: Map,
+      of: mongoose.Schema.Types.Mixed,
+    },
+  },
+  {strict: false}
+);
+
 const ProductSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -66,20 +76,10 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  filters: {
-    color: {type: [String], required: false},
-    ram: {type: [String], required: false},
-    rom: {type: [String], required: false},
-    condition: {
-      type: String,
-      enum: ["New", "Refurbished", "Used"],
-      required: false,
-    },
-    type: {type: [String], required: false},
-    brand: {type: [String], required: false},
-    material: {type: [String], required: false},
-    otherFeatures: [String],
-  },
+  // Dynamic fields based on category/subcategory
+  categorySpecificFields: DynamicFieldsSchema,
+
+  // Base fields remain the same
   createdAt: {
     type: Date,
     default: Date.now,
@@ -110,17 +110,8 @@ const ProductSchema = new mongoose.Schema({
     max: 5,
     default: 0,
   },
-  liked: {
-    type: Boolean,
-    default: false,
-  },
-  viewed: {
-    type: Boolean,
-    default: false,
-  },
 });
 
-// Use mongoose.models.Product if it exists, otherwise create a new model
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);
 

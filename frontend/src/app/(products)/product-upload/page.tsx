@@ -7,6 +7,7 @@ import { UploadProductVideo } from '@/components/Upload/video/page';
 import { WaveInput } from '@/components/input/waveinput';
 import { useState } from 'react';
 import LocationSelector from '@/components/locationselect/locationselector';
+import DynamicProductForm from '@/components/dynamicproductform/dynamicProductForm';
 
 export default function ProdUplink() {
 
@@ -88,46 +89,17 @@ export default function ProdUplink() {
               </div>
 
               <div className="uplink_location">
-                <form action="" className="w-full h-[80px] py-4">
+                <form action="" className="w-full h-full py-4">
                   <LocationSelector onChange={handleLocationChange} />
                 </form>
               </div>
 
-              <div className="uplink_type flex flex-row items-center justify-start gap-1 w-full">
-                <WaveInput
-                  label="Type *"
-                  name="type"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={handleNameChange}
-                />
-              </div>
 
-              <div className="uplink_gender flex flex-row items-center justify-start gap-1 w-full">
-                <WaveInput
-                  label="Gender"
-                  name="gender"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={handleNameChange}
-                />
-              </div>
-
-              <div className="uplink_description flex flex-row items-center justify-start gap-1 w-full">
-                <WaveInput
-                  label="Description*"
-                  name="description"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={handleNameChange}
-                />
-              </div>
+              <DynamicProductForm />
             </div>
 
             <div className="category_uplink_ dark-glass flex flex-col w-full p-2 gap-2">
+              <span className="text">Product Price</span>
               <div className="uplink_price flex flex-row items-center justify-start gap-1 w-full">
                 <WaveInput
                   label="Price*"
@@ -139,15 +111,31 @@ export default function ProdUplink() {
                 />
               </div>
 
-              <div className="uplink_bulk-price flex flex-row items-center justify-start gap-1 w-full">
-                <WaveInput
-                  label="Add_bulk_price"
-                  name="bulkprice"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={handleNameChange}
-                />
+              <span className="text">Product Bulk Price</span>
+              <div className="bulk_price flex flex-row items-center justify-center w-full gap-1">
+                <div className="uplink_bulk-price flex flex-row items-center justify-start  w-[80%]">
+                  <WaveInput
+                    label="bulk_number"
+                    name="bulknumber"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={handleNameChange}
+                  />
+                </div>
+                <span className="flex flex-row items-center justify-center w-[10%] h-full  text-[20px] text-[--text1] font-medium ">
+                  for
+                </span>
+                <div className="uplink_bulk-price flex flex-row items-center justify-start gap-1 w-[80%]">
+                  <WaveInput
+                    label="bulk_price"
+                    name="bulkprice"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={handleNameChange}
+                  />
+                </div>
               </div>
             </div>
           </div>

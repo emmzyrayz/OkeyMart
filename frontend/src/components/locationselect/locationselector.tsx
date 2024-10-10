@@ -870,7 +870,7 @@ export default function LocationSelector({
 
   return (
     <div
-      className={`flex flex-row w-full items-center h-full gap-2 justify-start ${className}`}
+      className={`flex flex-row flex-wrap w-full items-center h-full gap-2 justify-start ${className}`}
     >
       <div className="flex flex-col h-full items-start justify-center ">
         <label
@@ -922,7 +922,7 @@ export default function LocationSelector({
       </div>
 
       {selectedState && selectedLGA && (
-        <p className="text-sm font-medium text-gray-600 h-full flex  items-end justify-end">
+        <p className="text-sm font-medium pt-[30px] text-gray-600 h-full flex  items-end justify-end">
           Selected location: {selectedLGA}, {selectedState}
         </p>
       )}
