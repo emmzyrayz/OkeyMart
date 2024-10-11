@@ -4,128 +4,128 @@ const mongoose = require("mongoose");
 const {faker} = require("@faker-js/faker");
 const router = express.Router();
 
-// Import your category configuration
+// Fixed categories structure to match schema
 const categories = [
   {
     name: "Agriculture & Food",
     subcategories: [
-      "Farm Animals",
-      "Farm machinery & Equipment",
-      "Feeds, Supplements & Seeds",
-      "Meal & Drink",
+      {
+        name: "Farm Animals",
+        requiredFields: [
+          "animalType",
+          "age",
+          "breed",
+          "weight",
+          "healthStatus",
+        ],
+        dropdownOptions: {
+          animalType: [
+            "Cows",
+            "Sheep",
+            "Goats",
+            "Pigs",
+            "Chickens",
+            "Fish",
+            "Cane Rat",
+            "Rabbits",
+            "Chinchillas",
+            "Ducks",
+          ],
+          breed: ["Local", "Exotic", "Crossbreed"],
+          healthStatus: ["Healthy", "Vaccinated", "Under Treatment"],
+        },
+      },
+      {
+        name: "Farm machinery & Equipment",
+        requiredFields: [
+          "equipmentType",
+          "brand",
+          "model",
+          "condition",
+          "color",
+        ],
+        dropdownOptions: {
+          equipmentType: [
+            "Tractor",
+            "Harvester",
+            "Plough",
+            "Irrigation System",
+            "Cages",
+            "Milling Machines",
+            "Knapsack Sprayer",
+          ],
+          brand: ["John Deere", "Massey Ferguson", "New Holland", "Kubota"],
+          condition: ["Brand New", "Used", "Seller Refurbished"],
+        },
+      },
+      {
+        name: "Feeds, Supplements & Seeds",
+        requiredFields: ["type", "weight", "brand", "expiryDate"],
+        dropdownOptions: {
+          type: ["Feeds", "Plant Seeds", "Supplement"],
+          brand: ["Purina", "Royal Canin", "Pioneer Seeds", "Monsanto"],
+        },
+      },
+      {
+        name: "Meal & Drink",
+        requiredFields: ["type", "litre", "brand", "expiryDate"],
+        dropdownOptions: {
+          type: ["Bottle", "Can", "Plastic"],
+          brand: ["Coca-Cola", "Pepsi", "Nestlé", "Unilever"],
+        },
+      },
     ],
   },
-  {
-    name: "Babies & Kid",
-    subcategories: ["Children's Clothing", "Children's Furniture"],
-  },
-  {
-    name: "Electronics",
-    subcategories: ["Laptops & Computers"],
-  },
-  // Add other categories as needed
+  // Add other categories following the same structure...
 ];
 
-const generateCategorySpecificFields = (category, subcategory) => {
-  switch (category) {
-    case "Agriculture & Food":
-      switch (subcategory) {
-        case "Farm Animals":
-          return {
-            fieldValues: new Map([
-              [
-                "animalType",
-                faker.helpers.arrayElement([
-                  "Cows",
-                  "Sheep",
-                  "Goats",
-                  "Pigs",
-                  "Chickens",
-                  "Fish",
-                ]),
-              ],
-              ["age", faker.number.int({min: 1, max: 10}) + " months"],
-              [
-                "breed",
-                faker.helpers.arrayElement(["Local", "Exotic", "Crossbreed"]),
-              ],
-              ["weight", faker.number.int({min: 10, max: 1000}) + " kg"],
-              [
-                "healthStatus",
-                faker.helpers.arrayElement([
-                  "Healthy",
-                  "Vaccinated",
-                  "Under Treatment",
-                ]),
-              ],
-            ]),
-          };
-        case "Farm machinery & Equipment":
-          return {
-            fieldValues: new Map([
-              [
-                "equipmentType",
-                faker.helpers.arrayElement([
-                  "Tractor",
-                  "Harvester",
-                  "Plough",
-                  "Irrigation System",
-                ]),
-              ],
-              [
-                "brand",
-                faker.helpers.arrayElement([
-                  "John Deere",
-                  "Massey Ferguson",
-                  "New Holland",
-                  "Kubota",
-                ]),
-              ],
-              ["model", faker.vehicle.model()],
-              [
-                "condition",
-                faker.helpers.arrayElement([
-                  "Brand New",
-                  "Used",
-                  "Seller Refurbished",
-                ]),
-              ],
-              ["color", faker.color.human()],
-            ]),
-          };
-        // Add other subcategories
+const generateCategorySpecificFields = (category, subcategoryName) => {
+  const categoryConfig = categories.find((cat) => cat.name === category);
+  if (!categoryConfig) return {fieldValues: new Map()};
+
+  const subcategoryConfig = categoryConfig.subcategories.find(
+    (sub) => sub.name === subcategoryName
+  );
+  if (!subcategoryConfig) return {fieldValues: new Map()};
+
+  const fieldValues = new Map();
+
+  // Generate values for each required field
+  subcategoryConfig.requiredFields.forEach((field) => {
+    const options = subcategoryConfig.dropdownOptions[field];
+    if (options) {
+      fieldValues.set(field, faker.helpers.arrayElement(options));
+    } else {
+      // Generate appropriate random values for non-dropdown fields
+      switch (field) {
+        case "age":
+          fieldValues.set(
+            field,
+            `${faker.number.int({min: 1, max: 10})} months`
+          );
+          break;
+        case "weight":
+          fieldValues.set(
+            field,
+            `${faker.number.int({min: 10, max: 1000})} kg`
+          );
+          break;
+        case "litre":
+          fieldValues.set(field, `${faker.number.int({min: 1, max: 20})} L`);
+          break;
+        case "expiryDate":
+          fieldValues.set(
+            field,
+            faker.date.future().toISOString().split("T")[0]
+          );
+          break;
         default:
-          return {fieldValues: new Map()};
+          fieldValues.set(field, faker.commerce.productAdjective());
       }
+    }
+  });
 
-    case "Electronics":
-      return {
-        fieldValues: new Map([
-          [
-            "brand",
-            faker.helpers.arrayElement(["Apple", "Dell", "HP", "Lenovo"]),
-          ],
-          [
-            "processor",
-            faker.helpers.arrayElement([
-              "Intel i3",
-              "Intel i5",
-              "Intel i7",
-              "AMD Ryzen",
-            ]),
-          ],
-          ["ram", faker.helpers.arrayElement(["4GB", "8GB", "16GB", "32GB"])],
-          ["storage", faker.helpers.arrayElement(["256GB", "512GB", "1TB"])],
-          [
-            "screenSize",
-            faker.helpers.arrayElement(['13"', '14"', '15.6"', '17"']),
-          ],
-        ]),
-      };
-
-    default:
-      return {fieldValues: new Map()};
-  }
+  return {fieldValues};
 };
 
 // Route: Populate database with fake products
@@ -141,33 +141,27 @@ router.post("/populate", async (req, res) => {
 
     console.log("Starting database population process...");
 
-    // Clear existing products with confirmation
+    // Clear existing products
     const deleteResult = await Product.deleteMany({});
     console.log(`Cleared ${deleteResult.deletedCount} existing products`);
 
     const products = [];
-    const numberOfProducts = 50; // Adjust as needed
-
-    console.log(`Generating ${numberOfProducts} new products...`);
+    const numberOfProducts = 50;
 
     for (let i = 0; i < numberOfProducts; i++) {
-      // Progress logging
-      if (i > 0 && i % 10 === 0) {
-        console.log(`Generated ${i} products...`);
-      }
-
       // Select random category and subcategory
       const categoryObj = faker.helpers.arrayElement(categories);
-      const category = categoryObj.name;
-      const subcategory = faker.helpers.arrayElement(categoryObj.subcategories);
+      const subcategoryObj = faker.helpers.arrayElement(
+        categoryObj.subcategories
+      );
 
       // Generate category-specific fields
       const categorySpecificFields = generateCategorySpecificFields(
-        category,
-        subcategory
+        categoryObj.name,
+        subcategoryObj.name
       );
 
-      // Generate images with placeholder URLs instead of faker.image
+      // Generate placeholder images
       const generatePlaceholderImage = (index) =>
         `/api/placeholder/${400 + index}/${300 + index}`;
 
@@ -175,7 +169,7 @@ router.post("/populate", async (req, res) => {
         generatePlaceholderImage(index)
       );
 
-      const mainImage = images[0]; // Use first image as main image
+      const mainImage = images[0];
 
       const product = {
         name: faker.commerce.productName(),
@@ -184,8 +178,8 @@ router.post("/populate", async (req, res) => {
         countInStock: faker.number.int({min: 0, max: 100}),
         images,
         mainImage,
-        category,
-        subcategory,
+        category: categoryObj.name, // Fixed: Using the category name string
+        subcategory: subcategoryObj.name, // Fixed: Using the subcategory name string
         categorySpecificFields,
         createdAt: faker.date.past(),
         discount: faker.number.int({min: 0, max: 50}),
@@ -201,11 +195,9 @@ router.post("/populate", async (req, res) => {
       products.push(product);
     }
 
-    // Insert all products with batch size control
+    // Insert products in batches
     const batchSize = 10;
     const batches = Math.ceil(products.length / batchSize);
-
-    console.log(`Inserting products in ${batches} batches...`);
 
     for (let i = 0; i < batches; i++) {
       const start = i * batchSize;
