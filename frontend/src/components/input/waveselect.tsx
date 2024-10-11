@@ -1,15 +1,8 @@
 // components/WaveSelect.tsx
 import React, {CSSProperties} from "react";
 import styles from "./waveinput.module.css";
+import { WaveSelectProps } from '@/types/component'
 
-interface WaveSelectProps {
-  label: string;
-  name: string;
-  required?: boolean;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: {value: string; label: string}[];
-}
 
 export const WaveSelect: React.FC<WaveSelectProps> = ({
   label,

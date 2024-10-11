@@ -2,15 +2,7 @@
 import React from "react";
 import {CSSProperties} from "react";
 import styles from "./waveinput.module.css";
-
-interface WaveInputProps {
-  label: string;
-  name: string;
-  required?: boolean;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-}
+import {WaveInputProps} from '@/types/component'
 
 export const WaveInput: React.FC<WaveInputProps> = ({
   label,

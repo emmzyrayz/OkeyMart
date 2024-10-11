@@ -1,5 +1,5 @@
 // config/categoryValidation.ts
-import {CategoryConfig} from "@/types/categorytypes";
+import {CategoryConfig} from "@/types/product";
 
 export const categories: CategoryConfig[] = [
   {
