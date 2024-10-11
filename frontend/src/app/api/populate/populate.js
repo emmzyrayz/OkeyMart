@@ -1,5 +1,6 @@
 const express = require("express");
 const Product = require("../models/products");
+const mongoose = require("mongoose");
 const {faker} = require("@faker-js/faker");
 const router = express.Router();
 
@@ -130,13 +131,31 @@ const generateCategorySpecificFields = (category, subcategory) => {
 // Route: Populate database with fake products
 router.post("/populate", async (req, res) => {
   try {
-    // Clear existing products
-    await Product.deleteMany({});
+    // Check database connection
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error(
+        "Database not connected. Connection state: " +
+          mongoose.connection.readyState
+      );
+    }
+
+    console.log("Starting database population process...");
+
+    // Clear existing products with confirmation
+    const deleteResult = await Product.deleteMany({});
+    console.log(`Cleared ${deleteResult.deletedCount} existing products`);
 
     const products = [];
     const numberOfProducts = 50; // Adjust as needed
 
+    console.log(`Generating ${numberOfProducts} new products...`);
+
     for (let i = 0; i < numberOfProducts; i++) {
+      // Progress logging
+      if (i > 0 && i % 10 === 0) {
+        console.log(`Generated ${i} products...`);
+      }
+
       // Select random category and subcategory
       const categoryObj = faker.helpers.arrayElement(categories);
       const category = categoryObj.name;
@@ -148,9 +167,15 @@ router.post("/populate", async (req, res) => {
         subcategory
       );
 
-      // Generate 5 unique fake images
-      const images = Array.from({length: 5}, () => faker.image.url());
-      const mainImage = faker.helpers.arrayElement(images);
+      // Generate images with placeholder URLs instead of faker.image
+      const generatePlaceholderImage = (index) =>
+        `/api/placeholder/${400 + index}/${300 + index}`;
+
+      const images = Array.from({length: 5}, (_, index) =>
+        generatePlaceholderImage(index)
+      );
+
+      const mainImage = images[0]; // Use first image as main image
 
       const product = {
         name: faker.commerce.productName(),
@@ -176,15 +201,35 @@ router.post("/populate", async (req, res) => {
       products.push(product);
     }
 
-    // Insert all products
-    await Product.insertMany(products);
+    // Insert all products with batch size control
+    const batchSize = 10;
+    const batches = Math.ceil(products.length / batchSize);
+
+    console.log(`Inserting products in ${batches} batches...`);
+
+    for (let i = 0; i < batches; i++) {
+      const start = i * batchSize;
+      const end = Math.min(start + batchSize, products.length);
+      const batch = products.slice(start, end);
+
+      await Product.insertMany(batch, {ordered: true});
+      console.log(`Inserted batch ${i + 1} of ${batches}`);
+    }
+
     res.status(201).json({
+      success: true,
       message: "Products populated successfully",
       count: products.length,
+      deletedCount: deleteResult.deletedCount,
     });
   } catch (error) {
     console.error("Error populating products:", error);
-    res.status(500).json({message: "Error populating products", error});
+    res.status(500).json({
+      success: false,
+      message: "Error populating products",
+      error: error.message,
+      connectionState: mongoose.connection.readyState,
+    });
   }
 });
 
