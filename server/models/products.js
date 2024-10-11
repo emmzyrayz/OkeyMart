@@ -1,5 +1,5 @@
 // models/product.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const DynamicFieldsSchema = new mongoose.Schema(
   {
@@ -115,4 +115,4 @@ const ProductSchema = new mongoose.Schema({
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);
 
-export default Product;
+module.exports = Product;

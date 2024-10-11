@@ -34,9 +34,10 @@ export async function POST(req) {
       price: body.price,
       countInStock: body.countInStock,
       images: body.images,
-      mainImage: body.mainImage, // Ensure this is passed in correctly
-      categories: body.categories, // Ensure this is correctly structured
-      filters: body.filters,
+      mainImage: body.mainImage,
+      category: body.category,
+      subcategory: body.subcategory,
+      categorySpecificFields: body.categorySpecificFields,
       discount: body.discount,
       featured: body.featured,
       trending: body.trending,

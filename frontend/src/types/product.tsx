@@ -1,51 +1,93 @@
-// Type for product-specific input options (like brands, materials, etc.)
-export type CategoryDetails = {
-  types?: string[]; // e.g., list of farm animals, list of children's clothing types
-  brands?: string[]; // e.g., clothing brands for Babies & Kids
-  materials?: string[]; // e.g., fabrics for clothing or materials for toys
-  colors?: string[]; // e.g., colors available for clothing, toys, etc.
-  conditions?: ("New" | "Used" | "Refurbished")[]; // e.g., product condition
-  otherFeatures?: string[]; // Additional features specific to this category
-};
+// types/productTypes.ts
+export interface CategorySpecificFields {
+  fieldValues: Map<string, any>;
+}
 
-// Subcategory type that includes additional options for forms
-export type SubCategory = {
-  name: string; // e.g., Farm Animal, Children's Clothing
-  details?: CategoryDetails; // Optional form details for this subcategory
-};
-
-// ProductCategory type to represent categories and their subcategories
-export type ProductCategory = {
-  name: string; // e.g., Agriculture & Food, Babies & Kids
-  subcategories: SubCategory[]; // Array of subcategories with their details
-};
-
-// Filters type for the product filters
-export type ProductFilters = {
-  color?: string[]; // e.g., ["Black", "White"]
-  ram?: string[]; // e.g., ["8GB", "16GB"]
-  rom?: string[]; // e.g., ["128GB", "256GB"]
-  condition?: "New" | "Refurbished" | "Used"; // e.g., "New", "Refurbished", "Used"
-  otherFeatures?: string[]; // Add any other filterable options (optional)
-};
-
-// Main Product type based on your database schema
-export type Product = {
+export interface Product {
   _id: string;
-  id: string; // This will typically be a string in MongoDB
   name: string;
   description: string;
   price: number;
   countInStock: number;
-  images: string[]; // Array of image URLs
-  mainImage: string; // URL of the main image
-  categories: ProductCategory[]; // Array of categories
-  filters: ProductFilters; // Filters object
-  createdAt: Date; // Date when the product was created
-  discount: number; // Optional discount field
-  featured?: boolean; // Optional field to indicate if the product is featured
-  trending?: boolean; // Optional field to indicate if the product is trending
-  top?: boolean; // Optional field for top products
-  today?: boolean; // Optional field for today's products
-  rating: number; // Optional rating field
-};
+  images: string[];
+  mainImage: string;
+  category: string;
+  subcategory: string;
+  categorySpecificFields: CategorySpecificFields;
+  createdAt: Date;
+  discount: number;
+  featured?: boolean;
+  trending?: boolean;
+  top?: boolean;
+  today?: boolean;
+  rating: number;
+}
+
+// Category configuration types
+export interface SubcategoryConfig {
+  name: string;
+  requiredFields: string[];
+  dropdownOptions: {
+    [key: string]: string[];
+  };
+}
+
+export interface CategoryConfig {
+  name: string;
+  subcategories: SubcategoryConfig[];
+}
+
+// Form handling types
+export interface ProductFormData
+  extends Omit<Product, "_id" | "createdAt" | "categorySpecificFields"> {
+  categorySpecificFields: {
+    [key: string]: string | number | boolean;
+  };
+}
+
+// Helper type for form field values
+export type FormFieldValue = string | number | boolean | string[];
+
+// Validation types
+export interface ValidationRule {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  pattern?: RegExp;
+  message?: string;
+}
+
+export interface FieldValidation {
+  [fieldName: string]: ValidationRule;
+}
+
+// Helper functions
+export const createEmptyProduct = (): ProductFormData => ({
+  name: "",
+  description: "",
+  price: 0,
+  countInStock: 0,
+  images: [],
+  mainImage: "",
+  category: "",
+  subcategory: "",
+  categorySpecificFields: {},
+  discount: 0,
+  rating: 0,
+});
+
+export const mapFormDataToProduct = (
+  formData: ProductFormData
+): Omit<Product, "_id" | "createdAt"> => ({
+  ...formData,
+  categorySpecificFields: {
+    fieldValues: new Map(Object.entries(formData.categorySpecificFields)),
+  },
+});
+
+export const mapProductToFormData = (product: Product): ProductFormData => ({
+  ...product,
+  categorySpecificFields: Object.fromEntries(
+    product.categorySpecificFields.fieldValues
+  ),
+});
