@@ -4,6 +4,7 @@ import {FaCopyright, FaRegPaperPlane} from "react-icons/fa";
 import QrCode from '../../assets/img/products/Qrcode.png';
 import Playstore from "../../assets/img/products/g-playstore.png";
 import Appstore from "../../assets/img/products/appstore.png";
+import Link from 'next/link';
 
 
 export default function Footer() {
@@ -30,18 +31,30 @@ export default function Footer() {
             </div>
             <div className="account">
               <h2 className="title">Account</h2>
-              <span>My Account</span>
-              <span>Login/Register</span>
-              <span>Cart</span>
-              <span>Wishlist</span>
-              <span>Shop</span>
+              <Link href="/profile">
+                <span>My Account</span>
+              </Link>
+              <Link href="/signup">
+                <span>Login/Register</span>
+              </Link>
+              <Link href="/cart">
+                <span>Cart</span>
+              </Link>
+              <Link href="/wishlist">
+                <span>Wishlist</span>
+              </Link>
+              <Link href="/live_location">
+                <span>Shops</span>
+              </Link>
             </div>
             <div className="quick-link">
               <h2 className="title">Quick Link</h2>
               <span>Privacy Policy</span>
               <span>Terms Of Use</span>
               <span>FAQ</span>
-              <span>Contact</span>
+              <Link href="/contact">
+                <span>Contact</span>
+              </Link>
             </div>
             <div className="app">
               <h2 className="title">Download App</h2>
