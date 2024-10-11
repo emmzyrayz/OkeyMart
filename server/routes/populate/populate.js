@@ -1,5 +1,5 @@
 const express = require("express");
-const Product = require("../models/products");
+const Product = require("../../models/products");
 const mongoose = require("mongoose");
 const {faker} = require("@faker-js/faker");
 
