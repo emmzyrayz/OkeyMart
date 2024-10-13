@@ -10,6 +10,7 @@ import LoadingScreen from "@/components/loadingscreen/page";
 import { ProductProvider } from "@/context/productContext/productcontext";
 import { CartProvider } from "@/context/commerce logic/cartcontext";
 import { ViewWishProvider } from "@/context/commerce logic/view-wishcontext";
+import { SearchProvider } from "@/context/searchcontext/searchcontext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -60,25 +61,27 @@ export default function RootLayout({
     <ProductProvider>
       <CartProvider>
         <ViewWishProvider>
-          <html lang="en">
-            <head>
-              <meta charSet="UTF-8" />
-            </head>
-            <body>
-              {loading && <LoadingScreen />}
-              {!loading && (
-                <div className="fadeIn-load">
-                  <div className="page-container">
-                    {!hideLayout && <TopBar />}
-                    <div className={`${inter.className} content`}>
-                      {children}
+          <SearchProvider>
+            <html lang="en">
+              <head>
+                <meta charSet="UTF-8" />
+              </head>
+              <body>
+                {loading && <LoadingScreen />}
+                {!loading && (
+                  <div className="fadeIn-load">
+                    <div className="page-container">
+                      {!hideLayout && <TopBar />}
+                      <div className={`${inter.className} content`}>
+                        {children}
+                      </div>
                     </div>
+                    {!hideLayout && <Footer />}
                   </div>
-                  {!hideLayout && <Footer />}
-                </div>
-              )}
-            </body>
-          </html>
+                )}
+              </body>
+            </html>
+          </SearchProvider>
         </ViewWishProvider>
       </CartProvider>
     </ProductProvider>

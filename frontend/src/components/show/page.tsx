@@ -86,8 +86,8 @@ export default function Show() {
     removeFromViewlist,
     removeFromWishlist,
   } = useWishContext();
-  const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
-  const [eyedItems, setEyedItems] = useState<boolean[]>([]);
+  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>({});
+  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
   const [activeColors, setActiveColors] = useState<string[]>(
     Array(16).fill("red")
   );
@@ -113,41 +113,20 @@ export default function Show() {
 
  useEffect(() => {
    if (wishlist && viewedProducts) {
-     const updatedHeartedItemsTop = topProducts.top.map((product) =>
-       wishlist.some((wishItem) => wishItem._id === product._id)
-     );
-     const updatedEyedItemsTop = topProducts.top.map((product) =>
-       viewedProducts.some((viewedItem) => viewedItem._id === product._id)
-     );
+     const updatedHeartedItems: {[key: string]: boolean} = {};
+     const updatedEyedItems: {[key: string]: boolean} = {};
 
-     const updatedHeartedItemsBottom = topProducts.bottom.map((product) =>
-       wishlist.some((wishItem) => wishItem._id === product._id)
-     );
-     const updatedEyedItemsBottom = topProducts.bottom.map((product) =>
-       viewedProducts.some((viewedItem) => viewedItem._id === product._id)
-     );
-
-     const allHeartedItems = [
-       ...updatedHeartedItemsTop,
-       ...updatedHeartedItemsBottom,
-     ];
-     const allEyedItems = [...updatedEyedItemsTop, ...updatedEyedItemsBottom];
-
-     setHeartedItems((prevHeartedItems: boolean[]) => {
-       if (
-         JSON.stringify(allHeartedItems) !== JSON.stringify(prevHeartedItems)
-       ) {
-         return allHeartedItems;
-       }
-       return prevHeartedItems;
+     [...topProducts.top, ...topProducts.bottom].forEach((product) => {
+       updatedHeartedItems[product._id] = wishlist.some(
+         (wishItem) => wishItem._id === product._id
+       );
+       updatedEyedItems[product._id] = viewedProducts.some(
+         (viewedItem) => viewedItem._id === product._id
+       );
      });
 
-     setEyedItems((prevEyedItems: boolean[]) => {
-       if (JSON.stringify(allEyedItems) !== JSON.stringify(prevEyedItems)) {
-         return allEyedItems;
-       }
-       return prevEyedItems;
-     });
+     setHeartedItems(updatedHeartedItems);
+     setEyedItems(updatedEyedItems);
    }
  }, [topProducts, wishlist, viewedProducts]);
 
@@ -175,11 +154,11 @@ export default function Show() {
 
   
 
-  const handleHeartClick = (index: number, product: Product) => {
-    setHeartedItems((prev: boolean[]) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      if (updated[index]) {
+  const handleHeartClick = (product: Product) => {
+    setHeartedItems((prev) => {
+      const updated = {...prev};
+      updated[product._id] = !updated[product._id];
+      if (updated[product._id]) {
         addToWishlist(product);
       } else {
         removeFromWishlist(product._id);
@@ -188,11 +167,11 @@ export default function Show() {
     });
   };
 
-  const handleEyeClick = (index: number, product: Product) => {
-    setEyedItems((prev: boolean[]) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      if (updated[index]) {
+  const handleEyeClick = (product: Product) => {
+    setEyedItems((prev) => {
+      const updated = {...prev};
+      updated[product._id] = !updated[product._id];
+      if (updated[product._id]) {
         addToViewed(product);
       } else {
         removeFromViewlist(product._id);
@@ -253,78 +232,79 @@ export default function Show() {
 
             return (
               <div className="top_item" key={product._id}>
-                <Link href={`/show/${product._id}`}>
-                  <div className="product_image">
-                    <Image
-                      alt={product.name}
-                      width={200}
-                      height={300}
-                      src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                    />
-                    <div key={`icons-${product.id}`} className="product_icons">
+                {product?._id && (
+                  <Link href={`/top/${product._id}`}>
+                    <div className="product_image">
+                      <Image
+                        alt={product.name}
+                        width={200}
+                        height={300}
+                        src={product.mainImage || "/default-image.jpg"} // Ensure a default image
+                      />
                       <div
-                        className="icon-heart"
-                        onClick={(e) =>
-                          handleIconClick(e, () =>
-                            handleHeartClick(index, product)
-                          )
-                        }
+                        key={`icons-${product._id}`}
+                        className="product_icons"
                       >
-                        {heartedItems[index] ? (
-                          <FaHeart className="fas" />
-                        ) : (
-                          <FaRegHeart className="fa" />
-                        )}
-                      </div>
-                      <div
-                        className="icon-eye"
-                        onClick={(e) =>
-                          handleIconClick(e, () =>
-                            handleEyeClick(index, product)
-                          )
-                        }
-                      >
-                        {eyedItems[index] ? (
-                          <FaEye className="fas" />
-                        ) : (
-                          <FaRegEye className="fa" />
-                        )}
-                      </div>
-                    </div>
-                    <div
-                      className="product_btn"
-                      onClick={(e) => handleAddToCart(e, product)}
-                    >
-                      <span>Add To Cart</span>
-                    </div>
-                  </div>
-                  <div className="product_detal flex flex-col">
-                    <h3>{product.name}</h3>
-                    <div className="info flex flex-row gap-1 items-center">
-                      <span className="price">{product.price}</span>
-                      <div className="rating">
-                        <div className="rating_icon flex flex-row items-center">
-                          <ProductRating product={product} />{" "}
-                          {/* Render the rating */}
+                        <div
+                          className="icon-heart"
+                          onClick={(e) =>
+                            handleIconClick(e, () => handleHeartClick(product))
+                          }
+                        >
+                          {heartedItems[index] ? (
+                            <FaHeart className="fas" />
+                          ) : (
+                            <FaRegHeart className="fa" />
+                          )}
+                        </div>
+                        <div
+                          className="icon-eye"
+                          onClick={(e) =>
+                            handleIconClick(e, () => handleEyeClick(product))
+                          }
+                        >
+                          {eyedItems[index] ? (
+                            <FaEye className="fas" />
+                          ) : (
+                            <FaRegEye className="fa" />
+                          )}
                         </div>
                       </div>
-                      <span className="reviews">
-                        ({product.rating?.toFixed(1) ?? "N/A"})
-                      </span>
+                      <div
+                        className="product_btn"
+                        onClick={(e) => handleAddToCart(e, product)}
+                      >
+                        <span>Add To Cart</span>
+                      </div>
                     </div>
-                    <div className="color-var flex flex-row gap-2 items-center relative">
-                      {colors.map((color) => (
-                        <div
-                          key={color}
-                          className={`color-item ${color} ${
-                            activeColors[index] === color ? "active" : ""
-                          }`}
-                          onClick={() => handleColorChange(index, color)}
-                        ></div>
-                      ))}
+                    <div className="product_detal flex flex-col">
+                      <h3>{product.name}</h3>
+                      <div className="info flex flex-row gap-1 items-center">
+                        <span className="price">{product.price}</span>
+                        <div className="rating">
+                          <div className="rating_icon flex flex-row items-center">
+                            <ProductRating product={product} />{" "}
+                            {/* Render the rating */}
+                          </div>
+                        </div>
+                        <span className="reviews">
+                          ({product.rating?.toFixed(1) ?? "N/A"})
+                        </span>
+                      </div>
+                      <div className="color-var flex flex-row gap-2 items-center relative">
+                        {colors.map((color) => (
+                          <div
+                            key={color}
+                            className={`color-item ${color} ${
+                              activeColors[index] === color ? "active" : ""
+                            }`}
+                            onClick={() => handleColorChange(index, color)}
+                          ></div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                )}
               </div>
             );
           })}
@@ -338,82 +318,83 @@ export default function Show() {
 
             return (
               <div className="top_item" key={product._id}>
-                <Link href={`/show/${product._id}`}>
-                  <div className="product_image">
-                    <Image
-                      alt={product.name}
-                      width={200}
-                      height={300}
-                      src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                    />
-                    <div key={`icons-${product.id}`} className="product_icons">
+                {product?._id && (
+                  <Link href={`/top/${product._id}`}>
+                    <div className="product_image">
+                      <Image
+                        alt={product.name}
+                        width={200}
+                        height={300}
+                        src={product.mainImage || "/default-image.jpg"} // Ensure a default image
+                      />
                       <div
-                        className="icon-heart"
-                        onClick={(e) =>
-                          handleIconClick(e, () =>
-                            handleHeartClick(index, product)
-                          )
-                        }
+                        key={`icons-${product._id}`}
+                        className="product_icons"
                       >
-                        {heartedItems[index + topProducts.top.length] ? (
-                          <FaHeart className="fas" />
-                        ) : (
-                          <FaRegHeart className="fa" />
-                        )}
-                      </div>
-                      <div
-                        className="icon-eye"
-                        onClick={(e) =>
-                          handleIconClick(e, () =>
-                            handleEyeClick(index, product)
-                          )
-                        }
-                      >
-                        {eyedItems[index + topProducts.top.length] ? (
-                          <FaEye className="fas" />
-                        ) : (
-                          <FaRegEye className="fa" />
-                        )}
-                      </div>
-                    </div>
-                    <div className="product_btn">
-                      <span>Add To Cart</span>
-                    </div>
-                  </div>
-                  <div className="product_detal flex flex-col">
-                    <h3>{product.name}</h3>
-                    <div className="info flex flex-row gap-1 items-center">
-                      <span className="price">{product.price}</span>
-                      <div className="rating">
-                        <div className="rating_icon flex flex-row items-center">
-                          <ProductRating product={product} />
+                        <div
+                          className="icon-heart"
+                          onClick={(e) =>
+                            handleIconClick(e, () => handleHeartClick(product))
+                          }
+                        >
+                          {heartedItems[index + topProducts.top.length] ? (
+                            <FaHeart className="fas" />
+                          ) : (
+                            <FaRegHeart className="fa" />
+                          )}
+                        </div>
+                        <div
+                          className="icon-eye"
+                          onClick={(e) =>
+                            handleIconClick(e, () => handleEyeClick(product))
+                          }
+                        >
+                          {eyedItems[index + topProducts.top.length] ? (
+                            <FaEye className="fas" />
+                          ) : (
+                            <FaRegEye className="fa" />
+                          )}
                         </div>
                       </div>
-                      <span className="reviews">
-                        ({product.rating?.toFixed(1) ?? "N/A"})
-                      </span>
+                      <div className="product_btn">
+                        <span>Add To Cart</span>
+                      </div>
                     </div>
-                    <div className="color-var flex flex-row gap-2 items-center relative">
-                      {colors.map((color) => (
-                        <div
-                          key={color}
-                          className={`color-item ${color} ${
-                            activeColors[index + topProducts.top.length] ===
-                            color
-                              ? "active"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            handleColorChange(
-                              index + topProducts.top.length,
+                    <div className="product_detal flex flex-col">
+                      <h3>{product.name}</h3>
+                      <div className="info flex flex-row gap-1 items-center">
+                        <span className="price">{product.price}</span>
+                        <div className="rating">
+                          <div className="rating_icon flex flex-row items-center">
+                            <ProductRating product={product} />
+                          </div>
+                        </div>
+                        <span className="reviews">
+                          ({product.rating?.toFixed(1) ?? "N/A"})
+                        </span>
+                      </div>
+                      <div className="color-var flex flex-row gap-2 items-center relative">
+                        {colors.map((color) => (
+                          <div
+                            key={color}
+                            className={`color-item ${color} ${
+                              activeColors[index + topProducts.top.length] ===
                               color
-                            )
-                          }
-                        ></div>
-                      ))}
+                                ? "active"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleColorChange(
+                                index + topProducts.top.length,
+                                color
+                              )
+                            }
+                          ></div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                )}
               </div>
             );
           })}

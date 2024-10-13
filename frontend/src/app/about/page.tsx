@@ -84,7 +84,7 @@ export default function About() {
               <div className="dev_image">
                 <Image
                   src={TomCruise}
-                  alt=""
+                  alt="Tom Cruise"
                   width={300}
                   height={500}
                   className="dev_img"

@@ -161,16 +161,13 @@ router.post("/populate", async (req, res) => {
         subcategoryObj.name
       );
 
-      // Generate placeholder images
-      const generatePlaceholderImage = (index) =>
-        `/api/placeholder/${400 + index}/${300 + index}`;
-
-      const images = Array.from({length: 5}, (_, index) =>
-        generatePlaceholderImage(index)
+      // Generate images with a specific size
+      const images = Array.from({length: 5}, () =>
+        faker.image.imageUrl(400, 300, true)
       );
-
       const mainImage = images[0];
 
+      
       const product = {
         name: faker.commerce.productName(),
         description: faker.commerce.productDescription(),

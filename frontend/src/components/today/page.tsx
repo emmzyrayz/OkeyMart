@@ -147,6 +147,7 @@ export default function Today() {
   );
   const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
 
+
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
 
@@ -294,7 +295,7 @@ export default function Today() {
                 <div className="product_image">
                   <span className="discount">{product.discount}%</span>
                   <Image
-                    alt={`product ${index + 1}`}
+                    alt={product.name}
                     width={200}
                     height={300}
                     src={product.mainImage}
