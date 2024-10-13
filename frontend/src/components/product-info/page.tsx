@@ -54,7 +54,7 @@ const ProductRating = ({rating}: {rating: number}) => {
 };
 
 export const ProductInfo = ({product}: {product: Product}) => {
-  const {categories} = product;
+  const {category} = product;
 
   return (
     <div className="product-info_section flex flex-col items-center justify-center w-full h-full">
@@ -62,7 +62,7 @@ export const ProductInfo = ({product}: {product: Product}) => {
         <div className="profile_nav flex flex-row gap-1 items-start justify-start">
           <span className="faint">Home</span>
           <span className="faint">/</span>
-          <span className="faint">{categories.join(", ")}</span>
+          <span className="faint">{category}</span>
           <span className="faint">/</span>
           <span className="full">{product.name}</span>
         </div>

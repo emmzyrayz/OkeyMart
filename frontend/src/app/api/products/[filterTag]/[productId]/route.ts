@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // Verify the product belongs to the specified filter
-    if (!product[filterTag as keyof typeof product]) {
+    if (filterTag !== 'search' && !product[filterTag as keyof typeof product]) {
       return new Response(
         JSON.stringify({ message: 'Product not found in this category' }),
         { 

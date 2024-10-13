@@ -31,19 +31,19 @@ export default function Footer() {
             </div>
             <div className="account">
               <h2 className="title">Account</h2>
-              <Link href="/profile">
+              <Link href="/profile" className="hover:text-[--secondary2] cursor-pointer">
                 <span>My Account</span>
               </Link>
-              <Link href="/signup">
+              <Link href="/signup" className="hover:text-[--secondary2] cursor-pointer">
                 <span>Login/Register</span>
               </Link>
-              <Link href="/cart">
+              <Link href="/cart" className="hover:text-[--secondary2] cursor-pointer">
                 <span>Cart</span>
               </Link>
-              <Link href="/wishlist">
+              <Link href="/wishlist" className="hover:text-[--secondary2] cursor-pointer">
                 <span>Wishlist</span>
               </Link>
-              <Link href="/live_location">
+              <Link href="/live_location" className="hover:text-[--secondary2] cursor-pointer">
                 <span>Shops</span>
               </Link>
             </div>
@@ -52,7 +52,7 @@ export default function Footer() {
               <span>Privacy Policy</span>
               <span>Terms Of Use</span>
               <span>FAQ</span>
-              <Link href="/contact">
+              <Link href="/contact" className="hover:text-[--secondary2] cursor-pointer">
                 <span>Contact</span>
               </Link>
             </div>

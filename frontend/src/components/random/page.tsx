@@ -12,12 +12,10 @@ import {ProductNotFound} from "../product-notfound/page";
 
 export default function Random() {
   const router = useRouter();
-  const {loading: globalLoading} = useProductContext();
-  const [products, setProducts] = useState<Product[]>([]);
+  const {products, loading} = useProductContext();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(
     null
   );
-  const [localLoading, setLocalLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({
     hours: 23,
     minutes: 59,
@@ -56,45 +54,21 @@ export default function Random() {
   }, []);
 
   useEffect(() => {
-    console.log(products); // Using 'products' to avoid ESLint warning
-  }, [products]);
-
-  const isLoading = globalLoading || localLoading;
-
-  const fetchProducts = async () => {
-    try {
-      setLocalLoading(true);
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
-
-      // Filter products with top set to true
-      const topProducts = data.filter(
-        (product: Product) => product.top === true
-      );
-
-      // Set filtered top products
-      setProducts(topProducts);
-
-      // Randomly select one product
+    if (products.length > 0) {
+      const topProducts = products.filter((product) => product.top === true);
       if (topProducts.length > 0) {
         const randomProduct =
           topProducts[Math.floor(Math.random() * topProducts.length)];
         setSelectedProduct(randomProduct);
       }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLocalLoading(false);
     }
-  };
+  }, [products]);
+
+
 
   // Call fetchProducts when component mounts
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
-  if (isLoading) {
+  if (loading) {
     return <FetchLoader />; // Display loading component while fetching
   }
 
@@ -107,7 +81,7 @@ export default function Random() {
       <div className="random_text flex flex-col items-start justify-center gap-4 w-2/4">
         {selectedProduct ? (
           <>
-            <h2>{selectedProduct.categories.length > 0 ? selectedProduct.categories[0].name : 'No Category'}</h2>
+            <h2>{selectedProduct.category}</h2>
             <span className="title">{selectedProduct.description}</span>
             <div className="random_time flex flex-row gap-3">
               <div className="random_hr">
@@ -129,7 +103,10 @@ export default function Random() {
                 <span className="time">Seconds</span>
               </div>
             </div>
-            <div className="random_btn flex items-center justify-center" onClick={() => router.push("/top/${product._id}")}>
+            <div
+              className="random_btn flex items-center justify-center"
+              onClick={() => router.push("/top/${selectedProduct._id}")}
+            >
               <span>Buy Now</span>
             </div>
           </>

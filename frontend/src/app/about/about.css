@@ -195,3 +195,14 @@
         height: 14px;
     }
 }
+
+@media (max-width: 808px) {
+    .about_container{
+        flex-wrap: wrap;
+
+        .about_text,
+        .about_img{
+            width: 100%;
+        }
+    }
+}

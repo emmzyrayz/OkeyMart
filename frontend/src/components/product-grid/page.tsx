@@ -1,8 +1,13 @@
+'use client'
+import {useState} from "react";
+import {WaveSelect} from "@/components/input/waveselect";
+import {WaveInput} from "@/components/input/waveinput";
+import {categories} from "@/config/categoryvalidation";
+import Link from "next/link";
 import {ProductCard} from "../product-card/page";
-// import { Product } from '@/types/product';
 import "./prod-grid.css";
-
 import {Product} from "@/types/product";
+
 
 type ProductGridProps = {
   products: Product[];
@@ -10,6 +15,67 @@ type ProductGridProps = {
 };
 
 export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(0);
+  const [sortOption, setSortOption] = useState("");
+
+
+  const categoryOptions = categories.map((category) => ({
+    value: category.name,
+    label: category.name,
+  }));
+
+  const subcategoryOptions = selectedCategory
+    ? categories
+        .find((category) => category.name === selectedCategory)
+        ?.subcategories.map((subcategory) => ({
+          value: subcategory.name,
+          label: subcategory.name,
+        })) || []
+    : [];
+
+    const sortOptions = [
+      {value: "price-asc", label: "Price: Low to High"},
+      {value: "price-desc", label: "Price: High to Low"},
+      {value: "name-asc", label: "Name: A-Z"},
+      {value: "name-desc", label: "Name: Z-A"},
+      {value: "reviews", label: "By Reviews"},
+    ];
+
+
+    const filteredProducts = products.filter((product) => {
+      const categoryMatch = selectedCategory
+        ? product.category === selectedCategory
+        : true;
+      const subcategoryMatch = selectedSubcategory
+        ? product.subcategory === selectedSubcategory
+        : true;
+      const priceMatch =
+        minPrice === 0 && maxPrice === 0
+          ? true
+          : product.price >= minPrice && product.price <= maxPrice;
+      return categoryMatch && subcategoryMatch && priceMatch;
+    });
+
+    const sortedProducts = filteredProducts.sort((a, b) => {
+      switch (sortOption) {
+        case "price-asc":
+          return a.price - b.price;
+        case "price-desc":
+          return b.price - a.price;
+        case "name-asc":
+          return a.name.localeCompare(b.name);
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "reviews":
+          return b.rating - a.rating;
+        default:
+          return 0;
+      }
+    });
+
   // Add debug logging
   console.log("ProductGrid rendered with:", {
     productsCount: products.length,
@@ -20,67 +86,71 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
   return (
     <div className="productgrid_section flex flex-col items-start justify-center w-full h-full gap-4">
       <div className="productgrid_nav flex flex-row gap-1 items-center justify-center">
-        <span className="faint">Home</span>
+        <Link href="/">
+          <span className="faint">Home</span>
+        </Link>
         <span className="faint">/</span>
-        <span className="full">My Account</span>
+        <span className="full">{products[0].category}</span>
       </div>
 
       <div className="productgrid_top flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 mb-4 p-4 bg-gray-100 rounded-md shadow-sm gap-2">
         {/* Grid Filter */}
         <div className="grid_filter w-full sm:w-1/3">
-          <label className="block mb-2 text-sm font-medium text-gray-700">
-            Filter by Category
-          </label>
-          <select className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black">
-            <option value="all">All Categories</option>
-            <option value="electronics">Electronics</option>
-            <option value="gadgets">Gadget Accessories</option>
-            <option value="kitchen">Kitchen Materials</option>
-          </select>
+          <WaveSelect
+            label="Category"
+            name="category"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            options={categoryOptions}
+          />
+          {selectedCategory && (
+            <WaveSelect
+              label="Subcategory"
+              name="subcategory"
+              value={selectedSubcategory}
+              onChange={(e) => setSelectedSubcategory(e.target.value)}
+              options={subcategoryOptions}
+            />
+          )}
         </div>
 
         {/* Grid Sort */}
         <div className="grid_sort w-full sm:w-1/3">
-          <label className="block mb-2 text-sm font-medium text-gray-700">
-            Sort by
-          </label>
-          <select className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black">
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="name-asc">Name: A-Z</option>
-            <option value="name-desc">Name: Z-A</option>
-            <option value="reviews">By Reviews</option>
-          </select>
+          <WaveSelect
+            label="Sort by"
+            name="sort"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            options={sortOptions}
+          />
         </div>
 
         {/* Grid Prices */}
         <div className="grid_prices w-full sm:w-1/3 flex flex-col sm:flex-row items-center sm:space-x-2">
           <div className="w-full sm:w-1/2">
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Min Price
-            </label>
-            <input
+            <WaveInput
+              label="Min Price"
+              name="minPrice"
               type="number"
-              className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              placeholder="Min"
+              value={minPrice}
+              onChange={(e) => setMinPrice(Number(e.target.value))}
             />
           </div>
           <div className="w-full sm:w-1/2 mt-4 sm:mt-0">
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-              Max Price
-            </label>
-            <input
+            <WaveInput
+              label="Max Price"
+              name="maxPrice"
               type="number"
-              className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-              placeholder="Max"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Number(e.target.value))}
             />
           </div>
         </div>
       </div>
 
       <div className="productgrid_container flex flex-row flex-wrap items-start justify-center gap-2">
-        {products.length > 0 ? (
-          products.map((product) => {
+        {sortedProducts.length > 0 ? (
+          sortedProducts.map((product) => {
             // Add debug logging for each product
             // console.log("Rendering product:", {
             //   productId: product._id,

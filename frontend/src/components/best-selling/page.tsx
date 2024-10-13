@@ -1,5 +1,5 @@
 "use client";
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {
   FaEye,
   FaHeart,
@@ -66,42 +66,68 @@ const ProductRating = ({product}: {product: Product}) => {
 export const BestSelling = () => {
   const router = useRouter();
    const {addToCart} = useCart();
-  const {loading: globalLoading} = useProductContext();
-  const {addToWishlist, addToViewed} = useWishContext();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
-  const [eyedItems, setEyedItems] = useState<boolean[]>([]);
-  const [localLoading, setLocalLoading] = useState(true);
-
+  const {products, loading} = useProductContext();
+  const {
+    wishlist,
+    viewedProducts,
+    addToWishlist,
+    addToViewed,
+    removeFromViewlist,
+    removeFromWishlist,
+  } = useWishContext();
   
-  // Fetch products from the API
-  const fetchProducts = async () => {
-    try {
-      setLocalLoading(true);
-      const response = await fetch("/api/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
-      const data = await response.json();
+  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>(
+    {}
+  );
+  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
 
-      // Filter products with today set to true
-      const todayProducts = data.filter(
-        (product: Product) => product.trending === true
-      );
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-      // Limit to 10 today products
-      const limitedTodayProducts = todayProducts.slice(0, 10);
+      setHeartedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToWishlist(product);
+        } else {
+          removeFromWishlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToWishlist, removeFromWishlist]
+  );
 
-      // Set state with only the limited products
-      setProducts(limitedTodayProducts);
-      setHeartedItems(Array(limitedTodayProducts.length).fill(false));
-      setEyedItems(Array(limitedTodayProducts.length).fill(false));
-      
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
+      setEyedItems((prev) => {
+        const newState = !prev[product._id];
+        if (newState) {
+          addToViewed(product);
+        } else {
+          removeFromViewlist(product._id);
+        }
+        return {...prev, [product._id]: newState};
+      });
+    },
+    [addToViewed, removeFromViewlist]
+  );
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      addToCart(product);
+    },
+    [addToCart]
+  );
+
+   const filteredProducts = useMemo(() => {
+     return products.filter((product) => product.trending === true).slice(0, 12);
+   }, [products]);
 
   const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
     e.preventDefault(); // Prevent navigation when clicking icons
@@ -110,10 +136,25 @@ export const BestSelling = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [])
+    const newHeartedItems: {[key: string]: boolean} = {};
+    const newEyedItems: {[key: string]: boolean} = {};
 
-   if (globalLoading || localLoading) {
+    filteredProducts.forEach((product) => {
+      newHeartedItems[product._id] = wishlist.some(
+        (item) => item._id === product._id
+      );
+      newEyedItems[product._id] = viewedProducts.some(
+        (item) => item._id === product._id
+      );
+    });
+
+    setHeartedItems(newHeartedItems);
+    setEyedItems(newEyedItems);
+  }, [filteredProducts, wishlist, viewedProducts]);
+
+  
+
+   if (loading) {
      return <FetchLoader />; // Display loading component while fetching
    }
 
@@ -121,53 +162,21 @@ export const BestSelling = () => {
      return <ProductNotFound />;
    }
 
-   const removeFromViewlist = (index: number, listType: "heart" | "eye") => {
-     if (listType === "heart") {
-       setHeartedItems((prev) => {
-         const updated = [...prev];
-         updated[index] = false; // Unset heart (remove from wishlist)
-         return updated;
-       });
-     } else if (listType === "eye") {
-       setEyedItems((prev) => {
-         const updated = [...prev];
-         updated[index] = false; // Unset eye (remove from viewed products)
-         return updated;
-       });
-     }
-   };
+  //    if (listType === "heart") {
+  //      setHeartedItems((prev) => {
+  //        const updated = [...prev];
+  //        updated[index] = false; // Unset heart (remove from wishlist)
+  //        return updated;
+  //      });
+  //    } else if (listType === "eye") {
+  //      setEyedItems((prev) => {
+  //        const updated = [...prev];
+  //        updated[index] = false; // Unset eye (remove from viewed products)
+  //        return updated;
+  //      });
+  //    }
+  //  };
 
-   const handleHeartClick = (index: number, product: Product) => {
-     setHeartedItems((prev) => {
-       const updated = [...prev];
-       updated[index] = !updated[index]; // Toggle the heart state
-       if (updated[index]) {
-         addToWishlist(product); // Add to wishlist if liked
-       } else {
-         removeFromViewlist(index, "heart"); // Remove from wishlist
-       }
-       return updated;
-     });
-   };
-
-   const handleEyeClick = (index: number, product: Product) => {
-     setEyedItems((prev) => {
-       const updated = [...prev];
-       updated[index] = !updated[index]; // Toggle the eye state
-       if (updated[index]) {
-         addToViewed(product); // Add to viewed products if viewed
-       } else {
-         removeFromViewlist(index, "eye"); // Remove from viewed products
-       }
-       return updated;
-     });
-   };
-
-   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
-     e.preventDefault(); // Prevent navigation when adding to cart
-     addToCart(product);
-     alert(`${product.name} added to cart!`);
-   };
 
   return (
     <div className="best_section">
@@ -206,7 +215,7 @@ export const BestSelling = () => {
                       className="icon-heart"
                       onClick={(e) =>
                         handleIconClick(e, () =>
-                          handleHeartClick(index, product)
+                          handleHeartClick(product, e)
                         )
                       }
                     >
@@ -219,7 +228,7 @@ export const BestSelling = () => {
                     <div
                       className="icon-eye"
                       onClick={(e) =>
-                        handleIconClick(e, () => handleEyeClick(index, product))
+                        handleIconClick(e, () => handleEyeClick(product, e))
                       }
                     >
                       {eyedItems[index] ? (

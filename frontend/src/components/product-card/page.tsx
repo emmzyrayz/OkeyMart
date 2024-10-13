@@ -79,20 +79,14 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   };
 
   const handleViewItemClick = () => {
-    // Add console.log to debug the values
-    // console.log("Clicking product:", {
-    //   filterTag,
-    //   productId: product._id, // or product.id depending on your data structure
-    //   product,
-    // });
-
+    
     if (!product._id) {
       console.error("Product ID is undefined:", product);
       return;
     }
 
     // Use the correct ID field from your product object
-    const productId = product._id || product.id;
+    const productId = product._id;
     const url = `/${filterTag}/${productId}`;
     console.log("Navigating to:", url);
     router.push(url);
@@ -100,20 +94,15 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
 
   const handleAddToCart = (product: Product) => {
     addToCart(product);
-    alert(`${product.name} added to cart!`);
+    // alert(`${product.name} added to cart!`);
     // You can add a notification here to show the item was added
   };
 
-  // Add console.log to check product data when component renders
-  // console.log("ProductCard rendered with:", {
-  //   filterTag,
-  //   productId: product._id,
-  //   product,
-  // });
+  
 
   return (
     <>
-      <div className="product_item mb-6" key={product.id}>
+      <div className="product_item mb-6" key={product._id}>
         <div className="product_image">
           <span className="discount">{product.discount}%</span>
           <Image
