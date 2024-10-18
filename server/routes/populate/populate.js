@@ -127,6 +127,10 @@ const generateCategorySpecificFields = (category, subcategoryName) => {
   return {fieldValues};
 };
 
+const generateUnsplashImageUrl = (width, height, category) => {
+  return `https://source.unsplash.com/random/${width}x${height}/?${category}`;
+};
+
 const populateProducts = async () => {
   try {
     // Check database connection
@@ -159,11 +163,13 @@ const populateProducts = async () => {
         subcategoryObj.name
       );
 
-      // Generate images with a specific size
+       // Generate images using Unsplash
       const images = Array.from({length: 5}, () =>
-        faker.image.avatar(400, 300, true)
+        generateUnsplashImageUrl(400, 300, categoryObj.name.toLowerCase().replace(/&/g, ''))
       );
       const mainImage = images[0];
+
+      
 
       const product = {
         name: faker.commerce.productName(),
