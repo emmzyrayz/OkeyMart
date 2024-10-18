@@ -299,6 +299,7 @@ export default function Today() {
                     width={200}
                     height={300}
                     src={product.mainImage}
+                    className="imagess"
                   />
                   <div className="product_icons">
                     <div

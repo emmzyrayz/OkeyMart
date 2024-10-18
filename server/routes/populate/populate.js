@@ -136,7 +136,7 @@ const generateCategorySpecificFields = (category, subcategoryName) => {
 // Function to fetch images from Unsplash
 const fetchUnsplashImages = async (query) => {
   try {
-    const result = await api.search.getPhotos({ query, orientation: "portrait", perPage: 5 });
+    const result = await api.search.getPhotos({ query, orientation: "landscape", perPage: 5 });
     if (result.errors) {
       throw new Error(result.errors[0]);
     }
