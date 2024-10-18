@@ -136,7 +136,7 @@ const generateCategorySpecificFields = (category, subcategoryName) => {
 // Function to fetch images from Unsplash
 const fetchUnsplashImages = async (query) => {
   try {
-    const result = await api.search.getPhotos({ query, orientation: "landscape" });
+    const result = await api.search.getPhotos({ query, orientation: "landscape", perPage: 5 });
     if (result.errors) {
       throw new Error(result.errors[0]);
     }
@@ -181,15 +181,18 @@ const populateProducts = async () => {
 
       // Fetch images from Unsplash
       const images = await fetchUnsplashImages(categoryObj.name);
-      const mainImage = images[0] || "";
+      const mainImage =
+        images.length > 0
+          ? images[Math.floor(Math.random() * images.length)]
+          : ""; // Select a random main image from the fetched images
 
       const product = {
         name: faker.commerce.productName(),
         description: faker.commerce.productDescription(),
         price: parseFloat(faker.commerce.price()),
         countInStock: faker.number.int({min: 0, max: 100}),
-        images,
-        mainImage,
+        images: images.length > 0 ? images : [], // Use fetched images
+        mainImage, // Set the main image
         category: categoryObj.name, // Fixed: Using the category name string
         subcategory: subcategoryObj.name, // Fixed: Using the subcategory name string
         categorySpecificFields,
