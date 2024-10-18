@@ -160,7 +160,7 @@ const populateProducts = async () => {
 
       // Generate placeholder images
       const generatePlaceholderImage = (index) =>
-        `/api/placeholder/${400 + index}/${300 + index}`;
+        `/api/placeholderss/${400 + index}/${300 + index}`;
 
       const images = Array.from({length: 5}, (_, index) =>
         generatePlaceholderImage(index)
