@@ -161,7 +161,7 @@ const populateProducts = async () => {
 
       // Generate images with a specific size
       const images = Array.from({length: 5}, () =>
-        faker.image.imageUrl(400, 300, true)
+        faker.image.avatar(400, 300, true)
       );
       const mainImage = images[0];
 
