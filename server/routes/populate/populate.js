@@ -2,6 +2,12 @@ const express = require("express");
 const Product = require("../../models/products");
 const mongoose = require("mongoose");
 const {faker} = require("@faker-js/faker");
+const {createApi} = require("unsplash-js");
+
+// Initialize Unsplash API
+const api = createApi({
+  accessKey: "RJ1Cmou4Znq861qOnoC-PyXET1Xyeqlb94rbpCItFqo", // Replace with your actual access key
+});
 
 // Fixed categories structure to match schema
 const categories = [
@@ -127,8 +133,18 @@ const generateCategorySpecificFields = (category, subcategoryName) => {
   return {fieldValues};
 };
 
-const generateUnsplashImageUrl = (width, height, category) => {
-  return `https://source.unsplash.com/random/${width}x${height}/?${category}`;
+// Function to fetch images from Unsplash
+const fetchUnsplashImages = async (query) => {
+  try {
+    const result = await api.search.getPhotos({ query, orientation: "landscape" });
+    if (result.errors) {
+      throw new Error(result.errors[0]);
+    }
+    return result.response.results.map(photo => photo.urls.regular);
+  } catch (error) {
+    console.error("Error fetching images from Unsplash:", error);
+    return [];
+  }
 };
 
 const populateProducts = async () => {
@@ -163,13 +179,9 @@ const populateProducts = async () => {
         subcategoryObj.name
       );
 
-       // Generate images using Unsplash
-      const images = Array.from({length: 5}, () =>
-        generateUnsplashImageUrl(400, 300, categoryObj.name.toLowerCase().replace(/&/g, ''))
-      );
-      const mainImage = images[0];
-
-      
+      // Fetch images from Unsplash
+      const images = await fetchUnsplashImages(categoryObj.name);
+      const mainImage = images[0] || "";
 
       const product = {
         name: faker.commerce.productName(),
