@@ -1,6 +1,7 @@
 "use client";
 import {usePathname, useRouter} from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import React, {useState, useEffect} from "react";
 import "./navbar.css";
 import {FaSearch, FaRegHeart, FaRegUserCircle} from "react-icons/fa";
@@ -147,6 +148,7 @@ export const HomeNav = () => {
                   onClick={() => handleProductClick(product._id)}
                   className="search-result-item overflow-y-auto text-[--text2] bg-[--text] hover:bg-[--text2] hover:text-[--text] w-full p-3 items-center justify-center"
                 >
+                  <Image src={product.mainImage} width={100} height={100} alt={product.name} className="" />
                   {product.name}
                   <hr className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
                   rounded-lg" />

@@ -9,15 +9,21 @@ const nextConfig = {
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
+      // {
+      //   protocol: "https",
+      //   hostname: "images.unsplash.com",
+      //   port: "",
+      //   pathname: "**",
+      // },
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "avatars.githubusercontent.com",
         port: "",
         pathname: "**",
       },
       {
         protocol: "https",
-        hostname: "avatars.githubusercontent.com",
+        hostname: "source.unsplash.com",
         port: "",
         pathname: "**",
       },
