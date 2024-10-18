@@ -144,7 +144,7 @@ const populateProducts = async () => {
     console.log(`Cleared ${deleteResult.deletedCount} existing products`);
 
     const products = [];
-    const numberOfProducts = 50;
+    const numberOfProducts = 100;
 
     for (let i = 0; i < numberOfProducts; i++) {
       // Select random category and sub category
@@ -159,14 +159,10 @@ const populateProducts = async () => {
         subcategoryObj.name
       );
 
-      // Generate placeholder images
-      const generatePlaceholderImage = (index) =>
-        `/api/placeholder/${400 + index}/${300 + index}`;
-
-      const images = Array.from({length: 5}, (_, index) =>
-        generatePlaceholderImage(index)
+      // Generate images with a specific size
+      const images = Array.from({length: 5}, () =>
+        faker.image.imageUrl(400, 300, true)
       );
-
       const mainImage = images[0];
 
       const product = {
