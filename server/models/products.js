@@ -1,5 +1,5 @@
 // models/product.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const DynamicFieldsSchema = new mongoose.Schema(
   {
@@ -110,9 +110,29 @@ const ProductSchema = new mongoose.Schema({
     max: 5,
     default: 0,
   },
+  video: {
+    type: String,
+  },
+  youtubeLink: {
+    type: String,
+  },
+  state: {
+    type: String,
+    required: true,
+  },
+  lga: {
+    type: String,
+    required: true,
+  },
+  bulkNumber: {
+    type: String,
+  },
+  bulkPrice: {
+    type: String,
+  },
 });
 
 const Product =
   mongoose.models.Product || mongoose.model("Product", ProductSchema);
 
-module.exports = Product;
+export default Product;
