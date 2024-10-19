@@ -326,7 +326,6 @@ const nigerianStatesAndLGAs = {
     "Isiala Mbano",
     "Isu",
     "Mbaitoli",
-    "Mbaitoli",
     "Ngor-Okpala",
     "Njaba",
     "Nwangele",

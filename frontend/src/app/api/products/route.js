@@ -26,6 +26,7 @@ export async function POST(req) {
 
   try {
     const body = await req.json(); // Parse incoming request body
+    console.log("Received product data:", body);
 
     // Create a new product using the request data
     const newProduct = new Product({
@@ -37,19 +38,30 @@ export async function POST(req) {
       mainImage: body.mainImage,
       category: body.category,
       subcategory: body.subcategory,
-      categorySpecificFields: body.categorySpecificFields,
+      categorySpecificFields: {
+        fieldValues: new Map(Object.entries(body.categorySpecificFields)),
+      },
       discount: body.discount,
       featured: body.featured,
       trending: body.trending,
       top: body.top,
       today: body.today,
       rating: body.rating,
+      video: body.video,
+      youtubeLink: body.youtubeLink,
+      state: body.state,
+      lga: body.lga,
+      bulkNumber: body.bulkNumber,
+      bulkPrice: body.bulkPrice,
     });
 
-    // Save the product in the database
-    await newProduct.save();
+    console.log("New product object:", newProduct);
 
-    return new Response(JSON.stringify(newProduct), {
+    // Save the product in the database
+    const savedProduct = await newProduct.save();
+    console.log("Saved product:", savedProduct); // Log the saved product
+
+    return new Response(JSON.stringify(savedProduct), {
       status: 201,
       headers: {
         "content-type": "application/json",
@@ -58,11 +70,13 @@ export async function POST(req) {
   } catch (error) {
     // Log the actual error for debugging
     console.error("Error creating product:", error);
+    console.error("Error stack:", error.stack); // Log the full error stack
 
     return new Response(
       JSON.stringify({
         message: "Error creating product",
         error: error.message || error,
+        stack: error.stack,
       }),
       {status: 500}
     );

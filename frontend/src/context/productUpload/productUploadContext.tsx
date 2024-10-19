@@ -166,16 +166,19 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
       };
 
       // Add product to database
-      await addProduct(productData);
-
-      dispatch({type: "SET_UPLOAD_PROGRESS", payload: 100});
-      console.log("Product uploaded successfully");
-      dispatch({type: "RESET_FORM"});
+     try {
+       await addProduct(productData);
+       dispatch({type: "SET_UPLOAD_PROGRESS", payload: 100});
+       console.log("Product uploaded successfully");
+       dispatch({type: "RESET_FORM"});
+     } catch (error) {
+       console.error("Error adding product:", error);
+       throw new Error("Failed to add product to database. Please try again.");
+     }
     } catch (error) {
       console.error("Error uploading product:", error);
-      throw new Error("Upload failed. Please try again.");
-    } finally {
       dispatch({type: "SET_IS_UPLOADING", payload: false});
+      throw error;
     }
   };
 
