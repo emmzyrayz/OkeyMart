@@ -232,14 +232,6 @@
   /* This allows the content to take the remaining space */
 }
 
-.imagess{
-  min-width: 100% !important;
-  min-height: 100% !important;
-  object-fit: fill;
-  object-position: center;
-  outline: 2px solid red;
-  scale: 1.25;
-}
 
 /* styles/globals.css */
 

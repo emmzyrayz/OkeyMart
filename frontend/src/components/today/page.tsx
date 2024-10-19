@@ -291,7 +291,7 @@ export default function Today() {
 
           return (
             <div className="product_item" key={index}>
-              <Link href={`/today/${product._id}`}>
+              <Link href={`/today/${product._id}`} className="itemms">
                 <div className="product_image">
                   <span className="discount">{product.discount}%</span>
                   <Image

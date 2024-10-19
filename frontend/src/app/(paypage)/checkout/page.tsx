@@ -2,53 +2,18 @@
 import React, {useState} from "react";
 import Image from "next/image";
 import "./checkout.css";
-import Monitor from "../../../assets/img/products/monitor.png";
-import RedGampad from "../../../assets/img/products/gamepad.png";
 import Bkash from "../../../assets/img/banks/Bkash.png";
 import Visa from "../../../assets/img/banks/visa.png";
-import Mastercard from '../../../assets/img/banks/mastercard.png';
+import Mastercard from "../../../assets/img/banks/mastercard.png";
 import Nagad from "../../../assets/img/banks/Nagad.png";
-import { MdCancel } from "react-icons/md";
-
-// Example product data, this can come from state or props
-const cartItemsData = [
-  {
-    id: 1,
-    name: "LCD Monitor",
-    price: 960,
-    quantity: 1,
-    image: Monitor, // Update with actual image path
-  },
-  {
-    id: 2,
-    name: "H1 Gamepad",
-    price: 1960,
-    quantity: 2,
-    image: RedGampad, // Update with actual image path
-  },
-];
+import {MdCancel} from "react-icons/md";
+import {useCart} from "@/context/commerce logic/cartcontext";
 
 export default function Checkout() {
   // const [cartItems, setCartItems] = useState(cartItemsData);
+  const {cartState} = useCart(); // Get cart state from context
+  const {items} = cartState; // Destructure items from cart state
   const [selectedPayment, setSelectedPayment] = useState<string>("cash");
-  const cartItems = cartItemsData;
-
-  // Function to handle quantity change
-  // const handleQuantityChange = (id: number, action: string) => {
-  //   setCartItems((prevItems) =>
-  //     prevItems.map((item) =>
-  //       item.id === id
-  //         ? {
-  //             ...item,
-  //             quantity:
-  //               action === "increment"
-  //                 ? item.quantity + 1
-  //                 : Math.max(1, item.quantity - 1),
-  //           }
-  //         : item
-  //     )
-  //   );
-  // };
 
   const calculateSubtotal = (price: number, quantity: number) => {
     return price * quantity;
@@ -114,13 +79,13 @@ export default function Checkout() {
           <div className="checkout_c flex flex-col gap-5 w-2/4">
             <div className="checkout_items">
               <div className="checkout_item">
-                {cartItems.map((item) => (
-                  <div className="cart-row" key={item.id}>
+                {items.map((item) => (
+                  <div className="cart-row" key={item._id}>
                     {/* Product Info */}
                     <div className="cart-item product-info flex flex-row items-center justify-center">
                       <div className="product_image flex items-center justify-center relative">
                         <Image
-                          src={item.image}
+                          src={item.mainImage}
                           alt={item.name}
                           width={80}
                           height={80}
@@ -143,7 +108,7 @@ export default function Checkout() {
                 <p className="sub_total_head">Subtotal:</p>
                 <p className="sub_total_price">
                   $
-                  {cartItems.reduce(
+                  {items.reduce(
                     (acc, item) =>
                       acc + calculateSubtotal(item.price, item.quantity),
                     0
@@ -158,7 +123,7 @@ export default function Checkout() {
                 <p>Total: </p>
                 <span>
                   $
-                  {cartItems.reduce(
+                  {items.reduce(
                     (acc, item) =>
                       acc + calculateSubtotal(item.price, item.quantity),
                     0

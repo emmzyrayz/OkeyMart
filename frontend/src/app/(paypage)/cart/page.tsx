@@ -58,7 +58,7 @@ export default function Cart() {
 
           {/* Product Rows */}
           {items.map((item: CartItem) => (
-            <div className="cart-row" key={item.id}>
+            <div className="cart-row" key={item._id}>
               {/* Product Info */}
               <div className="cart-item product-info flex flex-row items-center justify-center">
                 <div className="product_image flex items-center justify-center relative">
@@ -70,7 +70,7 @@ export default function Cart() {
                   />
                   <MdCancel
                     className="absolute text-red-500 fa"
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => removeFromCart(item._id)}
                   />
                 </div>
                 <p>{item.name}</p>
@@ -170,7 +170,9 @@ export default function Cart() {
                 </span>
               </div>
             </div>
-            <Link href="/checkout">
+            <Link
+              href="/checkout"
+            >
               <button className="checkout-btn flex flex-row items-center justify-center">
                 <span>Proceed to Checkout</span>
               </button>

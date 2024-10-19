@@ -78,7 +78,7 @@ export default function WishList() {
         ) : (
           <div className="wish_items flex flex-row overflow-x-auto gap-5">
             {wishlist.map((product) => (
-              <div key={product.id} className="wish_item flex flex-col gap-3">
+              <div key={product._id} className="wish_item flex flex-col gap-3">
                 <div className="item_img flex flex-col relative">
                   <Image
                     src={product.mainImage}
@@ -134,7 +134,7 @@ export default function WishList() {
         ) : (
           <div className="wish_items flex flex-row overflow-x-auto gap-5">
             {viewedProducts.map((product) => (
-              <div className="wish_item flex flex-col gap-3" key={product.id}>
+              <div className="wish_item flex flex-col gap-3" key={product._id}>
                 <div className="item_img flex flex-col relative">
                   <Image
                     src={product.mainImage}

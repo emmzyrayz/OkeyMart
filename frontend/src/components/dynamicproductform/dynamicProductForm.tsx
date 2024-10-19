@@ -2,18 +2,29 @@
 import React, {useState, useEffect} from "react";
 import {categories, getSubcategoryConfig} from "@/config/categoryvalidation";
 import {
-  ProductFormData,
   SubcategoryConfig,
-  FormFieldValue,
-  createEmptyProduct,
 } from "@/types/product";
 import {WaveInput} from "@/components/input/waveinput";
 import {WaveSelect} from "@/components/input/waveselect";
+import {useProductUpload} from "@/context/productUpload/productUploadContext";
 
-const DynamicProductForm = () => {
-  const [formData, setFormData] = useState<ProductFormData>(
-    createEmptyProduct()
-  );
+interface DynamicProductFormProps {
+  category: string;
+  subcategory: string;
+  fields: {[key: string]: string | number | boolean};
+  onChange: (fields: {[key: string]: string | number | boolean}) => void;
+  errors: {[key: string]: string};
+}
+
+const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
+  category,
+  subcategory,
+  fields,
+  onChange,
+  errors,
+}) => {
+  const {state, dispatch} = useProductUpload(); // Access context
+  const {formData} = state; // Extract formData from context
   const [formFields, setFormFields] = useState<SubcategoryConfig | null>(null);
 
   useEffect(() => {
@@ -30,42 +41,37 @@ const DynamicProductForm = () => {
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCategory = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      category: newCategory,
-      subcategory: "",
-      categorySpecificFields: {},
-    }));
+    dispatch({
+      type: "SET_FORM_DATA",
+      payload: {
+        category: newCategory,
+        subcategory: "",
+        categorySpecificFields: {},
+      },
+    });
   };
 
   const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSubcategory = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      subcategory: newSubcategory,
-      categorySpecificFields: {},
-    }));
-  };
-
-  const handleBaseInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {name, value} = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    dispatch({
+      type: "SET_FORM_DATA",
+      payload: {subcategory: newSubcategory, categorySpecificFields: {}},
+    });
   };
 
   const handleSpecificFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const {name, value} = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      categorySpecificFields: {
-        ...prev.categorySpecificFields,
-        [name]: value,
+    dispatch({
+      type: "SET_FORM_DATA",
+      payload: {
+        categorySpecificFields: {
+          ...formData.categorySpecificFields,
+          [name]: value,
+        },
       },
-    }));
+    });
   };
 
   const getSubcategoriesForCategory = () => {
@@ -118,12 +124,14 @@ const DynamicProductForm = () => {
   };
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="dynamic-form">
+    <div onSubmit={(e) => e.preventDefault()} className="dynamic-form">
       <WaveInput
         label="Product Name"
         name="name"
         value={formData.name}
-        onChange={handleBaseInputChange}
+        onChange={(e) =>
+          dispatch({type: "SET_FORM_DATA", payload: {name: e.target.value}})
+        }
         required
       />
 
@@ -156,7 +164,7 @@ const DynamicProductForm = () => {
       {formFields && (
         <div className="dynamic-fields">{renderDynamicFields()}</div>
       )}
-    </form>
+    </div>
   );
 };
 

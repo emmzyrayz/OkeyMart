@@ -1,6 +1,9 @@
 // types/productTypes.ts
+
+// Define a more specific type for the values in the Map
+export type FieldValue = string | number | boolean;
 export interface CategorySpecificFields {
-  fieldValues: Map<string, any>;
+  fieldValues: Map<string, FieldValue>;
 }
 
 export interface Product {
@@ -43,6 +46,12 @@ export interface ProductFormData
   categorySpecificFields: {
     [key: string]: string | number | boolean;
   };
+  state?: string; // Add this line
+  lga?: string; // Add this line
+  bulkNumber?: string;
+  bulkPrice?: string;
+  video?: string;
+  youtubeLink?: string;
 }
 
 // Helper type for form field values

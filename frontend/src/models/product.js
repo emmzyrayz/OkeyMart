@@ -110,6 +110,26 @@ const ProductSchema = new mongoose.Schema({
     max: 5,
     default: 0,
   },
+  video: {
+    type: String,
+  },
+  youtubeLink: {
+    type: String,
+  },
+  state: {
+    type: String,
+    required: true,
+  },
+  lga: {
+    type: String,
+    required: true,
+  },
+  bulkNumber: {
+    type: String,
+  },
+  bulkPrice: {
+    type: String,
+  },
 });
 
 const Product =

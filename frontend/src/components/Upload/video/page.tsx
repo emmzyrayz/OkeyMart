@@ -13,8 +13,18 @@ interface CutRange {
     end: number;
 }
 
-export const UploadProductVideo: React.FC = () => {
-  const [selectedVideo, setSelectedVideo] = useState<string | undefined>(undefined);
+interface UploadProductVideoProps {
+  video: File | null;
+  setVideo: (video: File | null) => void;
+}
+
+export const UploadProductVideo: React.FC<UploadProductVideoProps> = ({
+  video,
+  setVideo,
+}) => {
+  const [selectedVideo, setSelectedVideo] = useState<string | undefined>(
+    undefined
+  );
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [videoDuration, setVideoDuration] = useState(0);
   const [cutRange, setCutRange] = useState<CutRange>({start: 0, end: 0});
@@ -51,12 +61,12 @@ export const UploadProductVideo: React.FC = () => {
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("video/")) {
-        if (selectedVideo) {
-          URL.revokeObjectURL(selectedVideo);
-        }
+      if (selectedVideo) {
+        URL.revokeObjectURL(selectedVideo);
+      }
       const videoURL = URL.createObjectURL(file);
       setSelectedVideo(videoURL);
-      setCutRange({start: 0, end: 0}); 
+      setCutRange({start: 0, end: 0});
     }
   };
 
@@ -168,178 +178,171 @@ export const UploadProductVideo: React.FC = () => {
     };
   }, [selectedVideo]);
 
-   const renderVideoPreview = () => {
-     if (!selectedVideo) return null;
+  const renderVideoPreview = () => {
+    if (!selectedVideo) return null;
 
-     return (
-       <div className="relative w-[300px] h-[300px] video-preview-container">
-         <video
-           className="rounded-lg"
-           ref={videoRef}
-           src={selectedVideo}
-           controls
-           width={300}
-           height={300}
-           style={{
-             filter: `brightness(${savedEnhancement.brightness}%) contrast(${savedEnhancement.contrast}%)`,
-           }}
-         />
-         <RiPencilFill
-           className="absolute bg-[--light-blur] hover:bg-[--text] p-1 rounded-full top-2 right-[10px] text-[28px] cursor-pointer"
-           onClick={() => setIsEditing(true)}
-         />
-         <MdCancel
-           className="absolute bg-[--light-blur] hover:bg-[--text] p-1 rounded-full top-2 left-2 text-[28px] cursor-pointer"
-           onClick={removeVideo}
-         />
-       </div>
-     );
-   };
+    return (
+      <div className="relative w-[300px] h-[300px] video-preview-container">
+        <video
+          className="rounded-lg"
+          ref={videoRef}
+          src={selectedVideo}
+          controls
+          width={300}
+          height={300}
+          style={{
+            filter: `brightness(${savedEnhancement.brightness}%) contrast(${savedEnhancement.contrast}%)`,
+          }}
+        />
+        <RiPencilFill
+          className="absolute bg-[--light-blur] hover:bg-[--text] p-1 rounded-full top-2 right-[10px] text-[28px] cursor-pointer"
+          onClick={() => setIsEditing(true)}
+        />
+        <MdCancel
+          className="absolute bg-[--light-blur] hover:bg-[--text] p-1 rounded-full top-2 left-2 text-[28px] cursor-pointer"
+          onClick={removeVideo}
+        />
+      </div>
+    );
+  };
 
-   const renderEditingMode = () => {
-     if (!selectedVideo || !isEditing) return null;
+  const renderEditingMode = () => {
+    if (!selectedVideo || !isEditing) return null;
 
-     return (
-       <div className="video-preview-container absolute px-[4%] pt-[30%] top-[20px] left-0 items-center justify-center w-full h-full bg-[--blur]">
-         <video
-           className="rounded-lg"
-           ref={videoRef}
-           src={selectedVideo}
-           controls
-           style={{
-             filter: `brightness(${enhancement.brightness}%) contrast(${enhancement.contrast}%)`,
-           }}
-         />
-         <div className="video-controls w-full flex flex-col gap-1 pt-3">
-           <div className="trim_cont flex flex-row items-center p-2">
-             <button
-               type="button"
-               className={`trim-button bg-[--secondary2] p-1 px-1 rounded-lg text-[--text] text-[16px] hover:bg-[--btn-hover] hover:text-[--text1] font-medium mr-[10px] ${
-                 isTrimmingInProgress ? "disabled" : ""
-               }`}
-               onClick={handleTrim}
-               disabled={isTrimmingInProgress}
-             >
-               {isTrimmingInProgress ? "Trimming..." : "Trim Video"}
-             </button>
+    return (
+      <div className="video-preview-container absolute px-[4%] pt-[30%] top-[20px] left-0 items-center justify-center w-full h-full bg-[--blur]">
+        <video
+          className="rounded-lg"
+          ref={videoRef}
+          src={selectedVideo}
+          controls
+          style={{
+            filter: `brightness(${enhancement.brightness}%) contrast(${enhancement.contrast}%)`,
+          }}
+        />
+        <div className="video-controls w-full flex flex-col gap-1 pt-3">
+          <div className="trim_cont flex flex-row items-center p-2">
+            <button
+              type="button"
+              className={`trim-button bg-[--secondary2] p-1 px-1 rounded-lg text-[--text] text-[16px] hover:bg-[--btn-hover] hover:text-[--text1] font-medium mr-[10px] ${
+                isTrimmingInProgress ? "disabled" : ""
+              }`}
+              onClick={handleTrim}
+              disabled={isTrimmingInProgress}
+            >
+              {isTrimmingInProgress ? "Trimming..." : "Trim Video"}
+            </button>
 
-             <div className="cut-range-controls flex flex-row items-center justify-center gap-2">
-               <div className="start">
-                 <label
-                   htmlFor="start-time"
-                   className="text-[16px] font-semibold"
-                 >
-                   Start Time (seconds):{" "}
-                 </label>
-                 <input
-                   id="start-time"
-                   type="number"
-                   value={cutRange.start}
-                   className="w-[45px] rounded-lg px-1"
-                   onChange={(e) => {
-                     const value = Math.max(
-                       0,
-                       Math.min(Number(e.target.value), cutRange.end)
-                     );
-                     setCutRange((prev) => ({...prev, start: value}));
-                   }}
-                   step="0.1"
-                   min={0}
-                   max={videoDuration}
-                 />
-               </div>
-               <div className="end">
-                 <label
-                   htmlFor="end-time"
-                   className="text-[16px] font-semibold"
-                 >
-                   End Time (seconds):{" "}
-                 </label>
-                 <input
-                   id="end-time"
-                   type="number"
-                   value={cutRange.end}
-                   className="w-[45px] rounded-lg px-1"
-                   onChange={(e) => {
-                     const value = Math.max(
-                       cutRange.start,
-                       Math.min(Number(e.target.value), videoDuration)
-                     );
-                     setCutRange((prev) => ({...prev, end: value}));
-                   }}
-                   step="0.1"
-                   min={0}
-                   max={videoDuration}
-                 />
-               </div>
+            <div className="cut-range-controls flex flex-row items-center justify-center gap-2">
+              <div className="start">
+                <label
+                  htmlFor="start-time"
+                  className="text-[16px] font-semibold"
+                >
+                  Start Time (seconds):{" "}
+                </label>
+                <input
+                  id="start-time"
+                  type="number"
+                  value={cutRange.start}
+                  className="w-[45px] rounded-lg px-1"
+                  onChange={(e) => {
+                    const value = Math.max(
+                      0,
+                      Math.min(Number(e.target.value), cutRange.end)
+                    );
+                    setCutRange((prev) => ({...prev, start: value}));
+                  }}
+                  step="0.1"
+                  min={0}
+                  max={videoDuration}
+                />
+              </div>
+              <div className="end">
+                <label htmlFor="end-time" className="text-[16px] font-semibold">
+                  End Time (seconds):{" "}
+                </label>
+                <input
+                  id="end-time"
+                  type="number"
+                  value={cutRange.end}
+                  className="w-[45px] rounded-lg px-1"
+                  onChange={(e) => {
+                    const value = Math.max(
+                      cutRange.start,
+                      Math.min(Number(e.target.value), videoDuration)
+                    );
+                    setCutRange((prev) => ({...prev, end: value}));
+                  }}
+                  step="0.1"
+                  min={0}
+                  max={videoDuration}
+                />
+              </div>
 
-               <div className="video-duration">
-                 Total Duration: {videoDuration.toFixed(1)} seconds
-               </div>
-             </div>
-           </div>
+              <div className="video-duration">
+                Total Duration: {videoDuration.toFixed(1)} seconds
+              </div>
+            </div>
+          </div>
 
-           <div className="enhancement-controls flex flex-row items-center justify-start px-2 gap-2">
-             <div className="bright flex flex-row items-center gap-2">
-               <label
-                 className="text-[16px] font-semibold"
-                 htmlFor="brightness"
-               >
-                 Brightness:{" "}
-               </label>
-               <input
-                 id="brightness"
-                 type="range"
-                 min={50}
-                 max={150}
-                 value={enhancement.brightness}
-                 className="bg-[--secondary2]"
-                 onChange={(e) =>
-                   handleEnhancementChange("brightness", Number(e.target.value))
-                 }
-               />
-             </div>
+          <div className="enhancement-controls flex flex-row items-center justify-start px-2 gap-2">
+            <div className="bright flex flex-row items-center gap-2">
+              <label className="text-[16px] font-semibold" htmlFor="brightness">
+                Brightness:{" "}
+              </label>
+              <input
+                id="brightness"
+                type="range"
+                min={50}
+                max={150}
+                value={enhancement.brightness}
+                className="bg-[--secondary2]"
+                onChange={(e) =>
+                  handleEnhancementChange("brightness", Number(e.target.value))
+                }
+              />
+            </div>
 
-             <div className="cont flex flex-row items-center gap-2">
-               <label className="text-[16px] font-semibold" htmlFor="contrast">
-                 Contrast:{" "}
-               </label>
-               <input
-                 id="contrast"
-                 type="range"
-                 min={50}
-                 max={150}
-                 value={enhancement.contrast}
-                 onChange={(e) =>
-                   handleEnhancementChange("contrast", Number(e.target.value))
-                 }
-               />
-             </div>
-           </div>
+            <div className="cont flex flex-row items-center gap-2">
+              <label className="text-[16px] font-semibold" htmlFor="contrast">
+                Contrast:{" "}
+              </label>
+              <input
+                id="contrast"
+                type="range"
+                min={50}
+                max={150}
+                value={enhancement.contrast}
+                onChange={(e) =>
+                  handleEnhancementChange("contrast", Number(e.target.value))
+                }
+              />
+            </div>
+          </div>
 
-           <div className="edit-buttons w-full flex flex-row items-center justify-start gap-5">
-             <button
-               type="button"
-               className="done-button p-2 bg-[--green-500] rounded-lg text-[16px] font-semibold text-[--text] hover:bg-[--success-gradient]"
-               onClick={handleDoneEditing}
-               disabled={isTrimmingInProgress}
-             >
-               Done
-             </button>
-             <button
-               type="button"
-               className="cancel-button p-2 bg-[--secondary2] rounded-lg text-[16px] font-semibold text-[--text] hover:bg-[--btn-hover]"
-               onClick={handleCancelEditing}
-               disabled={isTrimmingInProgress}
-             >
-               Cancel
-             </button>
-           </div>
-         </div>
-       </div>
-     );
-   };
-
+          <div className="edit-buttons w-full flex flex-row items-center justify-start gap-5">
+            <button
+              type="button"
+              className="done-button p-2 bg-[--green-500] rounded-lg text-[16px] font-semibold text-[--text] hover:bg-[--success-gradient]"
+              onClick={handleDoneEditing}
+              disabled={isTrimmingInProgress}
+            >
+              Done
+            </button>
+            <button
+              type="button"
+              className="cancel-button p-2 bg-[--secondary2] rounded-lg text-[16px] font-semibold text-[--text] hover:bg-[--btn-hover]"
+              onClick={handleCancelEditing}
+              disabled={isTrimmingInProgress}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="uploadvideo_section flex flex-col ">

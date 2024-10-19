@@ -1,15 +1,14 @@
 // app/[filterTag]/[productId]/page.tsx
 'use client'
 import React from "react";
-import {useRouter} from "next/router";
 import {useProductContext} from "@/context/productContext/productcontext";
 
 const ProductDetailsPage = ({
   params,
 }: {
-  params: {filterTag: string; productId: string};
+  params: {productId: string};
 }) => {
-  const {filterTag, productId} = params;
+  const {productId} = params;
   const {products, loading} = useProductContext();
 
   const product = products.find((p) => p._id === productId);

@@ -30,7 +30,14 @@ const nextConfig = {
     ],
     formats: ["image/webp"],
   },
-  webpack(config) {
+  webpack(config, {isServer}) {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+
     config.module.rules.push({
       test: /\.svg$/,
       use: [
@@ -44,6 +51,23 @@ const nextConfig = {
     });
 
     return config;
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
+          {
+            key: "Cross-Origin-Embedder-Policy",
+            value: "require-corp",
+          },
+        ],
+      },
+    ];
   },
 };
 

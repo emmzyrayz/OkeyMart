@@ -1,9 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {useProductContext} from "../productContext/productcontext";
-import {Product, ProductFormData, createEmptyProduct} from "@/types/product";
+import { ProductFormData, createEmptyProduct} from "@/types/product";
 import {
-  getCategory,
-  getSubcategoryConfig,
   categories,
 } from "@/config/categoryvalidation";
 
