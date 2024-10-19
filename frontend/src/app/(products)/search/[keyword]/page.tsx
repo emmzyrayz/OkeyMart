@@ -2,7 +2,6 @@
 
 'use client'
 import React from "react";
-import {useRouter} from "next/router";
 import Link from "next/link";
 import {useProductContext} from "@/context/productContext/productcontext";
 
@@ -23,7 +22,7 @@ const SearchResultsPage = ({params}: {params: {keyword: string}}) => {
 
   return (
     <div>
-      <h1>Search Results for "{keyword}"</h1>
+      <h1>Search Results for &qout;{keyword}&qout;</h1>
       {filteredProducts.length === 0 ? (
         <p>No products found.</p>
       ) : (

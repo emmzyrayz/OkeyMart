@@ -14,7 +14,6 @@ import {HamburgerMenu} from "../hamburger/page";
 import {useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useSearch} from "@/context/searchcontext/searchcontext";
-import {Product} from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 
 export const HomeNav = () => {

@@ -155,6 +155,7 @@ export const categories: CategoryConfig[] = [
           "ram",
           "storage",
           "screenSize",
+          "StorageType",
         ],
         dropdownOptions: {
           brand: ["Apple", "Dell", "HP", "Lenovo", "ASUS"],
@@ -168,6 +169,7 @@ export const categories: CategoryConfig[] = [
           ram: ["4GB", "8GB", "16GB", "32GB", "64GB"],
           storage: ["256GB", "512GB", "1TB", "2TB"],
           screenSize: ['13"', '14"', '15.6"', '16"', '17"'],
+          StorageType: ["HDD", "SSD", "Hybrid"],
         },
       },
     ],

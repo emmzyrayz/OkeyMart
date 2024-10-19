@@ -1,16 +1,17 @@
 "use client";
 import {useState, useEffect} from "react";
-import { usePathname } from "next/navigation"; // New hook
+import {usePathname} from "next/navigation"; // New hook
 // import type {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/footer/page";
 import TopBar from "@/components/top-bar/page";
 import LoadingScreen from "@/components/loadingscreen/page";
-import { ProductProvider } from "@/context/productContext/productcontext";
-import { CartProvider } from "@/context/commerce logic/cartcontext";
-import { ViewWishProvider } from "@/context/commerce logic/view-wishcontext";
-import { SearchProvider } from "@/context/searchcontext/searchcontext";
+import {ProductProvider} from "@/context/productContext/productcontext";
+import {CartProvider} from "@/context/commerce logic/cartcontext";
+import {ViewWishProvider} from "@/context/commerce logic/view-wishcontext";
+import {SearchProvider} from "@/context/searchcontext/searchcontext";
+import { ProductUploadProvider } from "@/context/productUpload/productUploadContext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -57,30 +58,93 @@ export default function RootLayout({
     };
   }, []);
 
+  // Set metadata based on the current pathname
+  const getMetadata = () => {
+    switch (pathname) {
+      case "/":
+        return {
+          title: "Home - Okey Mart",
+          description:
+            "Welcome to Okey Mart, your one-stop shop for all your needs.",
+        };
+      case "/checkout":
+        return {
+          title: "Checkout - Okey Mart",
+          description: "Complete your purchase at Okey Mart.",
+        };
+      // Add more cases for other routes as needed
+      default:
+        return {
+          title: "Okey Mart",
+          description:
+            "Shop the best products at Okey Mart. From electronics to fashion, we have everything you need. Fast shipping and secure payments.",
+        };
+    }
+  };
+
+  const {title, description} = getMetadata();
+
   return (
     <ProductProvider>
       <CartProvider>
         <ViewWishProvider>
           <SearchProvider>
-            <html lang="en">
-              <head>
-                <meta charSet="UTF-8" />
-              </head>
-              <body>
-                {loading && <LoadingScreen />}
-                {!loading && (
-                  <div className="fadeIn-load">
-                    <div className="page-container">
-                      {!hideLayout && <TopBar />}
-                      <div className={`${inter.className} content`}>
-                        {children}
+            <ProductUploadProvider>
+              <html lang="en">
+                <head>
+                  <meta charSet="UTF-8" />
+                  <title>{title}</title>
+                  <meta name="description" content={description} />
+
+                  {/* og meta tags */}
+                  <meta
+                    property="og:title"
+                    content="Okey Mart - your one-stop shop for all your needs."
+                  />
+                  <meta
+                    property="og:description"
+                    content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
+                  />
+                  <meta property="og:image" content="" />
+                  <meta
+                    property="og:url"
+                    content="https://okeymart.vercel.app/"
+                  />
+                  <meta property="og:type" content="website" />
+
+                  {/* twitter card tag */}
+                  <meta name="twitter:card" content="summary_large_image" />
+                  <meta
+                    name="twitter:title"
+                    content="Okey Mart - your one-stop shop for all your needs."
+                  />
+                  <meta
+                    name="twitter:description"
+                    content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
+                  />
+                  <meta name="twitter:image" content="" />
+
+                  <meta
+                    name="keywords"
+                    content="eCommerce, online shopping, electronics, fashion, bill payment, cash transfer, gift cards, cryptocurrency, game currencies"
+                  />
+                </head>
+                <body>
+                  {loading && <LoadingScreen />}
+                  {!loading && (
+                    <div className="fadeIn-load">
+                      <div className="page-container">
+                        {!hideLayout && <TopBar />}
+                        <div className={`${inter.className} content`}>
+                          {children}
+                        </div>
                       </div>
+                      {!hideLayout && <Footer />}
                     </div>
-                    {!hideLayout && <Footer />}
-                  </div>
-                )}
-              </body>
-            </html>
+                  )}
+                </body>
+              </html>
+            </ProductUploadProvider>
           </SearchProvider>
         </ViewWishProvider>
       </CartProvider>

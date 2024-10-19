@@ -11,8 +11,6 @@ import {
   Product,
   ProductFormData,
   mapFormDataToProduct,
-  mapProductToFormData,
-  createEmptyProduct,
 } from "@/types/product";
 import {getCategory, getSubcategoryConfig} from "@/config/categoryvalidation";
 

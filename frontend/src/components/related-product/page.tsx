@@ -111,7 +111,7 @@ const RelatedProductsList = () => {
   return (
     <div className="related_items flex flex-row overflow-x-auto mb-8 px-4">
       {relatedProducts.map((product, index) => (
-        <div key={product.id} className="related_item">
+        <div key={product._id} className="related_item">
           <div className="product_image">
             <span className="discount">
               -{((1 - product.discount / product.price) * 100).toFixed(0)}%

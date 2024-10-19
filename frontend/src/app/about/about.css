@@ -205,4 +205,15 @@
             width: 100%;
         }
     }
+
+    .about_stats{
+        flex-direction: column;
+        flex-wrap: wrap;
+        width: 100%;
+
+        .about_stat{
+            width: 240px;
+            height: 200px;
+        }
+    }
 }

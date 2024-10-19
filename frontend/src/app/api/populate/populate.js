@@ -1,8 +1,7 @@
-const express = require("express");
-const Product = require("../models/products");
-const mongoose = require("mongoose");
-const {faker} = require("@faker-js/faker");
-const router = express.Router();
+// import express from "express";
+import Product from "../models/products";
+import mongoose from "mongoose";
+import {faker} from "@faker-js/faker";
 
 // Fixed categories structure to match schema
 const categories = [
@@ -167,7 +166,6 @@ router.post("/populate", async (req, res) => {
       );
       const mainImage = images[0];
 
-      
       const product = {
         name: faker.commerce.productName(),
         description: faker.commerce.productDescription(),
