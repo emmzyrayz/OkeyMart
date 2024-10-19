@@ -52,11 +52,6 @@ const nextConfig = {
 
     return config;
   },
-  api: {
-    bodyParser: {
-      sizeLimit: '100mb',
-    },
-  },
   async headers() {
     return [
       {
@@ -75,5 +70,16 @@ const nextConfig = {
     ];
   },
 };
+
+// Conditionally add the serverRuntimeConfig if using Next.js 13 or later
+if (parseInt(process.env.NEXT_PUBLIC_VERSION) >= 13) {
+  nextConfig.serverRuntimeConfig = {
+    api: {
+      bodyParser: {
+        sizeLimit: "100mb",
+      },
+    },
+  };
+}
 
 export default nextConfig;

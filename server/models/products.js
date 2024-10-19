@@ -1,5 +1,5 @@
 // models/product.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const DynamicFieldsSchema = new mongoose.Schema(
   {
