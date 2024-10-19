@@ -81,6 +81,10 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
     return selectedCategory?.subcategories || [];
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch({type: "SET_FORM_DATA", payload: {description: e.target.value}});
+  };
+
   const formatFieldLabel = (field: string) => {
     return field
       .split(/(?=[A-Z])/)
@@ -126,12 +130,10 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
   return (
     <div onSubmit={(e) => e.preventDefault()} className="dynamic-form">
       <WaveInput
-        label="Product Name"
+        label="Product Description"
         name="name"
-        value={formData.name}
-        onChange={(e) =>
-          dispatch({type: "SET_FORM_DATA", payload: {name: e.target.value}})
-        }
+        value={formData.description}
+        onChange={handleDescriptionChange}
         required
       />
 

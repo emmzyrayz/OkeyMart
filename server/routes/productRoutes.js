@@ -72,8 +72,18 @@ router.get("/:id", async (req, res) => {
 
 // Route: Add a new product
 router.post("/", async (req, res) => {
-  const {name, description, price, mainImage, images, countInStock, category} =
-    req.body;
+  const {
+    name,
+    description,
+    price,
+    mainImage,
+    images,
+    countInStock,
+    category,
+    subcategory, // Add subcategory
+    state, // Add state
+    lga,
+  } = req.body;
 
   try {
     const product = new Product({
@@ -83,7 +93,10 @@ router.post("/", async (req, res) => {
       mainImage,
       images,
       countInStock,
-      categories: category,
+      category,
+      subcategory, // Ensure this is included
+      state, // Ensure this is included
+      lga,
     });
 
     const createdProduct = await product.save(); // Save product to the database
@@ -104,7 +117,7 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({message: "Invalid product ID"});
     }
 
-  const {name, description, price, imageUrl, countInStock, category} = req.body;
+  const {name, description, price, images, mainImage, countInStock, category} = req.body;
 
   try {
     const product = await Product.findById(req.params.id);

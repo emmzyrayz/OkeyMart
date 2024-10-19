@@ -75,7 +75,14 @@ export const ProductProvider: React.FC<{children: ReactNode}> = ({
       const response = await axios.post<Product>(apiUrl, productData);
       setProducts((prev) => [...prev, response.data]);
     } catch (error) {
-      console.error("Error adding product:", error);
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Error adding product:",
+          error.response?.data || error.message
+        );
+      } else {
+        console.error("Unexpected error:", error);
+      }
     }
   };
 

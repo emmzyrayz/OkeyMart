@@ -95,6 +95,8 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
       const errors: {[key: string]: string} = {};
 
       if (!state.formData.name) errors.name = "Name is required";
+      if (!state.formData.description)
+        errors.description = "Description is required";
       if (!state.formData.category) errors.category = "Category is required";
       if (!state.formData.subcategory)
         errors.subcategory = "Subcategory is required";
@@ -165,8 +167,10 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
         youtubeLink: state.youtubeLink,
       };
 
+      console.log("Product Data to be sent:", productData);
       // Add product to database
      try {
+      
        await addProduct(productData);
        dispatch({type: "SET_UPLOAD_PROGRESS", payload: 100});
        console.log("Product uploaded successfully");
