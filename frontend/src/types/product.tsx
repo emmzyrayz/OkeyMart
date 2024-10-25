@@ -100,3 +100,5 @@ export const mapProductToFormData = (product: Product): ProductFormData => ({
     product.categorySpecificFields.fieldValues
   ),
 });
+
+

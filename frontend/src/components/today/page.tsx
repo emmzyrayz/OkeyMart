@@ -8,7 +8,7 @@ import {useProductContext} from "@/context/productContext/productcontext";
 import { FilterButton } from "../filterbtn";
 import {Product} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
-import { useCart } from "@/context/commerce logic/cartcontext";
+import { CartItem, useCart } from "@/context/commerce logic/cartcontext";
 import { useWishContext } from "@/context/commerce logic/view-wishcontext";
 import {
   FaArrowLeft,
@@ -70,59 +70,25 @@ export default function Today() {
   const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
-    wishlist,
+    // wishlist,
     viewedProducts,
     addToWishlist,
     addToViewed,
     removeFromViewlist,
     removeFromWishlist,
+    isInWishlist,
   } = useWishContext();
+
+  const [selectedColor] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleHeartClick = useCallback(
-    (product: Product, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => product.trending === true).slice(0, 12);
+  }, [products]);
 
-      setHeartedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToWishlist(product);
-        } else {
-          removeFromWishlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
-    },
-    [addToWishlist, removeFromWishlist]
-  );
-
-  const handleEyeClick = useCallback(
-    (product: Product, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      setEyedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToViewed(product);
-        } else {
-          removeFromViewlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
-    },
-    [addToViewed, removeFromViewlist]
-  );
-
-  const handleAddToCart = useCallback(
-    (e: React.MouseEvent, product: Product) => {
-      e.preventDefault();
-      addToCart(product);
-    },
-    [addToCart]
-  );
 
   const scrollLeft = useCallback(() => {
     if (scrollContainerRef.current) {
@@ -137,15 +103,48 @@ export default function Today() {
   }, []);
 
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => product.today === true).slice(0, 12);
-  }, [products]);
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  // Initialize state based on memoized filtered products
-  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>(
-    {}
+      if (isInWishlist(product._id)) {
+        removeFromWishlist(product._id);
+      } else {
+        addToWishlist(product);
+      }
+    },
+    [addToWishlist, removeFromWishlist, isInWishlist]
   );
-  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
+
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const isViewed = viewedProducts.some((item) => item._id === product._id);
+      if (isViewed) {
+        removeFromViewlist(product._id);
+      } else {
+        addToViewed(product);
+      }
+    },
+    [addToViewed, removeFromViewlist, viewedProducts]
+  );
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor,
+        selectedSize,
+        quantity,
+      };
+      addToCart(cartItem);
+    },
+    [addToCart, selectedColor, selectedSize, quantity]
+  );
 
 
   // Set the end date here (e.g., Dec 31, 2024)
@@ -159,22 +158,7 @@ export default function Today() {
   });
 
   // Update hearts and eyes based on wishlist and viewed products
-  useEffect(() => {
-    const newHeartedItems: {[key: string]: boolean} = {};
-    const newEyedItems: {[key: string]: boolean} = {};
-
-    filteredProducts.forEach((product) => {
-      newHeartedItems[product._id] = wishlist.some(
-        (item) => item._id === product._id
-      );
-      newEyedItems[product._id] = viewedProducts.some(
-        (item) => item._id === product._id
-      );
-    });
-
-    setHeartedItems(newHeartedItems);
-    setEyedItems(newEyedItems);
-  }, [filteredProducts, wishlist, viewedProducts]);
+  
 
   useEffect(() => {
     // Update countdown every second
@@ -306,7 +290,7 @@ export default function Today() {
                       className="icon-heart"
                       onClick={(e) => handleHeartClick(product, e)}
                     >
-                      {heartedItems[product._id] ? (
+                      {isInWishlist(product._id) ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -316,7 +300,9 @@ export default function Today() {
                       className="icon-eye"
                       onClick={(e) => handleEyeClick(product, e)}
                     >
-                      {eyedItems[product._id] ? (
+                      {viewedProducts.some(
+                        (item) => item._id === product._id
+                      ) ? (
                         <FaEye className="fas" />
                       ) : (
                         <FaRegEye className="fa" />

@@ -1,13 +1,21 @@
 .sortcat_section {
     min-height: 100%;
-    min-width: 217px;
+    min-width: 235px;
     padding: 0px 10px;
 }
 
 .sortcat_container {
     position: relative;
     height: 100%;
+    width: 100%;
     justify-content: space-between;
+}
+
+h2.relative {
+    display: flex;
+    font-size: var(--fs-24);
+    font-weight: 600;
+    padding: 5px 10px;
 }
 
 
@@ -19,34 +27,45 @@
     color: var(--black);
     font-size: var(--fs-16);
     font-weight: 500;
+    display: flex;
+    align-items: center;
 }
 
-.sortcat_container>span {
+.sortcat_container .sort_spann {
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 50px;
     padding: 5px;
+    cursor: pointer;
     align-items: center;
     justify-content: center;
 }
 
-.sortcat_container>span>span {
+.sortcat_container .sort_spann a {
     display: flex;
     width: 100%;
     height: 100%;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 
-.sortcat_container>span:hover {
+ .sort_spann:hover,
+ .sort_spann:focus {
     background: rgba(12, 12, 12, 0.26);
     border-radius: 10px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(8.8px);
     -webkit-backdrop-filter: blur(8.8px);
+    transition: all 0.3s ease;
 }
+
+.sortcat_item.opacity-50 {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 
 @media (max-width : 808px) {
     .sortcat_item {

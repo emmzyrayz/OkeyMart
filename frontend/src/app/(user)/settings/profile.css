@@ -68,12 +68,28 @@
         font-size: var(--fs-16);
         font-weight: 500;
         color: var(--text1);
+        gap: 10px;
+
+        span{
+            display: flex;
+            flex-direction: row;
+            height: 50px;
+            width: 100%;
+            align-items: center;
+            justify-content: start;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: var(--fs-16);
+            gap: 20px;
+            font-weight: 600;
+            transition: all 0.5s ease-in-out;
+        }
     }
 
     .account_list span:hover,
     .account_list span:focus,
     .order_list span:hover {
-        color: var(--btn-hover);
+        color: var(--text1);
     }
 }
 
@@ -163,4 +179,8 @@
     .save_btn:hover {
         background: var(--btn-hover);
     }
+}
+
+.iccons{
+    font-size: 20px;
 }

@@ -23,7 +23,7 @@ export const UploadProductVideo: React.FC<UploadProductVideoProps> = ({
   setVideo,
 }) => {
   const [selectedVideo, setSelectedVideo] = useState<string | undefined>(
-    undefined
+    video ? URL.createObjectURL(video) : undefined
   );
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -67,6 +67,7 @@ export const UploadProductVideo: React.FC<UploadProductVideoProps> = ({
       const videoURL = URL.createObjectURL(file);
       setSelectedVideo(videoURL);
       setCutRange({start: 0, end: 0});
+      setVideo(file);
     }
   };
 

@@ -23,6 +23,7 @@ import { Product } from "@/types/product";
 import { ProductNotFound } from "../product-notfound/page";
 import { FilterButton } from "../filterbtn";
 import Link from "next/link";
+import {CartItem} from "../../context/commerce logic/cartcontext";
 
 
 
@@ -79,20 +80,20 @@ export default function Show() {
   const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
-    wishlist,
+    // wishlist,
     viewedProducts,
     addToWishlist,
     addToViewed,
-    removeFromViewlist,
     removeFromWishlist,
+    removeFromViewlist,
+    isInWishlist, // Use the isInWishlist function from context
   } = useWishContext();
-  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>({});
-  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
-  const [activeColors, setActiveColors] = useState<string[]>(
-    Array(16).fill("red")
-  );
 
-  // Create two separate refs for each grid
+  const [selectedColor] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
+  const [activeColors, setActiveColors] = useState<string[]>([]);
+
   const topGridRef = useRef<HTMLDivElement>(null);
   const bottomGridRef = useRef<HTMLDivElement>(null);
 
@@ -108,41 +109,48 @@ export default function Show() {
     };
   }, [products]);
 
+  // Initialize activeColors when products load
+  useEffect(() => {
+    setActiveColors(
+      Array(topProducts.top.length + topProducts.bottom.length).fill("red")
+    );
+  }, [topProducts]);
+
   const colors = ["red", "orange", "yellow", "black"];
-  
-
- useEffect(() => {
-   if (wishlist && viewedProducts) {
-     const updatedHeartedItems: {[key: string]: boolean} = {};
-     const updatedEyedItems: {[key: string]: boolean} = {};
-
-     [...topProducts.top, ...topProducts.bottom].forEach((product) => {
-       updatedHeartedItems[product._id] = wishlist.some(
-         (wishItem) => wishItem._id === product._id
-       );
-       updatedEyedItems[product._id] = viewedProducts.some(
-         (viewedItem) => viewedItem._id === product._id
-       );
-     });
-
-     setHeartedItems(updatedHeartedItems);
-     setEyedItems(updatedEyedItems);
-   }
- }, [topProducts, wishlist, viewedProducts]);
 
   const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
-    e.preventDefault(); // Prevent navigation when clicking icons
-    e.stopPropagation(); // Prevent event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     callback();
   };
 
-  if (loading) {
-    return <FetchLoader />; // Display loading component while fetching
-  }
+  const handleHeartClick = (product: Product) => {
+    if (isInWishlist(product._id)) {
+      removeFromWishlist(product._id);
+    } else {
+      addToWishlist(product);
+    }
+  };
 
-  if (!products || products.length === 0) {
-    return <ProductNotFound />;
-  }
+  const handleEyeClick = (product: Product) => {
+    const isViewed = viewedProducts.some((item) => item._id === product._id);
+    if (isViewed) {
+      removeFromViewlist(product._id);
+    } else {
+      addToViewed(product);
+    }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    const cartItem: CartItem = {
+      ...product,
+      selectedColor,
+      selectedSize,
+      quantity,
+    };
+    addToCart(cartItem);
+  };
 
   const handleColorChange = (index: number, color: string) => {
     setActiveColors((prev) => {
@@ -152,40 +160,6 @@ export default function Show() {
     });
   };
 
-  
-
-  const handleHeartClick = (product: Product) => {
-    setHeartedItems((prev) => {
-      const updated = {...prev};
-      updated[product._id] = !updated[product._id];
-      if (updated[product._id]) {
-        addToWishlist(product);
-      } else {
-        removeFromWishlist(product._id);
-      }
-      return updated;
-    });
-  };
-
-  const handleEyeClick = (product: Product) => {
-    setEyedItems((prev) => {
-      const updated = {...prev};
-      updated[product._id] = !updated[product._id];
-      if (updated[product._id]) {
-        addToViewed(product);
-      } else {
-        removeFromViewlist(product._id);
-      }
-      return updated;
-    });
-  };
-
-  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
-    e.preventDefault(); // Prevent navigation when adding to cart
-    addToCart(product);
-  };
-
-  // Scroll functions for both grids
   const scrollLeft = () => {
     topGridRef.current?.scrollBy({left: -200, behavior: "smooth"});
     bottomGridRef.current?.scrollBy({left: -200, behavior: "smooth"});
@@ -195,6 +169,85 @@ export default function Show() {
     topGridRef.current?.scrollBy({left: 200, behavior: "smooth"});
     bottomGridRef.current?.scrollBy({left: 200, behavior: "smooth"});
   };
+
+  if (loading) return <FetchLoader />;
+  if (!products || products.length === 0) return <ProductNotFound />;
+
+
+  const renderProductGrid = (products: Product[], startIndex: number = 0) =>
+    products.map((product, index) => (
+      <div className="top_item" key={product._id}>
+        {product?._id && (
+          <Link href={`/top/${product._id}`}>
+            <div className="product_image">
+              <Image
+                alt={product.name}
+                width={200}
+                height={300}
+                src={product.mainImage || "/default-image.jpg"}
+              />
+              <div className="product_icons">
+                <div
+                  className="icon-heart"
+                  onClick={(e) =>
+                    handleIconClick(e, () => handleHeartClick(product))
+                  }
+                >
+                  {isInWishlist(product._id) ? (
+                    <FaHeart className="fas" />
+                  ) : (
+                    <FaRegHeart className="fa" />
+                  )}
+                </div>
+                <div
+                  className="icon-eye"
+                  onClick={(e) =>
+                    handleIconClick(e, () => handleEyeClick(product))
+                  }
+                >
+                  {viewedProducts.some((item) => item._id === product._id) ? (
+                    <FaEye className="fas" />
+                  ) : (
+                    <FaRegEye className="fa" />
+                  )}
+                </div>
+              </div>
+              <div
+                className="product_btn"
+                onClick={(e) => handleAddToCart(e, product)}
+              >
+                <span>Add To Cart</span>
+              </div>
+            </div>
+            <div className="product_detal flex flex-col">
+              <h3>{product.name}</h3>
+              <div className="info flex flex-row gap-1 items-center">
+                <span className="price">{product.price}</span>
+                <div className="rating">
+                  <ProductRating product={product} />
+                </div>
+                <span className="reviews">
+                  ({product.rating?.toFixed(1) ?? "N/A"})
+                </span>
+              </div>
+              <div className="color-var flex flex-row gap-2 items-center relative">
+                {colors.map((color) => (
+                  <div
+                    key={color}
+                    className={`color-item ${color} ${
+                      activeColors[startIndex + index] === color ? "active" : ""
+                    }`}
+                    onClick={() => handleColorChange(startIndex + index, color)}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          </Link>
+        )}
+      </div>
+    ));
+
+ 
 
   return (
     <div className="show_section w-full flex flex-col">
@@ -227,177 +280,13 @@ export default function Show() {
           className="top_grid flex flex-row overflow-x-auto"
           ref={topGridRef}
         >
-          {topProducts.top.map((product, index) => {
-            // console.log("Rendering product: ", product);
-
-            return (
-              <div className="top_item" key={product._id}>
-                {product?._id && (
-                  <Link href={`/top/${product._id}`}>
-                    <div className="product_image">
-                      <Image
-                        alt={product.name}
-                        width={200}
-                        height={300}
-                        src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                      />
-                      <div
-                        key={`icons-${product._id}`}
-                        className="product_icons"
-                      >
-                        <div
-                          className="icon-heart"
-                          onClick={(e) =>
-                            handleIconClick(e, () => handleHeartClick(product))
-                          }
-                        >
-                          {heartedItems[index] ? (
-                            <FaHeart className="fas" />
-                          ) : (
-                            <FaRegHeart className="fa" />
-                          )}
-                        </div>
-                        <div
-                          className="icon-eye"
-                          onClick={(e) =>
-                            handleIconClick(e, () => handleEyeClick(product))
-                          }
-                        >
-                          {eyedItems[index] ? (
-                            <FaEye className="fas" />
-                          ) : (
-                            <FaRegEye className="fa" />
-                          )}
-                        </div>
-                      </div>
-                      <div
-                        className="product_btn"
-                        onClick={(e) => handleAddToCart(e, product)}
-                      >
-                        <span>Add To Cart</span>
-                      </div>
-                    </div>
-                    <div className="product_detal flex flex-col">
-                      <h3>{product.name}</h3>
-                      <div className="info flex flex-row gap-1 items-center">
-                        <span className="price">{product.price}</span>
-                        <div className="rating">
-                          <div className="rating_icon flex flex-row items-center">
-                            <ProductRating product={product} />{" "}
-                            {/* Render the rating */}
-                          </div>
-                        </div>
-                        <span className="reviews">
-                          ({product.rating?.toFixed(1) ?? "N/A"})
-                        </span>
-                      </div>
-                      <div className="color-var flex flex-row gap-2 items-center relative">
-                        {colors.map((color) => (
-                          <div
-                            key={color}
-                            className={`color-item ${color} ${
-                              activeColors[index] === color ? "active" : ""
-                            }`}
-                            onClick={() => handleColorChange(index, color)}
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  </Link>
-                )}
-              </div>
-            );
-          })}
+          {renderProductGrid(topProducts.top)}
         </div>
         <div
           className="bottom_grid flex flex-row overflow-x-auto"
           ref={bottomGridRef}
         >
-          {topProducts.bottom.map((product, index) => {
-            // console.log("Rendering product: ", product);
-
-            return (
-              <div className="top_item" key={product._id}>
-                {product?._id && (
-                  <Link href={`/top/${product._id}`}>
-                    <div className="product_image">
-                      <Image
-                        alt={product.name}
-                        width={200}
-                        height={300}
-                        src={product.mainImage || "/default-image.jpg"} // Ensure a default image
-                      />
-                      <div
-                        key={`icons-${product._id}`}
-                        className="product_icons"
-                      >
-                        <div
-                          className="icon-heart"
-                          onClick={(e) =>
-                            handleIconClick(e, () => handleHeartClick(product))
-                          }
-                        >
-                          {heartedItems[index + topProducts.top.length] ? (
-                            <FaHeart className="fas" />
-                          ) : (
-                            <FaRegHeart className="fa" />
-                          )}
-                        </div>
-                        <div
-                          className="icon-eye"
-                          onClick={(e) =>
-                            handleIconClick(e, () => handleEyeClick(product))
-                          }
-                        >
-                          {eyedItems[index + topProducts.top.length] ? (
-                            <FaEye className="fas" />
-                          ) : (
-                            <FaRegEye className="fa" />
-                          )}
-                        </div>
-                      </div>
-                      <div className="product_btn">
-                        <span>Add To Cart</span>
-                      </div>
-                    </div>
-                    <div className="product_detal flex flex-col">
-                      <h3>{product.name}</h3>
-                      <div className="info flex flex-row gap-1 items-center">
-                        <span className="price">{product.price}</span>
-                        <div className="rating">
-                          <div className="rating_icon flex flex-row items-center">
-                            <ProductRating product={product} />
-                          </div>
-                        </div>
-                        <span className="reviews">
-                          ({product.rating?.toFixed(1) ?? "N/A"})
-                        </span>
-                      </div>
-                      <div className="color-var flex flex-row gap-2 items-center relative">
-                        {colors.map((color) => (
-                          <div
-                            key={color}
-                            className={`color-item ${color} ${
-                              activeColors[index + topProducts.top.length] ===
-                              color
-                                ? "active"
-                                : ""
-                            }`}
-                            onClick={() =>
-                              handleColorChange(
-                                index + topProducts.top.length,
-                                color
-                              )
-                            }
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  </Link>
-                )}
-              </div>
-            );
-          })}
+          {renderProductGrid(topProducts.bottom, topProducts.top.length)}
         </div>
       </div>
 
