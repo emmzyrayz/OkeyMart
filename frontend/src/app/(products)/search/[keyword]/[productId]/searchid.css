@@ -44,11 +44,11 @@
             }
 
             .product_image img {
-                width: 100%;
+                width: 100% !important;
                 height: 100% !important;
-                object-fit: cover;
-                border-radius: 7px;
+                object-fit: fill;
                 object-position: center;
+                border-radius: 7px;
             }
 
             .product_image .discount,

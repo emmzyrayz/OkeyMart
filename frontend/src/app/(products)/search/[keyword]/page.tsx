@@ -1,40 +1,47 @@
 // app/search/[keyword]/page.tsx
 
 'use client'
-import React from "react";
-import Link from "next/link";
+import React, { useMemo } from "react";
+// import Link from "next/link";
 import {useProductContext} from "@/context/productContext/productcontext";
+import FetchLoader from "@/components/fetchloading/page";
+// import { Product } from "@/types/product";
+import { ProductGrid } from "@/components/product-grid/page";
+
 
 const SearchResultsPage = ({params}: {params: {keyword: string}}) => {
-  const {keyword} = params;
+  const decodedKeyword = decodeURIComponent(params.keyword);
   const {products, loading} = useProductContext();
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(keyword.toLowerCase()) ||
-      product.category.toLowerCase().includes(keyword.toLowerCase()) ||
-      product.subcategory.toLowerCase().includes(keyword.toLowerCase())
-  );
+ const filteredProducts = useMemo(() => {
+   const searchTerm = decodedKeyword.toLowerCase();
+
+   return products.filter((product) => {
+     const nameMatch = product.name.toLowerCase().includes(searchTerm);
+     const categoryMatch = product.category.toLowerCase().includes(searchTerm);
+     const subcategoryMatch = (product.subcategory || "")
+       .toLowerCase()
+       .includes(searchTerm);
+
+     return nameMatch || categoryMatch || subcategoryMatch;
+   });
+ }, [products, decodedKeyword]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <FetchLoader />;
   }
 
   return (
-    <div>
-      <h1>Search Results for &qout;{keyword}&qout;</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">
+        Search Results for &quot;{decodedKeyword}&quot;
+      </h1>
+
       {filteredProducts.length === 0 ? (
-        <p>No products found.</p>
+        <p className="text-gray-600">No products found.</p>
       ) : (
-        <ul>
-          {filteredProducts.map((product) => (
-            <li key={product._id}>
-              <Link href={`/search/${keyword}/${product._id}`}>
-                {product.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        // Render ProductGrid with filtered products
+        <ProductGrid products={filteredProducts} filterTag={decodedKeyword} />
       )}
     </div>
   );

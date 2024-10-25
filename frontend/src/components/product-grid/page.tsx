@@ -95,7 +95,7 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
 
       <div className="productgrid_top flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 mb-4 p-4 bg-gray-100 rounded-md shadow-sm gap-2">
         {/* Grid Filter */}
-        <div className="grid_filter w-full sm:w-1/3">
+        <div className="grid_filter flex flex-col w-full sm:w-1/3 gap-2">
           <WaveSelect
             label="Category"
             name="category"

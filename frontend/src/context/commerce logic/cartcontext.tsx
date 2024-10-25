@@ -10,6 +10,8 @@ import {Product} from "@/types/product";
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedColor: string; // Added selectedColor
+  selectedSize: string; // Added selectedSize
 }
 
 interface CartState {
@@ -19,14 +21,14 @@ interface CartState {
 }
 
 type CartAction =
-  | {type: "ADD_TO_CART"; payload: Product}
+  | {type: "ADD_TO_CART"; payload: CartItem}
   | {type: "REMOVE_FROM_CART"; payload: string}
   | {type: "UPDATE_QUANTITY"; payload: {id: string; quantity: number}}
   | {type: "CLEAR_CART"};
 
 interface CartContextType {
   cartState: CartState;
-  addToCart: (product: Product) => void;
+  addToCart: (product: CartItem) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -49,16 +51,21 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         (item) => item._id === action.payload._id
       );
 
-      let newItems;
+      let newItems: CartItem[];
 
       if (existingItemIndex > -1) {
         newItems = state.items.map((item, index) =>
           index === existingItemIndex
-            ? {...item, quantity: item.quantity + 1}
+            ? {
+                ...item,
+                quantity: item.quantity + action.payload.quantity,
+                selectedColor: action.payload.selectedColor,
+                selectedSize: action.payload.selectedSize,
+              }
             : item
         );
       } else {
-        newItems = [...state.items, {...action.payload, quantity: 1}];
+        newItems = [...state.items, action.payload];
       }
 
       const totalItems = newItems.reduce(
@@ -127,7 +134,7 @@ export const CartProvider: React.FC<{children: ReactNode}> = ({children}) => {
     itemCount: 0,
   });
 
-  const addToCart = useCallback((product: Product) => {
+  const addToCart = useCallback((product: CartItem) => {
     dispatch({type: "ADD_TO_CART", payload: product});
   }, []);
 

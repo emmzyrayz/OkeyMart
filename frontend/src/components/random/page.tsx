@@ -77,8 +77,8 @@ export default function Random() {
   }
 
   return (
-    <div className="random_section flex flex-row items-center justify-around relative gap-5">
-      <div className="random_text flex flex-col items-start justify-center gap-4 w-2/4">
+    <div className="random_section relative">
+      <div className="random_text ">
         {selectedProduct ? (
           <>
             <h2>{selectedProduct.category}</h2>
@@ -104,7 +104,7 @@ export default function Random() {
               </div>
             </div>
             <div
-              className="random_btn flex items-center justify-center"
+              className="random_btn "
               onClick={() => router.push("/top/${selectedProduct._id}")}
             >
               <span>Buy Now</span>
@@ -114,7 +114,7 @@ export default function Random() {
           <p>Loading product of the day...</p>
         )}
       </div>
-      <div className="random_image flex items-center justify-center relative w-2/4 rounded-sm">
+      <div className="random_image ">
         {selectedProduct ? (
           <>
             {/* Assign product.imageUrl to the Image component */}
@@ -123,7 +123,7 @@ export default function Random() {
               width={500}
               height={300}
               alt={selectedProduct.name}
-              className="rounded-sm"
+              className="rounded-md"
             />
           </>
         ) : (

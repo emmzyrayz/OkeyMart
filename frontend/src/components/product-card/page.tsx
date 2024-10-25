@@ -11,12 +11,14 @@ import {
   FaStarHalf,
 } from "react-icons/fa";
 import "./prod-card.css";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import React from "react";
 import {useRouter} from "next/navigation";
 import {Product} from "@/types/product";
 import {useCart} from "@/context/commerce logic/cartcontext";
 // import Link from "next/link";
+import { CartItem } from '../../context/commerce logic/cartcontext';
+import { useWishContext } from "@/context/commerce logic/view-wishcontext";
 
 type ProductCardProps = {
   product: Product;
@@ -65,19 +67,50 @@ const ProductRating = ({rating}: {rating: number}) => {
 
 export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   const {addToCart} = useCart();
-  const [hearted, setHearted] = useState(false); // Single state for heart icon
-  const [eyed, setEyed] = useState(false); // Single state for eye icon
   const router = useRouter();
+  const [selectedColor ] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
+  const {
+    // wishlist,
+    viewedProducts,
+    addToWishlist,
+    addToViewed,
+    removeFromViewlist,
+    removeFromWishlist,
+    isInWishlist,
+  } = useWishContext();
+  // const [isFavorite, setIsFavorite] = useState(isInWishlist(product._id));
 
-  // Handlers no longer need an index, just toggle states
-  const handleHeartClick = () => {
-    setHearted(!hearted);
-  };
 
-  const handleEyeClick = () => {
-    setEyed(!eyed);
-  };
+   const handleHeartClick = useCallback(
+     (product: Product, e: React.MouseEvent) => {
+       e.preventDefault();
+       e.stopPropagation();
 
+       if (isInWishlist(product._id)) {
+         removeFromWishlist(product._id);
+       } else {
+         addToWishlist(product);
+       }
+     },
+     [addToWishlist, removeFromWishlist, isInWishlist]
+   );
+
+   const handleEyeClick = useCallback(
+     (product: Product, e: React.MouseEvent) => {
+       e.preventDefault();
+       e.stopPropagation();
+
+       const isViewed = viewedProducts.some((item) => item._id === product._id);
+       if (isViewed) {
+         removeFromViewlist(product._id);
+       } else {
+         addToViewed(product);
+       }
+     },
+     [addToViewed, removeFromViewlist, viewedProducts]
+   );
   const handleViewItemClick = () => {
     
     if (!product._id) {
@@ -92,11 +125,19 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
     router.push(url);
   };
 
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    // alert(`${product.name} added to cart!`);
-    // You can add a notification here to show the item was added
-  };
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor,
+        selectedSize,
+        quantity,
+      };
+      addToCart(cartItem);
+    },
+    [addToCart, selectedColor, selectedSize, quantity]
+  );
 
   
 
@@ -112,18 +153,31 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
             src={product.mainImage}
           />
           <div className="product_icons">
-            <div className="icon-heart" onClick={handleHeartClick}>
-              {hearted ? (
+            <div
+              className="icon-heart"
+              onClick={(e) => handleHeartClick(product, e)}
+            >
+              {isInWishlist(product._id) ? (
                 <FaHeart className="fas" />
               ) : (
                 <FaRegHeart className="fa" />
               )}
             </div>
-            <div className="icon-eye" onClick={handleEyeClick}>
-              {eyed ? <FaEye className="fas" /> : <FaRegEye className="fa" />}
+            <div
+              className="icon-eye"
+              onClick={(e) => handleEyeClick(product, e)}
+            >
+              {viewedProducts.some((item) => item._id === product._id) ? (
+                <FaEye className="fas" />
+              ) : (
+                <FaRegEye className="fa" />
+              )}
             </div>
           </div>
-          <div className="product_btn" onClick={() => handleAddToCart(product)}>
+          <div
+            className="product_btn"
+            onClick={(e) => handleAddToCart(e, product)}
+          >
             <span>Add To Cart</span>
           </div>
         </div>

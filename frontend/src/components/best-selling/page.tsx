@@ -1,5 +1,7 @@
 "use client";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useCallback, 
+  // useEffect,
+   useMemo, useState} from "react";
 import {
   FaEye,
   FaHeart,
@@ -19,6 +21,7 @@ import {useRouter} from "next/navigation";
 import { ProductNotFound } from "../product-notfound/page";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import Link from "next/link";
+import {CartItem} from "../../context/commerce logic/cartcontext";
 
 
 const renderStars = (rating: number) => {
@@ -65,38 +68,38 @@ const ProductRating = ({product}: {product: Product}) => {
 
 export const BestSelling = () => {
   const router = useRouter();
-   const {addToCart} = useCart();
+  const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
-    wishlist,
+    // wishlist,
     viewedProducts,
     addToWishlist,
     addToViewed,
     removeFromViewlist,
     removeFromWishlist,
+    isInWishlist,
   } = useWishContext();
-  
-  const [heartedItems, setHeartedItems] = useState<{[key: string]: boolean}>(
-    {}
-  );
-  const [eyedItems, setEyedItems] = useState<{[key: string]: boolean}>({});
+
+  const [selectedColor] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => product.trending === true).slice(0, 12);
+  }, [products]);
 
   const handleHeartClick = useCallback(
     (product: Product, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      setHeartedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToWishlist(product);
-        } else {
-          removeFromWishlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
+      if (isInWishlist(product._id)) {
+        removeFromWishlist(product._id);
+      } else {
+        addToWishlist(product);
+      }
     },
-    [addToWishlist, removeFromWishlist]
+    [addToWishlist, removeFromWishlist, isInWishlist]
   );
 
   const handleEyeClick = useCallback(
@@ -104,78 +107,32 @@ export const BestSelling = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      setEyedItems((prev) => {
-        const newState = !prev[product._id];
-        if (newState) {
-          addToViewed(product);
-        } else {
-          removeFromViewlist(product._id);
-        }
-        return {...prev, [product._id]: newState};
-      });
+      const isViewed = viewedProducts.some((item) => item._id === product._id);
+      if (isViewed) {
+        removeFromViewlist(product._id);
+      } else {
+        addToViewed(product);
+      }
     },
-    [addToViewed, removeFromViewlist]
+    [addToViewed, removeFromViewlist, viewedProducts]
   );
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent, product: Product) => {
       e.preventDefault();
-      addToCart(product);
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor,
+        selectedSize,
+        quantity,
+      };
+      addToCart(cartItem);
     },
-    [addToCart]
+    [addToCart, selectedColor, selectedSize, quantity]
   );
 
-   const filteredProducts = useMemo(() => {
-     return products.filter((product) => product.trending === true).slice(0, 12);
-   }, [products]);
-
-  const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
-    e.preventDefault(); // Prevent navigation when clicking icons
-    e.stopPropagation(); // Prevent event bubbling
-    callback();
-  };
-
-  useEffect(() => {
-    const newHeartedItems: {[key: string]: boolean} = {};
-    const newEyedItems: {[key: string]: boolean} = {};
-
-    filteredProducts.forEach((product) => {
-      newHeartedItems[product._id] = wishlist.some(
-        (item) => item._id === product._id
-      );
-      newEyedItems[product._id] = viewedProducts.some(
-        (item) => item._id === product._id
-      );
-    });
-
-    setHeartedItems(newHeartedItems);
-    setEyedItems(newEyedItems);
-  }, [filteredProducts, wishlist, viewedProducts]);
-
-  
-
-   if (loading) {
-     return <FetchLoader />; // Display loading component while fetching
-   }
-
-   if (products.length === 0) {
-     return <ProductNotFound />;
-   }
-
-  //    if (listType === "heart") {
-  //      setHeartedItems((prev) => {
-  //        const updated = [...prev];
-  //        updated[index] = false; // Unset heart (remove from wishlist)
-  //        return updated;
-  //      });
-  //    } else if (listType === "eye") {
-  //      setEyedItems((prev) => {
-  //        const updated = [...prev];
-  //        updated[index] = false; // Unset eye (remove from viewed products)
-  //        return updated;
-  //      });
-  //    }
-  //  };
+  if (loading) return <FetchLoader />;
+  if (products.length === 0) return <ProductNotFound />;
 
 
   return (
@@ -196,11 +153,11 @@ export const BestSelling = () => {
         </div>
       </div>
       <div className="best_product flex flex-row overflow-x-auto">
-        {products.map((product, index) => {
+        {filteredProducts.map((product, index) => {
           const discountPrice = product.price * (1 - product.discount / 100);
 
           return (
-            <div className="product_item" key={index}>
+            <div className="product_item" key={product._id}>
               <Link href={`/trending/${product._id}`}>
                 <div className="product_image">
                   <span className="discount hidden">{product.discount}</span>
@@ -213,13 +170,9 @@ export const BestSelling = () => {
                   <div className="product_icons">
                     <div
                       className="icon-heart"
-                      onClick={(e) =>
-                        handleIconClick(e, () =>
-                          handleHeartClick(product, e)
-                        )
-                      }
+                      onClick={(e) => handleHeartClick(product, e)}
                     >
-                      {heartedItems[index] ? (
+                      {isInWishlist(product._id) ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -227,11 +180,11 @@ export const BestSelling = () => {
                     </div>
                     <div
                       className="icon-eye"
-                      onClick={(e) =>
-                        handleIconClick(e, () => handleEyeClick(product, e))
-                      }
+                      onClick={(e) => handleEyeClick(product, e)}
                     >
-                      {eyedItems[index] ? (
+                      {viewedProducts.some(
+                        (item) => item._id === product._id
+                      ) ? (
                         <FaEye className="fas" />
                       ) : (
                         <FaRegEye className="fa" />

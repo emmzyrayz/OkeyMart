@@ -7,11 +7,15 @@ import {
   FaStarHalf,
   FaRegStar,
   FaStar,
+  FaHeart,
 } from "react-icons/fa6";
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
 import {Product} from "@/types/product";
-import Link from "next/link";
+// import Link from "next/link";
+import { useWishContext } from "@/context/commerce logic/view-wishcontext";
+import { useState } from "react";
+import { useCart, CartItem } from "@/context/commerce logic/cartcontext";
 
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
@@ -55,6 +59,54 @@ const ProductRating = ({rating}: {rating: number}) => {
 
 export const ProductInfo = ({product}: {product: Product}) => {
   const {category} = product;
+  const {addToWishlist, removeFromWishlist, isInWishlist} = useWishContext();
+  const {addToCart} = useCart();
+
+  // State variables for color, size, quantity, and favorite status
+  const [selectedColor, setSelectedColor] = useState("purple");
+  const [selectedSize, setSelectedSize] = useState("M");
+  const [quantity, setQuantity] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(isInWishlist(product._id));
+
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color);
+  };
+
+  const handleSizeChange = (size: string) => {
+    setSelectedSize(size);
+  };
+
+  const increaseQuantity = () => {
+    setQuantity((prev) => prev + 1);
+  };
+
+  const decreaseQuantity = () => {
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  };
+
+  const handleFavoriteToggle = () => {
+    setIsFavorite((prev) => {
+      const newFavoriteStatus = !prev;
+      if (newFavoriteStatus) {
+        addToWishlist(product);
+      } else {
+        removeFromWishlist(product._id);
+      }
+      return newFavoriteStatus;
+    });
+  };
+
+  const handleAddToCart = () => {
+    const productWithDetails: CartItem = {
+      ...product,
+      selectedColor,
+      selectedSize,
+      quantity,
+    };
+    addToCart(productWithDetails);
+  };
+
 
   return (
     <div className="product-info_section flex flex-col items-center justify-center w-full h-full">
@@ -81,7 +133,7 @@ export const ProductInfo = ({product}: {product: Product}) => {
               src={product.images[0]}
               alt={product.name}
               width={500}
-              height={300}
+              height={500}
               className="display_image"
             />
           </div>
@@ -107,39 +159,61 @@ export const ProductInfo = ({product}: {product: Product}) => {
             <div className="det_color flex flex-row items-center justify-center">
               <span className="colo-name">Colours:</span>
               <div className="colors flex flex-row items-center justify-center">
-                <div className="color purple active"></div>
-                <div className="color orange"></div>
-                <div className="color green"></div>
-                <div className="color cream"></div>
+                {["purple", "orange", "green", "cream"].map((color) => (
+                  <div
+                    key={color}
+                    className={`color ${color} ${
+                      selectedColor === color ? "active" : ""
+                    }`}
+                    onClick={() => handleColorChange(color)}
+                  ></div>
+                ))}
               </div>
             </div>
             <div className="det_sizes flex flex-row items-center justify-center">
               <span className="size-name">Size:</span>
               <div className="sizes flex flex-row">
-                <div className="size">XS</div>
-                <div className="size">S</div>
-                <div className="size active">M</div>
-                <div className="size">L</div>
-                <div className="size">XL</div>
+                {["XS", "S", "M", "L", "XL"].map((size) => (
+                  <div
+                    key={size}
+                    className={`size ${selectedSize === size ? "active" : ""}`}
+                    onClick={() => handleSizeChange(size)}
+                  >
+                    {size}
+                  </div>
+                ))}
               </div>
             </div>
             <div className="det_calc flex flex-row items-center justify-center gap-2">
               <div className="det_quantity flex flex-row items-center justify-between">
                 <div className="quant_icons border-right">
-                  <FaMinus className="quant_icon" />
+                  <FaMinus className="quant_icon" onClick={decreaseQuantity} />
                 </div>
-                <span className="quant_digit">2</span>
+                <span className="quant_digit">{quantity}</span>
                 <div className="quant_icons border-left">
-                  <FaPlus className="quant_icon" />
+                  <FaPlus className="quant_icon" onClick={increaseQuantity} />
                 </div>
               </div>
-              <Link href="/checkout" className="cursor-pointer block">
+              <button
+                onClick={handleAddToCart}
+                className="cursor-pointer block"
+              >
                 <div className="det_btn flex flex-row">
-                  <span>Buy Now</span>
+                  <span>Add to cart</span>
                 </div>
-              </Link>
+              </button>
               <div className="det_fav flex flex-row">
-                <FaRegHeart className="quant_icon" />
+                {isFavorite ? (
+                  <FaHeart
+                    className="quant_iconsst"
+                    onClick={handleFavoriteToggle}
+                  />
+                ) : (
+                  <FaRegHeart
+                    className="quant_icon"
+                    onClick={handleFavoriteToggle}
+                  />
+                )}
               </div>
             </div>
             <div className="det_bonus flex flex-col">
