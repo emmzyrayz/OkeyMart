@@ -157,72 +157,80 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
       if (options) {
         return (
-          <WaveSelect
+          <div className="py-3 my-2">
+            <WaveSelect
+              key={field}
+              label={formatFieldLabel(field)}
+              name={field}
+              value={fieldValue.toString()}
+              onChange={handleSpecificFieldChange}
+              options={options.map((opt) => ({value: opt, label: opt}))}
+              error={errorMessage}
+              required
+            />
+          </div>
+        ) as React.ReactElement;
+      }
+
+      return (
+        <div className="py-3 my-2">
+          <WaveInput
             key={field}
             label={formatFieldLabel(field)}
             name={field}
             value={fieldValue.toString()}
             onChange={handleSpecificFieldChange}
-            options={options.map((opt) => ({value: opt, label: opt}))}
             error={errorMessage}
             required
+            type="text"
           />
-        ) as React.ReactElement;
-      }
-
-      return (
-        <WaveInput
-          key={field}
-          label={formatFieldLabel(field)}
-          name={field}
-          value={fieldValue.toString()}
-          onChange={handleSpecificFieldChange}
-          error={errorMessage}
-          required
-          type="text"
-        />
+        </div>
       ) as React.ReactElement;
     });
   };
 
   return (
     <div onSubmit={(e) => e.preventDefault()} className="dynamic-form">
-      <WaveInput
-        label="Product Description"
-        name="name"
-        value={formData.description}
-        onChange={handleDescriptionChange}
-        error={errors.description}
-        required
-      />{" "}
-      as React.ReactElement
-      <WaveSelect
-        label="Category"
-        name="category"
-        value={formData.category}
-        onChange={handleCategoryChange}
-        options={categories.map((cat) => ({
-          value: cat.name,
-          label: cat.name,
-        }))}
-        error={errors.category}
-        required
-      />{" "}
-      as React.ReactElement
+      <div className="py-3 my-2">
+        <WaveInput
+          label="Product Description"
+          name="name"
+          value={formData.description}
+          onChange={handleDescriptionChange}
+          error={errors.description}
+          required
+        />
+      </div>
+      <div className="py-3 my-2">
+        <WaveSelect
+          label="Category"
+          name="category"
+          value={formData.category}
+          onChange={handleCategoryChange}
+          options={categories.map((cat) => ({
+            value: cat.name,
+            label: cat.name,
+          }))}
+          error={errors.category}
+          required
+        />
+      </div>
       {formData.category &&
         ((
-          <WaveSelect
-            label="Subcategory"
-            name="subcategory"
-            value={formData.subcategory}
-            onChange={handleSubcategoryChange}
-            options={getSubcategoriesForCategory().map((sub) => ({
-              value: sub.name,
-              label: sub.name,
-            }))}
-            error={errors.subcategory}
-            required
-          />
+          <div className="py-3 my-2">
+            <WaveSelect
+              label="Subcategory"
+              name="subcategory"
+              value={formData.subcategory}
+              onChange={handleSubcategoryChange}
+              options={getSubcategoriesForCategory().map((sub) => ({
+                value: sub.name,
+                label: sub.name,
+              }))}
+              error={errors.subcategory}
+              required
+            />
+          </div>
         ) as React.ReactElement)}
       {formFields && (
         <div className="dynamic-fields">{renderDynamicFields()}</div>
