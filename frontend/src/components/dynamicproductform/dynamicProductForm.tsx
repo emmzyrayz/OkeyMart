@@ -12,28 +12,39 @@ import {useProductUpload} from "@/context/productUpload/productUploadContext";
 
 
 // Updated form data interface
-interface FormDataType {
-  category: string;
-  subcategory: string;
-  categorySpecificFields: { [key: string]: string | number | boolean };
-  description?: string;
-  state?: string;
-  lga?: string;
-  bulkNumber?: string;
-  bulkPrice?: string;
-  video?: string;
-  youtubeLink?: string;
-  images: string[];
-  name: string;
-  rating: number;
-  [key: string]: any; // Allow for additional dynamic fields
+
+interface SimpleFields {
+  [key: string]: string | number | boolean;
 }
+
+// interface FormDataType {
+//   category: string;
+//   subcategory: string;
+//   categorySpecificFields: SimpleFields;
+//   description?: string;
+//   state?: string;
+//   lga?: string;
+//   bulkNumber?: string;
+//   bulkPrice?: string;
+//   video?: string;
+//   youtubeLink?: string;
+//   images: string[];
+//   name: string;
+//   rating: number;
+//   [key: string]:
+//     | string
+//     | number
+//     | boolean
+//     | string[]
+//     | SimpleFields
+//     | undefined;
+// }
 
 interface DynamicProductFormProps {
   category: string;
   subcategory: string;
-  fields: {[key: string]: string | number | boolean};
-  onChange: (fields: FormDataType) => void;
+  fields: SimpleFields;
+  onChange: (categorySpecificFields: SimpleFields) => void;
   errors: {[key: string]: string};
 }
 
@@ -73,50 +84,40 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCategory = e.target.value;
-    const newState: FormDataType = {
-      ...formData,
-      category: newCategory,
-      subcategory: "",
-      categorySpecificFields: {},
-    };
+    const newCategorySpecificFields: SimpleFields = {};
 
     dispatch({
       type: "SET_FORM_DATA",
       payload: {
         category: newCategory,
         subcategory: "",
-        categorySpecificFields: {},
+        categorySpecificFields: newCategorySpecificFields,
       },
     });
-    onChange(newState);
+    onChange(newCategorySpecificFields);
   };
 
   const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSubcategory = e.target.value;
-    const newState: FormDataType = {
-      ...formData,
-      subcategory: newSubcategory,
-      categorySpecificFields: {},
-    };
+    const newCategorySpecificFields: SimpleFields = {};
 
     dispatch({
       type: "SET_FORM_DATA",
-      payload: {subcategory: newSubcategory, categorySpecificFields: {}},
+      payload: {
+        subcategory: newSubcategory,
+        categorySpecificFields: newCategorySpecificFields,
+      },
     });
-    onChange(newState);
+    onChange(newCategorySpecificFields);
   };
 
   const handleSpecificFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const {name, value} = e.target;
-    const newCategorySpecificFields = {
+    const newCategorySpecificFields: SimpleFields = {
       ...formData.categorySpecificFields,
       [name]: value,
-    };
-    const newState: FormDataType = {
-      ...formData,
-      categorySpecificFields: newCategorySpecificFields,
     };
 
     dispatch({
@@ -125,7 +126,7 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
         categorySpecificFields: newCategorySpecificFields,
       },
     });
-    onChange(newState);
+    onChange(newCategorySpecificFields);
   };
 
   const getSubcategoriesForCategory = () => {
@@ -136,9 +137,7 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newState: FormDataType = {...formData, description: e.target.value};
     dispatch({type: "SET_FORM_DATA", payload: {description: e.target.value}});
-    onChange(newState);
   };
 
   const formatFieldLabel = (field: string) => {
@@ -167,8 +166,8 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             options={options.map((opt) => ({value: opt, label: opt}))}
             error={errorMessage}
             required
-          /> as React.ReactElement
-        );
+          />
+        ) as React.ReactElement;
       }
 
       return (
@@ -181,8 +180,8 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
           error={errorMessage}
           required
           type="text"
-        /> as React.ReactElement
-      );
+        />
+      ) as React.ReactElement;
     });
   };
 
@@ -195,8 +194,8 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
         onChange={handleDescriptionChange}
         error={errors.description}
         required
-      /> as React.ReactElement
-
+      />{" "}
+      as React.ReactElement
       <WaveSelect
         label="Category"
         name="category"
@@ -208,23 +207,23 @@ const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
         }))}
         error={errors.category}
         required
-      /> as React.ReactElement
-
-      {formData.category && (
-        <WaveSelect
-          label="Subcategory"
-          name="subcategory"
-          value={formData.subcategory}
-          onChange={handleSubcategoryChange}
-          options={getSubcategoriesForCategory().map((sub) => ({
-            value: sub.name,
-            label: sub.name,
-          }))}
-          error={errors.subcategory}
-          required
-        /> as React.ReactElement
-      )}
-
+      />{" "}
+      as React.ReactElement
+      {formData.category &&
+        ((
+          <WaveSelect
+            label="Subcategory"
+            name="subcategory"
+            value={formData.subcategory}
+            onChange={handleSubcategoryChange}
+            options={getSubcategoriesForCategory().map((sub) => ({
+              value: sub.name,
+              label: sub.name,
+            }))}
+            error={errors.subcategory}
+            required
+          />
+        ) as React.ReactElement)}
       {formFields && (
         <div className="dynamic-fields">{renderDynamicFields()}</div>
       )}

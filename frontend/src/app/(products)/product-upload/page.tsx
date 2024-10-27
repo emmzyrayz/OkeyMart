@@ -8,6 +8,13 @@ import LocationSelector from '@/components/locationselect/locationselector';
 import DynamicProductForm from '@/components/dynamicproductform/dynamicProductForm';
 import { useProductUpload } from '@/context/productUpload/productUploadContext';
 
+
+interface SimpleFields {
+  [key: string]: string | number | boolean;
+}
+
+
+
 export default function ProdUplink() {
 
   const {state, dispatch, uploadProduct} = useProductUpload();
@@ -56,6 +63,8 @@ export default function ProdUplink() {
       alert("Please fill in all required fields correctly before submitting.");
     }
   };
+
+  
 
   console.log("Form Valid:", state.isFormValid);
   console.log("Is Uploading:", state.isUploading);
@@ -148,14 +157,13 @@ export default function ProdUplink() {
                 category={state.formData.category}
                 subcategory={state.formData.subcategory}
                 fields={state.formData.categorySpecificFields}
-                onChange={(fields: {
-                  [key: string]: string | number | boolean;
-                }) =>
+                onChange={(fields: SimpleFields) => {
+                  // Validate fields before dispatching
                   dispatch({
                     type: "SET_FORM_DATA",
                     payload: {categorySpecificFields: fields},
-                  })
-                }
+                  });
+                }}
                 errors={state.errors}
               />
             </div>
