@@ -1,4 +1,5 @@
 // types/productTypes.ts
+import mongoose from "mongoose";
 
 // Define a more specific type for the values in the Map
 export type FieldValue = string | number | boolean;
@@ -101,4 +102,29 @@ export const mapProductToFormData = (product: Product): ProductFormData => ({
   ),
 });
 
-
+export interface ProductType extends mongoose.Document {
+  name: string;
+  description: string;
+  price: number;
+  countInStock: number;
+  images: string[];
+  mainImage: string;
+  category: string;
+  subcategory: string;
+  categorySpecificFields: {
+    fieldValues: Map<string, any>; // Adjust this type as needed
+  };
+  createdAt: Date;
+  discount: number;
+  featured: boolean;
+  trending: boolean;
+  top: boolean;
+  today: boolean;
+  rating: number;
+  video?: string;
+  youtubeLink?: string;
+  state: string;
+  lga: string;
+  bulkNumber?: string;
+  bulkPrice?: string;
+}
