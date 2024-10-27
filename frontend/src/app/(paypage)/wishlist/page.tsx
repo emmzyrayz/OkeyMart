@@ -7,6 +7,8 @@ import {FaStar, FaStarHalf, FaRegStar } from "react-icons/fa6";
 import {RiDeleteBinLine} from "react-icons/ri";
 import {CiShoppingCart} from "react-icons/ci";
 import { Product } from "@/types/product";
+import { useState } from "react";
+import { CartItem } from '@/context/commerce logic/cartcontext';
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -53,9 +55,21 @@ const ProductRating = ({product}: {product: Product}) => {
 export default function WishList() {
   const {wishlist, viewedProducts, removeFromViewlist, removeFromWishlist} = useWishContext();
   const {addToCart} = useCart();
+  const [selectedColor ] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
+  
 
   const handleAddToCart = () => {
-    wishlist.forEach((product) => addToCart(product));
+    wishlist.forEach((product) => {
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor, // Use the selected color
+        selectedSize, // Use the selected size
+        quantity, // Use the quantity
+      };
+      addToCart(cartItem); // Add the constructed CartItem to the cart
+    });
     alert("All wishlist items added to cart!");
   };
 
@@ -96,7 +110,15 @@ export default function WishList() {
                   </span>
                   <span
                     className="ccart flex flex-row items-center justify-center gap-2 absolute"
-                    onClick={() => addToCart(product)}
+                    onClick={() => {
+                      const cartItem: CartItem = {
+                        ...product,
+                        selectedColor, // Use the selected color
+                        selectedSize, // Use the selected size
+                        quantity, // Use the quantity
+                      };
+                      addToCart(cartItem); // Pass the constructed CartItem to addToCart
+                    }}
                   >
                     <CiShoppingCart className="cart" /> <span>Add To Cart</span>
                   </span>

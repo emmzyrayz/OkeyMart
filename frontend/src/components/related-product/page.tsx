@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {
   FaStar,
   FaStarHalf,
@@ -13,7 +13,8 @@ import FetchLoader from "../fetchloading/page";
 import {Product} from "@/types/product";
 import {useProductContext} from "@/context/productContext/productcontext";
 import {ProductNotFound} from "../product-notfound/page";
-import {useCart} from "@/context/commerce logic/cartcontext";
+import {CartItem, useCart} from "@/context/commerce logic/cartcontext";
+import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
@@ -58,9 +59,19 @@ const ProductRating = ({rating}: {rating: number}) => {
 const RelatedProductsList = () => {
   const {addToCart} = useCart();
   const {products, loading} = useProductContext();
+  const {
+    // wishlist,
+    viewedProducts,
+    addToWishlist,
+    addToViewed,
+    removeFromViewlist,
+    removeFromWishlist,
+    isInWishlist,
+  } = useWishContext();
+  const [selectedColor] = useState("purple");
+  const [selectedSize] = useState("M");
+  const [quantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [heartedItems, setHeartedItems] = useState<boolean[]>([]);
-  const [eyedItems, setEyedItems] = useState<boolean[]>([]);
 
   useEffect(() => {
     if (!loading && products.length > 0) {
@@ -73,26 +84,48 @@ const RelatedProductsList = () => {
     }
   }, [products, loading]);
 
-  useEffect(() => {
-    setHeartedItems(new Array(relatedProducts.length).fill(false));
-    setEyedItems(new Array(relatedProducts.length).fill(false));
-  }, [relatedProducts.length]);
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const handleHeartClick = (index: number) => {
-    setHeartedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
+      if (isInWishlist(product._id)) {
+        removeFromWishlist(product._id);
+      } else {
+        addToWishlist(product);
+      }
+    },
+    [addToWishlist, removeFromWishlist, isInWishlist]
+  );
 
-  const handleEyeClick = (index: number) => {
-    setEyedItems((prev) => {
-      const updated = [...prev];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const isViewed = viewedProducts.some((item) => item._id === product._id);
+      if (isViewed) {
+        removeFromViewlist(product._id);
+      } else {
+        addToViewed(product);
+      }
+    },
+    [addToViewed, removeFromViewlist, viewedProducts]
+  );
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor,
+        selectedSize,
+        quantity,
+      };
+      addToCart(cartItem);
+    },
+    [addToCart, selectedColor, selectedSize, quantity]
+  );
 
   if (loading) {
     return <FetchLoader />; // Display loading component while fetching
@@ -102,15 +135,9 @@ const RelatedProductsList = () => {
     return <ProductNotFound />;
   }
 
-  const handleAddToCart = (product: Product) => {
-    addToCart(product);
-    alert(`${product.name} added to cart!`);
-    // You can add a notification here to show the item was added
-  };
-
   return (
     <div className="related_items flex flex-row overflow-x-auto mb-8 px-4">
-      {relatedProducts.map((product, index) => (
+      {relatedProducts.map((product) => (
         <div key={product._id} className="related_item">
           <div className="product_image">
             <span className="discount">
@@ -125,16 +152,19 @@ const RelatedProductsList = () => {
             <div className="product_icons">
               <div
                 className="icon-heart"
-                onClick={() => handleHeartClick(index)}
+                onClick={(e) => handleHeartClick(product, e)}
               >
-                {heartedItems[index] ? (
+                {isInWishlist(product._id) ? (
                   <FaHeart className="fas" />
                 ) : (
                   <FaRegHeart className="fa" />
                 )}
               </div>
-              <div className="icon-eye" onClick={() => handleEyeClick(index)}>
-                {eyedItems[index] ? (
+              <div
+                className="icon-eye"
+                onClick={(e) => handleEyeClick(product, e)}
+              >
+                {viewedProducts.some((item) => item._id === product._id) ? (
                   <FaEye className="fas" />
                 ) : (
                   <FaRegEye className="fa" />
@@ -143,7 +173,7 @@ const RelatedProductsList = () => {
             </div>
             <div
               className="product_btn"
-              onClick={() => handleAddToCart(product)}
+              onClick={(e) => handleAddToCart(e, product)}
             >
               <span>Add To Cart</span>
             </div>
@@ -165,7 +195,6 @@ const RelatedProductsList = () => {
           </div>
         </div>
       ))}
-      ;
     </div>
   );
 };
