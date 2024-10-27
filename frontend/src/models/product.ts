@@ -1,7 +1,35 @@
-// models/product.js
-import mongoose from "mongoose";
+// models/product.ts
+import mongoose, {Document, Model} from "mongoose";
 
-// Define the schema outside the conditional check
+// Define the interface for the Product document
+export interface ProductType extends Document {
+  name: string;
+  description: string;
+  price: number;
+  countInStock: number;
+  images: string[];
+  mainImage: string;
+  category: string;
+  subcategory: string;
+  categorySpecificFields: {
+    fieldValues: Map<string, any>; // Adjust this type as needed
+  };
+  createdAt: Date;
+  discount: number;
+  featured: boolean;
+  trending: boolean;
+  top: boolean;
+  today: boolean;
+  rating: number;
+  video?: string;
+  youtubeLink?: string;
+  state: string;
+  lga: string;
+  bulkNumber?: string;
+  bulkPrice?: string;
+}
+
+// Define the schema
 const DynamicFieldsSchema = new mongoose.Schema(
   {
     fieldValues: {
@@ -12,13 +40,13 @@ const DynamicFieldsSchema = new mongoose.Schema(
   {strict: false}
 );
 
-const ProductSchema = new mongoose.Schema(
+const ProductSchema = new mongoose.Schema<ProductType>(
   {
     name: {
       type: String,
       required: [true, "Name is required"],
       trim: true,
-      index: true, // Add index for better search performance
+      index: true,
     },
     description: {
       type: String,
@@ -40,7 +68,7 @@ const ProductSchema = new mongoose.Schema(
       type: [String],
       required: [true, "Images are required"],
       validate: {
-        validator: function (value) {
+        validator: function (value: string[]) {
           return value.length === 5;
         },
         message: "There must be exactly 5 images",
@@ -50,7 +78,7 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       required: [true, "Main image is required"],
       validate: {
-        validator: function (value) {
+        validator: function (value: string) {
           return this.images.includes(value);
         },
         message: "Main image must be one of the product images",
@@ -80,7 +108,7 @@ const ProductSchema = new mongoose.Schema(
         ],
         message: "{VALUE} is not a supported category",
       },
-      index: true, // Add index for better query performance
+      index: true,
     },
     subcategory: {
       type: String,
@@ -92,7 +120,7 @@ const ProductSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      index: true, // Add index for sorting by date
+      index: true,
     },
     discount: {
       type: Number,
@@ -156,7 +184,7 @@ const ProductSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt fields automatically
+    timestamps: true,
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
@@ -186,14 +214,14 @@ ProductSchema.index({top: 1, createdAt: -1});
 ProductSchema.index({today: 1, createdAt: -1});
 
 // Add error handling for model compilation
-let Product;
+let ProductModel: Model<ProductType>;
 try {
   // Try to get existing model
-  Product = mongoose.models.Product;
+  ProductModel = mongoose.models.Product as Model<ProductType>;
 } catch {
   try {
     // If not exists, create new model
-    Product = mongoose.model("Product", ProductSchema);
+    ProductModel = mongoose.model<ProductType>("Product", ProductSchema);
   } catch (error) {
     console.error("Error creating Product model:", error);
     throw error;
@@ -201,13 +229,13 @@ try {
 }
 
 // Add this check to ensure model is defined
-if (!Product) {
+if (!ProductModel) {
   try {
-    Product = mongoose.model("Product", ProductSchema);
+    ProductModel = mongoose.model<ProductType>("Product", ProductSchema);
   } catch (error) {
     console.error("Failed to create Product model:", error);
     throw error;
   }
 }
 
-export default Product;
+export default ProductModel;
