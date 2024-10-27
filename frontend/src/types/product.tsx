@@ -112,7 +112,7 @@ export interface ProductType extends mongoose.Document {
   category: string;
   subcategory: string;
   categorySpecificFields: {
-    fieldValues: Map<string, any>; // Adjust this type as needed
+    fieldValues: Map<string, number>; // Adjust this type as needed
   };
   createdAt: Date;
   discount: number;
