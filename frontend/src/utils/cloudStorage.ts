@@ -1,5 +1,4 @@
 import {v2 as cloudinary} from "cloudinary";
-import dotenv from 'dotenv';
 
 
 dotenv.config();
@@ -7,16 +6,19 @@ dotenv.config();
 // Configure Cloudinary
 cloudinary.config({
   cloud_name:
-    process.env.CLOUDINARY_CLOUD_NAME ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    process.env.CLOUDINARY_CLOUD_NAME,
   api_key:
-    process.env.CLOUDINARY_API_KEY ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+    process.env.CLOUDINARY_API_KEY,
   api_secret:
-    process.env.CLOUDINARY_API_SECRET ||
-    process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET,
+    process.env.CLOUDINARY_API_SECRET,
   cloud_url:
-    process.env.CLOUDINARY_URL || process.env.NEXT_PUBLIC_CLOUDINARY_URL,
+    process.env.CLOUDINARY_URL,
+});
+
+console.log("Cloudinary Config:", {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 export class CloudStorageProvider {

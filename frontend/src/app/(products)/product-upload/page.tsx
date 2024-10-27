@@ -149,7 +149,7 @@ export default function ProdUplink() {
                 />
               </div>
 
-              <div className="uplink_location">
+              <div className="uplink_location my-4">
                 <LocationSelector onChange={handleLocationChange} />
               </div>
 
