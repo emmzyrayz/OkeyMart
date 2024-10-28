@@ -16,6 +16,10 @@ import {ProductNotFound} from "../product-notfound/page";
 import {CartItem, useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
+
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
   const halfStars = rating % 1 >= 0.5 ? 1 : 0; // Half star if applicable
@@ -89,10 +93,13 @@ const RelatedProductsList = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (isInWishlist(product._id)) {
-        removeFromWishlist(product._id);
-      } else {
-        addToWishlist(product);
+      const productId = getProductId(product);
+      if (productId) {
+        if (isInWishlist(productId)) {
+          removeFromWishlist(productId);
+        } else {
+          addToWishlist(product);
+        }
       }
     },
     [addToWishlist, removeFromWishlist, isInWishlist]
@@ -103,11 +110,16 @@ const RelatedProductsList = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      const isViewed = viewedProducts.some((item) => item._id === product._id);
-      if (isViewed) {
-        removeFromViewlist(product._id);
-      } else {
-        addToViewed(product);
+      const productId = getProductId(product);
+      if (productId) {
+        const isViewed = viewedProducts.some(
+          (item) => getProductId(item) === productId
+        );
+        if (isViewed) {
+          removeFromViewlist(productId);
+        } else {
+          addToViewed(product);
+        }
       }
     },
     [addToViewed, removeFromViewlist, viewedProducts]
@@ -138,7 +150,7 @@ const RelatedProductsList = () => {
   return (
     <div className="related_items flex flex-row overflow-x-auto mb-8 px-4">
       {relatedProducts.map((product) => (
-        <div key={product._id} className="related_item">
+        <div key={getProductId(product) ?? "unknown"} className="related_item">
           <div className="product_image">
             <span className="discount">
               -{((1 - product.discount / product.price) * 100).toFixed(0)}%
@@ -154,7 +166,7 @@ const RelatedProductsList = () => {
                 className="icon-heart"
                 onClick={(e) => handleHeartClick(product, e)}
               >
-                {isInWishlist(product._id) ? (
+                {isInWishlist(getProductId(product) ?? "") ? (
                   <FaHeart className="fas" />
                 ) : (
                   <FaRegHeart className="fa" />
@@ -164,7 +176,9 @@ const RelatedProductsList = () => {
                 className="icon-eye"
                 onClick={(e) => handleEyeClick(product, e)}
               >
-                {viewedProducts.some((item) => item._id === product._id) ? (
+                {viewedProducts.some(
+                  (item) => getProductId(item) === getProductId(product)
+                ) ? (
                   <FaEye className="fas" />
                 ) : (
                   <FaRegEye className="fa" />

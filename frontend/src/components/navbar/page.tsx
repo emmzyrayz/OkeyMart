@@ -15,6 +15,7 @@ import {useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useSearch} from "@/context/searchcontext/searchcontext";
 import {useProductContext} from "@/context/productContext/productcontext";
+import { Product } from "@/types/product";
 
 export const HomeNav = () => {
   const pathname = usePathname();
@@ -26,6 +27,10 @@ export const HomeNav = () => {
   const {wishlist} = useWishContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const getProductId = (product: Product) => {
+    return product._id || product.id || null;
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -39,10 +44,17 @@ export const HomeNav = () => {
       setFilteredProducts([]);
     } else {
       try {
-        const response = await fetch(`/api/search?keyword=${encodeURIComponent(value)}`);
+        const response = await fetch(
+          `/api/search?keyword=${encodeURIComponent(value)}`
+        );
         if (response.ok) {
           const data = await response.json();
-          setFilteredProducts(data);
+          // Check if products have either _id or id
+          if (data.every((product: Product) => getProductId(product))) {
+            setFilteredProducts(data);
+          } else {
+            console.error("Some products are missing both _id and id");
+          }
         } else {
           console.error("Error fetching search results");
         }
@@ -52,11 +64,16 @@ export const HomeNav = () => {
     }
   };
 
-  const handleProductClick = (productId: string) => {
-    router.push(`/search/${searchValue}/${productId}`);
-    setIsSearchOpen(false);
-    setSearchValue("");
-    setFilteredProducts([]);
+  const handleProductClick = (product: Product) => {
+    const productId = getProductId(product);
+    if (productId) {
+      router.push(`/search/${encodeURIComponent(searchValue)}/${productId}`);
+      setIsSearchOpen(false);
+      setSearchValue("");
+      setFilteredProducts([]);
+    } else {
+      console.error("Product has no valid ID:", product);
+    }
   };
 
  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,12 +85,12 @@ export const HomeNav = () => {
    performSearch();
  };
 
- const performSearch = () => {
-   if (searchValue.trim() !== "") {
-     router.push(`/search/${searchValue}`);
-     setIsSearchOpen(false);
-   }
- };
+const performSearch = () => {
+  if (searchValue.trim() !== "") {
+    router.push(`/search/${encodeURIComponent(searchValue)}`);
+    setIsSearchOpen(false);
+  }
+};
 
 
   const toggleMenu = () => {
@@ -143,14 +160,22 @@ export const HomeNav = () => {
             <div className="search-results absolute top-[60px] bg-[--text] z-50 w-full p-3">
               {filteredProducts.map((product) => (
                 <div
-                  key={product._id}
-                  onClick={() => handleProductClick(product._id)}
+                  key={getProductId(product)}
+                  onClick={() => handleProductClick(product)}
                   className="search-result-item overflow-y-auto text-[--text2] bg-[--text] hover:bg-[--text2] hover:text-[--text] w-full p-3 items-center justify-center"
                 >
-                  <Image src={product.mainImage} width={100} height={100} alt={product.name} className="" />
+                  <Image
+                    src={product.mainImage}
+                    width={100}
+                    height={100}
+                    alt={product.name}
+                    className=""
+                  />
                   {product.name}
-                  <hr className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
-                  rounded-lg" />
+                  <hr
+                    className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
+                  rounded-lg"
+                  />
                 </div>
               ))}
             </div>
@@ -238,8 +263,8 @@ export const HomeNav = () => {
             <div className="mobile-search-results">
               {filteredProducts.map((product) => (
                 <div
-                  key={product._id}
-                  onClick={() => handleProductClick(product._id)}
+                  key={getProductId(product)}
+                  onClick={() => handleProductClick(product)}
                   className="search-result-item"
                 >
                   {product.name}

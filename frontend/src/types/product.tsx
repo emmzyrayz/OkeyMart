@@ -8,7 +8,8 @@ export interface CategorySpecificFields {
 }
 
 export interface Product {
-  _id: string;
+  _id?: string;
+  id?: string;
   name: string;
   description: string;
   price: number;

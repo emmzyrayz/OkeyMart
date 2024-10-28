@@ -23,6 +23,10 @@ import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import Link from "next/link";
 import {CartItem} from "../../context/commerce logic/cartcontext";
 
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
+
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -84,6 +88,7 @@ export const BestSelling = () => {
   const [selectedSize] = useState("M");
   const [quantity] = useState(1);
 
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => product.trending === true).slice(0, 12);
   }, [products]);
@@ -93,8 +98,11 @@ export const BestSelling = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (isInWishlist(product._id)) {
-        removeFromWishlist(product._id);
+      const productId = getProductId(product);
+      if (!productId) return;
+
+      if (isInWishlist(productId)) {
+        removeFromWishlist(productId);
       } else {
         addToWishlist(product);
       }
@@ -107,9 +115,14 @@ export const BestSelling = () => {
       e.preventDefault();
       e.stopPropagation();
 
-      const isViewed = viewedProducts.some((item) => item._id === product._id);
+      const productId = getProductId(product);
+      if (!productId) return;
+
+      const isViewed = viewedProducts.some(
+        (item) => getProductId(item) === productId
+      );
       if (isViewed) {
-        removeFromViewlist(product._id);
+        removeFromViewlist(productId);
       } else {
         addToViewed(product);
       }
@@ -154,11 +167,14 @@ export const BestSelling = () => {
       </div>
       <div className="best_product flex flex-row overflow-x-auto">
         {filteredProducts.map((product, index) => {
+          const productId = getProductId(product);
+          if (!productId) return null; 
+
           const discountPrice = product.price * (1 - product.discount / 100);
 
           return (
-            <div className="product_item" key={product._id}>
-              <Link href={`/trending/${product._id}`}>
+            <div className="product_item" key={productId}>
+              <Link href={`/trending/${productId}`}>
                 <div className="product_image">
                   <span className="discount hidden">{product.discount}</span>
                   <Image
@@ -172,7 +188,7 @@ export const BestSelling = () => {
                       className="icon-heart"
                       onClick={(e) => handleHeartClick(product, e)}
                     >
-                      {isInWishlist(product._id) ? (
+                      {isInWishlist(productId) ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -183,7 +199,7 @@ export const BestSelling = () => {
                       onClick={(e) => handleEyeClick(product, e)}
                     >
                       {viewedProducts.some(
-                        (item) => item._id === product._id
+                        (item) => getProductId(item) === productId
                       ) ? (
                         <FaEye className="fas" />
                       ) : (

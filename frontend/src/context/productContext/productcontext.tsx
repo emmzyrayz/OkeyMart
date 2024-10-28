@@ -14,6 +14,12 @@ import {
 } from "@/types/product";
 import {getCategory, getSubcategoryConfig} from "@/config/categoryvalidation";
 
+// Helper function for getting product ID
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
+
+
 interface ProductContextType {
   products: Product[];
   loading: boolean;
@@ -97,7 +103,9 @@ export const ProductProvider: React.FC<{children: ReactNode}> = ({
         updatedProductData
       );
       setProducts((prev) =>
-        prev.map((product) => (product._id === id ? response.data : product))
+        prev.map((product) =>
+          getProductId(product) === id ? response.data : product
+        )
       );
     } catch (error) {
       console.error("Error updating product:", error);
@@ -107,7 +115,9 @@ export const ProductProvider: React.FC<{children: ReactNode}> = ({
   const deleteProduct = async (id: string) => {
     try {
       await axios.delete(`${apiUrl}/${id}`);
-      setProducts((prev) => prev.filter((product) => product._id !== id));
+      setProducts((prev) =>
+        prev.filter((product) => getProductId(product) !== id)
+      );
     } catch (error) {
       console.error("Error deleting product:", error);
     }

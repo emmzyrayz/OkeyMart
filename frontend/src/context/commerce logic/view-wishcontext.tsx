@@ -8,6 +8,11 @@ import React, {
 } from "react";
 import {Product} from "@/types/product";
 
+// Helper function for getting product ID
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
+
 type ViewWishContextType = {
   wishlist: Product[];
   viewedProducts: Product[];
@@ -31,8 +36,11 @@ export const ViewWishProvider: React.FC<{children: React.ReactNode}> = ({
   const [viewedProducts, setViewedProducts] = useState<Product[]>([]);
 
   const addToWishlist = useCallback((product: Product) => {
+    const productId = getProductId(product);
+    if (!productId) return; // Skip if no valid ID
+
     setWishlist((prevWishlist) => {
-      if (!prevWishlist.some((item) => item._id === product._id)) {
+      if (!prevWishlist.some((item) => getProductId(item) === productId)) {
         return [...prevWishlist, product];
       }
       return prevWishlist;
@@ -40,8 +48,13 @@ export const ViewWishProvider: React.FC<{children: React.ReactNode}> = ({
   }, []);
 
   const addToViewed = useCallback((product: Product) => {
+    const productId = getProductId(product);
+    if (!productId) return; // Skip if no valid ID
+
     setViewedProducts((prevViewedProducts) => {
-      if (!prevViewedProducts.some((item) => item._id === product._id)) {
+      if (
+        !prevViewedProducts.some((item) => getProductId(item) === productId)
+      ) {
         return [product, ...prevViewedProducts].slice(0, 10); // Keep only the last 10 viewed products
       }
       return prevViewedProducts;
@@ -50,19 +63,19 @@ export const ViewWishProvider: React.FC<{children: React.ReactNode}> = ({
 
   const removeFromWishlist = useCallback((productId: string) => {
     setWishlist((prevWishlist) =>
-      prevWishlist.filter((item) => item._id !== productId)
+      prevWishlist.filter((item) => getProductId(item) !== productId)
     );
   }, []);
 
   const removeFromViewlist = useCallback((productId: string) => {
     setViewedProducts((prevViewedProducts) =>
-      prevViewedProducts.filter((item) => item._id !== productId)
+      prevViewedProducts.filter((item) => getProductId(item) !== productId)
     );
   }, []);
 
   const isInWishlist = useCallback(
     (productId: string) => {
-      return wishlist.some((item) => item._id === productId);
+      return wishlist.some((item) => getProductId(item) === productId);
     },
     [wishlist]
   );

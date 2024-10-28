@@ -12,24 +12,25 @@ import {
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
 import {Product} from "@/types/product";
-// import Link from "next/link";
-import { useWishContext } from "@/context/commerce logic/view-wishcontext";
-import { useState } from "react";
-import { useCart, CartItem } from "@/context/commerce logic/cartcontext";
+import {useWishContext} from "@/context/commerce logic/view-wishcontext";
+import {useState, useEffect} from "react";
+import {useCart, CartItem} from "@/context/commerce logic/cartcontext";
+
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
 
 const renderStars = (rating: number) => {
-  const fullStars = Math.floor(rating); // Full stars
-  const halfStars = rating % 1 >= 0.5 ? 1 : 0; // Half star if applicable
-  const emptyStars = 5 - fullStars - halfStars; // Remaining empty stars
+  const fullStars = Math.floor(rating);
+  const halfStars = rating % 1 >= 0.5 ? 1 : 0;
+  const emptyStars = 5 - fullStars - halfStars;
 
   const stars = [];
 
-  // Add full stars
   for (let i = 0; i < fullStars; i++) {
     stars.push(<FaStar key={`full-${i}`} className="fa-star" />);
   }
 
-  // Add half star
   if (halfStars) {
     stars.push(
       <div key="half" className="half-star-container">
@@ -39,7 +40,6 @@ const renderStars = (rating: number) => {
     );
   }
 
-  // Add empty stars
   for (let i = 0; i < emptyStars; i++) {
     stars.push(<FaRegStar key={`empty-${i}`} className="fa-star" />);
   }
@@ -59,15 +59,25 @@ const ProductRating = ({rating}: {rating: number}) => {
 
 export const ProductInfo = ({product}: {product: Product}) => {
   const {category} = product;
-  const {addToWishlist, removeFromWishlist, isInWishlist} = useWishContext();
+  const {addToWishlist, removeFromWishlist, isInWishlist, addToViewed} =
+    useWishContext();
   const {addToCart} = useCart();
+
+  const productId = getProductId(product);
 
   // State variables for color, size, quantity, and favorite status
   const [selectedColor, setSelectedColor] = useState("purple");
   const [selectedSize, setSelectedSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(isInWishlist(product._id));
+  const [isFavorite, setIsFavorite] = useState(false);
 
+  // Initialize favorite status and add to viewed products
+  useEffect(() => {
+    if (productId) {
+      setIsFavorite(isInWishlist(productId));
+      addToViewed(product);
+    }
+  }, [productId, isInWishlist, addToViewed, product]);
 
   const handleColorChange = (color: string) => {
     setSelectedColor(color);
@@ -86,15 +96,16 @@ export const ProductInfo = ({product}: {product: Product}) => {
   };
 
   const handleFavoriteToggle = () => {
-    setIsFavorite((prev) => {
-      const newFavoriteStatus = !prev;
-      if (newFavoriteStatus) {
-        addToWishlist(product);
-      } else {
-        removeFromWishlist(product._id);
-      }
-      return newFavoriteStatus;
-    });
+    if (!productId) return;
+
+    const newFavoriteStatus = !isFavorite;
+    setIsFavorite(newFavoriteStatus);
+
+    if (newFavoriteStatus) {
+      addToWishlist(product);
+    } else {
+      removeFromWishlist(productId);
+    }
   };
 
   const handleAddToCart = () => {
@@ -106,7 +117,6 @@ export const ProductInfo = ({product}: {product: Product}) => {
     };
     addToCart(productWithDetails);
   };
-
 
   return (
     <div className="product-info_section flex flex-col items-center justify-center w-full h-full">

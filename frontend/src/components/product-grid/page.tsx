@@ -14,6 +14,10 @@ type ProductGridProps = {
   filterTag: string;
 };
 
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
+
 export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
@@ -151,15 +155,12 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
       <div className="productgrid_container flex flex-row flex-wrap items-start justify-center gap-2">
         {sortedProducts.length > 0 ? (
           sortedProducts.map((product) => {
-            // Add debug logging for each product
-            // console.log("Rendering product:", {
-            //   productId: product._id,
-            //   productName: product.name,
-            // });
+            const productId = getProductId(product);
+            if (!productId) return null;
 
             return (
               <ProductCard
-                key={product._id}
+                key={productId}
                 product={product}
                 filterTag={filterTag}
               />

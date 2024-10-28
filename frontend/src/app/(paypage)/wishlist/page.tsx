@@ -52,6 +52,10 @@ const ProductRating = ({product}: {product: Product}) => {
   );
 };
 
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
+
 export default function WishList() {
   const {wishlist, viewedProducts, removeFromViewlist, removeFromWishlist} = useWishContext();
   const {addToCart} = useCart();
@@ -91,53 +95,62 @@ export default function WishList() {
           <p>Your wishlist is empty</p>
         ) : (
           <div className="wish_items flex flex-row overflow-x-auto gap-5">
-            {wishlist.map((product) => (
-              <div key={product._id} className="wish_item flex flex-col gap-3">
-                <div className="item_img flex flex-col relative">
-                  <Image
-                    src={product.mainImage}
-                    alt={product.name}
-                    width={100}
-                    className="Image"
-                    height={300}
-                  />
-                  <div className="discount absolute">-{product.discount}%</div>
-                  <span
-                    className="bbin"
-                    onClick={() => removeFromWishlist(product._id)}
-                  >
-                    <RiDeleteBinLine className="bin" />
-                  </span>
-                  <span
-                    className="ccart flex flex-row items-center justify-center gap-2 absolute"
-                    onClick={() => {
-                      const cartItem: CartItem = {
-                        ...product,
-                        selectedColor, // Use the selected color
-                        selectedSize, // Use the selected size
-                        quantity, // Use the quantity
-                      };
-                      addToCart(cartItem); // Pass the constructed CartItem to addToCart
-                    }}
-                  >
-                    <CiShoppingCart className="cart" /> <span>Add To Cart</span>
-                  </span>
-                </div>
-                <div className="item_desc flex flex-col items-start justify-center">
-                  <h3>{product.name}</h3>
-                  <div className="price flex flex-row gap-2">
-                    <span className="disc_price">
-                      $
-                      {(
-                        product.price *
-                        (1 - (product.discount ?? 0) / 100)
-                      ).toFixed(2)}
+            {wishlist.map((product) => {
+              const productId = getProductId(product);
+              if (!productId) return null; 
+
+
+              return (
+                <div key={productId} className="wish_item flex flex-col gap-3">
+                  <div className="item_img flex flex-col relative">
+                    <Image
+                      src={product.mainImage}
+                      alt={product.name}
+                      width={100}
+                      className="Image"
+                      height={300}
+                    />
+                    <div className="discount absolute">
+                      -{product.discount}%
+                    </div>
+                    <span
+                      className="bbin"
+                      onClick={() => removeFromWishlist(String(productId))}
+                    >
+                      <RiDeleteBinLine className="bin" />
                     </span>
-                    <span className="act_price">${product.price}</span>
+                    <span
+                      className="ccart flex flex-row items-center justify-center gap-2 absolute"
+                      onClick={() => {
+                        const cartItem: CartItem = {
+                          ...product,
+                          selectedColor, // Use the selected color
+                          selectedSize, // Use the selected size
+                          quantity, // Use the quantity
+                        };
+                        addToCart(cartItem); // Pass the constructed CartItem to addToCart
+                      }}
+                    >
+                      <CiShoppingCart className="cart" />{" "}
+                      <span>Add To Cart</span>
+                    </span>
+                  </div>
+                  <div className="item_desc flex flex-col items-start justify-center">
+                    <h3>{product.name}</h3>
+                    <div className="price flex flex-row gap-2">
+                      <span className="disc_price">
+                        $
+                        {(
+                          product.price *
+                          (1 - (product.discount ?? 0) / 100)
+                        ).toFixed(2)}
+                      </span>
+                      <span className="act_price">${product.price}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -155,54 +168,62 @@ export default function WishList() {
           <p>You have not viewed any products yet</p>
         ) : (
           <div className="wish_items flex flex-row overflow-x-auto gap-5">
-            {viewedProducts.map((product) => (
-              <div className="wish_item flex flex-col gap-3" key={product._id}>
-                <div className="item_img flex flex-col relative">
-                  <Image
-                    src={product.mainImage}
-                    alt={product.name}
-                    width={100}
-                    className="Image"
-                    height={300}
-                  />
-                  <div className="discount absolute">-{product.discount}%</div>
-                  <span
-                    className="bbin hover:bg-[]"
-                    onClick={() => removeFromViewlist(product._id)}
-                  >
-                    <RiDeleteBinLine className="bin" />
-                  </span>
-                  <span
-                    className="ccart flex flex-row items-center justify-center gap-2 absolute"
-                    onClick={handleAddToCart}
-                  >
-                    <CiShoppingCart className="cart" /> <span>Add To Cart</span>
-                  </span>
-                </div>
-                <div className="item_desc flex flex-col items-start justify-center">
-                  <h3>{product.name}</h3>
-                  <div className="price flex flex-row gap-2">
-                    <span className="disc_price">
-                      $
-                      {(
-                        product.price *
-                        (1 - (product.discount ?? 0) / 100)
-                      ).toFixed(2)}
+            {viewedProducts.map((product) => {
+              const productId = getProductId(product);
+              if (!productId) return null;
+
+              return (
+                <div className="wish_item flex flex-col gap-3" key={productId}>
+                  <div className="item_img flex flex-col relative">
+                    <Image
+                      src={product.mainImage}
+                      alt={product.name}
+                      width={100}
+                      className="Image"
+                      height={300}
+                    />
+                    <div className="discount absolute">
+                      -{product.discount}%
+                    </div>
+                    <span
+                      className="bbin hover:bg-[]"
+                      onClick={() => removeFromViewlist(String(productId))}
+                    >
+                      <RiDeleteBinLine className="bin" />
                     </span>
-                    <span className="act_price">${product.price}</span>
+                    <span
+                      className="ccart flex flex-row items-center justify-center gap-2 absolute"
+                      onClick={handleAddToCart}
+                    >
+                      <CiShoppingCart className="cart" />{" "}
+                      <span>Add To Cart</span>
+                    </span>
                   </div>
-                  <div className="rating">
-                    <div className="rating_icon flex flex-row items-center">
-                      <ProductRating product={product} />{" "}
-                      {/* Render the rating */}
+                  <div className="item_desc flex flex-col items-start justify-center">
+                    <h3>{product.name}</h3>
+                    <div className="price flex flex-row gap-2">
+                      <span className="disc_price">
+                        $
+                        {(
+                          product.price *
+                          (1 - (product.discount ?? 0) / 100)
+                        ).toFixed(2)}
+                      </span>
+                      <span className="act_price">${product.price}</span>
                     </div>
-                    <div className="rating_number">
-                      ({product.rating.toFixed(1)})
+                    <div className="rating">
+                      <div className="rating_icon flex flex-row items-center">
+                        <ProductRating product={product} />{" "}
+                        {/* Render the rating */}
+                      </div>
+                      <div className="rating_number">
+                        ({product.rating.toFixed(1)})
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

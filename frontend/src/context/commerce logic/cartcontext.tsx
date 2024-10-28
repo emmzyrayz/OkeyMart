@@ -8,6 +8,11 @@ import React, {
 } from "react";
 import {Product} from "@/types/product";
 
+// Helper function for getting product ID
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
+
 export interface CartItem extends Product {
   quantity: number;
   selectedColor: string; // Added selectedColor
@@ -47,9 +52,9 @@ const calculateTotal = (items: CartItem[]): number => {
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case "ADD_TO_CART": {
-      const existingItemIndex = state.items.findIndex(
-        (item) => item._id === action.payload._id
-      );
+     const existingItemIndex = state.items.findIndex(
+       (item) => getProductId(item) === getProductId(action.payload)
+     );
 
       let newItems: CartItem[];
 
@@ -83,7 +88,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case "REMOVE_FROM_CART": {
       const newItems = state.items.filter(
-        (item) => item._id !== action.payload
+        (item) => getProductId(item) !== action.payload
       );
       const totalItems = newItems.reduce(
         (count, item) => count + item.quantity,
@@ -99,7 +104,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case "UPDATE_QUANTITY": {
       const newItems = state.items.map((item) =>
-        item._id === action.payload.id
+        getProductId(item) === action.payload.id
           ? {...item, quantity: action.payload.quantity}
           : item
       );
@@ -152,7 +157,7 @@ export const CartProvider: React.FC<{children: ReactNode}> = ({children}) => {
 
   const isInCart = useCallback(
     (productId: string) => {
-      return cartState.items.some((item) => item._id === productId);
+      return cartState.items.some((item) => getProductId(item) === productId);
     },
     [cartState.items]
   );

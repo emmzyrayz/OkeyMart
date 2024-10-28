@@ -8,6 +8,9 @@ import {useRouter} from "next/navigation";
 import {Product} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
 
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
 
 
 export default function Random() {
@@ -16,6 +19,10 @@ export default function Random() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(
     null
   );
+
+  
+
+
   const [timeLeft, setTimeLeft] = useState({
     hours: 23,
     minutes: 59,
@@ -105,7 +112,12 @@ export default function Random() {
             </div>
             <div
               className="random_btn "
-              onClick={() => router.push("/top/${selectedProduct._id}")}
+              onClick={() => {
+                const productId = getProductId(selectedProduct);
+                if (productId) {
+                  router.push(`/top/${productId}`);
+                }
+              }}
             >
               <span>Buy Now</span>
             </div>

@@ -1,9 +1,14 @@
 import React, {useEffect, useState} from "react";
 import {useProductContext} from "../productContext/productcontext";
-import { ProductFormData, createEmptyProduct} from "@/types/product";
+import { ProductFormData, createEmptyProduct, Product} from "@/types/product";
 import {
   categories,
 } from "@/config/categoryvalidation";
+
+// Helper function for consistent ID handling
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
 
 const ProductManager: React.FC = () => {
   const {
@@ -65,18 +70,24 @@ const ProductManager: React.FC = () => {
     setFormData(createEmptyProduct());
   };
 
-  const handleUpdateProduct = async (id: string) => {
-    const productToUpdate = products.find((p) => p._id === id);
+  const handleUpdateProduct = async (productId: string) => {
+    const productToUpdate = products.find((p) => getProductId(p) === productId);
     if (productToUpdate) {
-      await updateProduct(id, {
+      await updateProduct(productId, {
         ...productToUpdate,
         ...formData,
       });
+    } else {
+      console.error("Product not found for update:", productId);
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    await deleteProduct(id);
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
   };
 
   const categoryConfig = getCategoryConfig(selectedCategory);
@@ -167,17 +178,22 @@ const ProductManager: React.FC = () => {
       </form>
 
       <ul>
-        {products.map((product) => (
-          <li key={product._id}>
-            {product.name} - ${product.price}
-            <button onClick={() => handleDeleteProduct(product._id)}>
-              Delete
-            </button>
-            <button onClick={() => handleUpdateProduct(product._id)}>
-              Update Product
-            </button>
-          </li>
-        ))}
+        {products.map((product) => {
+          const productId = getProductId(product);
+          if (!productId) return null;
+
+          return (
+            <li key={productId}>
+              {product.name} - ${product.price}
+              <button onClick={() => handleDeleteProduct(productId)}>
+                Delete
+              </button>
+              <button onClick={() => handleUpdateProduct(productId)}>
+                Update Product
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

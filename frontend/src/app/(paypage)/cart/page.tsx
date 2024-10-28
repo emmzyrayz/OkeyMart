@@ -9,23 +9,28 @@ import { CartItem, useCart } from "@/context/commerce logic/cartcontext";
 
 // Example product data, this can come from state or props
 
+// Helper function to handle different ID field names
+const getProductId = (product: CartItem) => {
+  return product._id || product.id || null;
+};
+
 
 export default function Cart() {
   const {cartState, updateQuantity, removeFromCart} = useCart();
   const {items} = cartState;
 
   // Function to handle quantity change
-  const handleQuantityChange = (id: string, action: string) => {
-    console.log(`Quantity change: ${action} for item ${id}`);
-    const item: CartItem | undefined = items.find((item) => item._id === id);
-    if (!item) return;
+  const handleQuantityChange = (item: CartItem, action: string) => {
+    const productId = getProductId(item);
+    if (!productId) return;
 
+    console.log(`Quantity change: ${action} for item ${productId}`);
     const newQuantity =
       action === "increment"
         ? item.quantity + 1
         : Math.max(1, item.quantity - 1);
 
-    updateQuantity(String(id), newQuantity);
+    updateQuantity(String(productId), newQuantity);
   };
 
   const calculateSubtotal = (
@@ -57,68 +62,69 @@ export default function Cart() {
           </div>
 
           {/* Product Rows */}
-          {items.map((item: CartItem) => (
-            <div className="cart-row" key={item._id}>
-              {/* Product Info */}
-              <div className="cart-item product-info flex flex-row items-center justify-center">
-                <div className="product_image flex items-center justify-center relative">
-                  <Image
-                    src={item.mainImage}
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                  />
-                  <MdCancel
-                    className="absolute text-red-500 fa"
-                    onClick={() => removeFromCart(item._id)}
-                  />
+          {items.map((item: CartItem) => {
+            const productId = getProductId(item);
+            if (!productId) return null; 
+
+            return (
+              <div className="cart-row" key={productId}>
+                {/* Product Info */}
+                <div className="cart-item product-info flex flex-row items-center justify-center">
+                  <div className="product_image flex items-center justify-center relative">
+                    <Image
+                      src={item.mainImage}
+                      alt={item.name}
+                      width={80}
+                      height={80}
+                    />
+                    <MdCancel
+                      className="absolute text-red-500 fa"
+                      onClick={() => removeFromCart(String(productId))}
+                    />
+                  </div>
+                  <p>{item.name}</p>
                 </div>
-                <p>{item.name}</p>
-              </div>
 
-              {/* Price */}
-              <div className="cart-item price">
-                ${(item.price * (1 - (item.discount ?? 0) / 100)).toFixed(2)}
-              </div>
+                {/* Price */}
+                <div className="cart-item price">
+                  ${(item.price * (1 - (item.discount ?? 0) / 100)).toFixed(2)}
+                </div>
 
-              {/* Quantity with Up/Down Arrows */}
-              <div className="cart-item quantity flex flex-row relative h-full">
-                <div className="quantity-control flex flex-row items-center justify-center relative w-full h-full">
-                  <span className="quantity-value w-1/2 h-full items-center justify-center">
-                    {String(item.quantity).padStart(2, "0")}
-                  </span>
-                  <div className="quantity-btns flex flex-col items-center relative w-1/2 h-full">
-                    <button
-                      className="quantity-btn"
-                      onClick={() =>
-                        handleQuantityChange(item._id, "increment")
-                      }
-                    >
-                      <FaAngleUp />
-                    </button>
-                    <button
-                      className="quantity-btn"
-                      onClick={() =>
-                        handleQuantityChange(item._id, "decrement")
-                      }
-                    >
-                      <FaAngleDown />
-                    </button>
+                {/* Quantity with Up/Down Arrows */}
+                <div className="cart-item quantity flex flex-row relative h-full">
+                  <div className="quantity-control flex flex-row items-center justify-center relative w-full h-full">
+                    <span className="quantity-value w-1/2 h-full items-center justify-center">
+                      {String(item.quantity).padStart(2, "0")}
+                    </span>
+                    <div className="quantity-btns flex flex-col items-center relative w-1/2 h-full">
+                      <button
+                        className="quantity-btn"
+                        onClick={() => handleQuantityChange(item, "increment")}
+                      >
+                        <FaAngleUp />
+                      </button>
+                      <button
+                        className="quantity-btn"
+                        onClick={() => handleQuantityChange(item, "decrement")}
+                      >
+                        <FaAngleDown />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Subtotal */}
-              <div className="cart-item subtotal">
-                $
-                {calculateSubtotal(
-                  item.price,
-                  item.quantity,
-                  item.discount
-                ).toFixed(2)}
+                {/* Subtotal */}
+                <div className="cart-item subtotal">
+                  $
+                  {calculateSubtotal(
+                    item.price,
+                    item.quantity,
+                    item.discount
+                  ).toFixed(2)}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <div className="cart_btn w-full flex flex-row items-center justify-between">
@@ -170,9 +176,7 @@ export default function Cart() {
                 </span>
               </div>
             </div>
-            <Link
-              href="/checkout"
-            >
+            <Link href="/checkout">
               <button className="checkout-btn flex flex-row items-center justify-center">
                 <span>Proceed to Checkout</span>
               </button>
