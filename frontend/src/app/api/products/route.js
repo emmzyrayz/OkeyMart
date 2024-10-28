@@ -26,7 +26,7 @@ export async function POST(req) {
 
   try {
     const body = await req.json(); // Parse incoming request body
-    console.log("Received product data:", body);
+    // console.log("Received product data:", body);
 
     // Create a new product using the request data
     const newProduct = new Product({
@@ -55,11 +55,11 @@ export async function POST(req) {
       bulkPrice: body.bulkPrice,
     });
 
-    console.log("New product object:", newProduct);
+    // console.log("New product object:", newProduct);
 
     // Save the product in the database
     const savedProduct = await newProduct.save();
-    console.log("Saved product:", savedProduct); // Log the saved product
+    // console.log("Saved product:", savedProduct); // Log the saved product
 
     return new Response(JSON.stringify(savedProduct), {
       status: 201,

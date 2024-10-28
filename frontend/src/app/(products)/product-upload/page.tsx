@@ -34,8 +34,8 @@ export default function ProdUplink() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Form submitted!");
-    console.log("Form submitted without preventDefault!");
+    // console.log("Form submitted!");
+    // console.log("Form submitted without preventDefault!");
     // Ensure the form is valid before proceeding
     if (state.isFormValid) {
       try {
@@ -48,7 +48,7 @@ export default function ProdUplink() {
         alert("Product successfully uploaded!");
         // Optionally, redirect the user or clear the form
         // Handle successful upload (e.g., show success message, redirect)
-        console.log("Product successfully uploaded!");
+        // console.log("Product successfully uploaded!");
       } catch (error) {
         // Show error message to the user
         alert(
@@ -66,8 +66,8 @@ export default function ProdUplink() {
 
   
 
-  console.log("Form Valid:", state.isFormValid);
-  console.log("Is Uploading:", state.isUploading);
+  // console.log("Form Valid:", state.isFormValid);
+  // console.log("Is Uploading:", state.isUploading);
 
 
     return (
