@@ -157,21 +157,23 @@ const performSearch = () => {
             </button>
           </form>
           {filteredProducts.length > 0 && (
-            <div className="search-results absolute top-[60px] bg-[--text] z-50 w-full p-3">
+            <div className="search-results absolute top-[60px]  h-[400px] overflow-y-auto bg-[--text] z-50 w-[350px] p-3 shadow-lg  rounded-xl">
               {filteredProducts.map((product) => (
                 <div
                   key={getProductId(product)}
                   onClick={() => handleProductClick(product)}
-                  className="search-result-item overflow-y-auto text-[--text2] bg-[--text] hover:bg-[--text2] hover:text-[--text] w-full p-3 items-center justify-center"
+                  className="search-result-item flex flex-col gap-1 text-[--text2] bg-[--text] hover:bg-[--text2] hover:text-[--text] w-full p-3 items-center justify-center rounded-md"
                 >
-                  <Image
-                    src={product.mainImage}
-                    width={100}
-                    height={100}
-                    alt={product.name}
-                    className=""
-                  />
-                  {product.name}
+                  <div className="flex flex-row items-center justify-start gap-1 w-full ">
+                    <Image
+                      src={product.mainImage}
+                      width={300}
+                      height={500}
+                      alt={product.name}
+                      className="rounded-lg object-cover w-[120px] h-[100px]"
+                    />
+                    <span className="font-medium text-[14px]">{product.name}</span>
+                  </div>
                   <hr
                     className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
                   rounded-lg"
@@ -265,9 +267,20 @@ const performSearch = () => {
                 <div
                   key={getProductId(product)}
                   onClick={() => handleProductClick(product)}
-                  className="search-result-item"
+                  className="search-result-item overflow-y-auto text-[--text2] bg-[--text] hover:bg-[--text2] hover:text-[--text] w-full p-3 items-center justify-center"
                 >
+                  <Image
+                    src={product.mainImage}
+                    width={100}
+                    height={100}
+                    alt={product.name}
+                    className=""
+                  />
                   {product.name}
+                  <hr
+                    className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
+                  rounded-lg"
+                  />
                 </div>
               ))}
             </div>

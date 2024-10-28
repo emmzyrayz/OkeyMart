@@ -119,11 +119,6 @@ export default function Show() {
 
   const colors = ["red", "orange", "yellow", "black"];
 
-  const handleIconClick = (e: React.MouseEvent, callback: () => void) => {
-    e.preventDefault();
-    e.stopPropagation();
-    callback();
-  };
 
   const handleHeartClick = useCallback(
     (product: Product, e: React.MouseEvent) => {
@@ -227,7 +222,7 @@ export default function Show() {
                   </div>
                   <div
                     className="icon-eye"
-                    onClick={(e) => handleHeartClick(product, e)}
+                    onClick={(e) => handleEyeClick(product, e)}
                   >
                     {viewedProducts.some(
                       (item) => getProductId(item) === productId

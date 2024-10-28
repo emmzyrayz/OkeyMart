@@ -24,7 +24,7 @@ export default function Cart() {
     const productId = getProductId(item);
     if (!productId) return;
 
-    console.log(`Quantity change: ${action} for item ${productId}`);
+    // console.log(`Quantity change: ${action} for item ${productId}`);
     const newQuantity =
       action === "increment"
         ? item.quantity + 1

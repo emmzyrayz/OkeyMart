@@ -134,7 +134,7 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
       }
 
       const url = `/${filterTag}/${productId}`;
-      console.log("Navigating to:", url);
+      // console.log("Navigating to:", url);
       router.push(url);
     },
     [product, filterTag, router]

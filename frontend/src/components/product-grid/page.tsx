@@ -81,11 +81,11 @@ export const ProductGrid = ({products, filterTag}: ProductGridProps) => {
     });
 
   // Add debug logging
-  console.log("ProductGrid rendered with:", {
-    productsCount: products.length,
-    filterTag,
-    firstProduct: products[0],
-  });
+  // console.log("ProductGrid rendered with:", {
+  //   productsCount: products.length,
+  //   filterTag,
+  //   firstProduct: products[0],
+  // });
 
   return (
     <div className="productgrid_section flex flex-col items-start justify-center w-full h-full gap-4">

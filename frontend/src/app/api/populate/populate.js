@@ -138,11 +138,11 @@ router.post("/populate", async (req, res) => {
       );
     }
 
-    console.log("Starting database population process...");
+    // console.log("Starting database population process...");
 
     // Clear existing products
     const deleteResult = await Product.deleteMany({});
-    console.log(`Cleared ${deleteResult.deletedCount} existing products`);
+    // console.log(`Cleared ${deleteResult.deletedCount} existing products`);
 
     const products = [];
     const numberOfProducts = 50;
@@ -200,7 +200,7 @@ router.post("/populate", async (req, res) => {
       const batch = products.slice(start, end);
 
       await Product.insertMany(batch, {ordered: true});
-      console.log(`Inserted batch ${i + 1} of ${batches}`);
+      // console.log(`Inserted batch ${i + 1} of ${batches}`);
     }
 
     res.status(201).json({

@@ -8,7 +8,7 @@ import FetchLoader from "@/components/fetchloading/page";
 // type FilterTag = "today" | "trending" | "top" | "featured";
 
 export default function Product({params}: {params: {filterTag: string}}) {
-  console.log("Current filter tag:", params.filterTag);
+  // console.log("Current filter tag:", params.filterTag);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

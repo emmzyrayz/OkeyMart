@@ -112,15 +112,15 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
            if (!value) errors[key] = `${key} is required`;
          }
        );
-       console.log("Images count:", state.images.length);
+      //  console.log("Images count:", state.images.length);
 
-       console.log("Validation errors:", errors);
+      //  console.log("Validation errors:", errors);
       dispatch({type: "SET_ERRORS", payload: errors});
       dispatch({
         type: "SET_IS_FORM_VALID",
         payload: Object.keys(errors).length === 0,
       });
-      console.log("Form valid:", Object.keys(errors).length === 0);
+      // console.log("Form valid:", Object.keys(errors).length === 0);
     };
 
     validateForm();
@@ -128,7 +128,7 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
 
   const uploadProduct = async () => {
     if (!state.isFormValid) {
-      console.log("Form is not valid, cannot upload");
+      // console.log("Form is not valid, cannot upload");
       throw new Error("Form is not valid");
     }
 
@@ -167,13 +167,13 @@ export const ProductUploadProvider: React.FC<{children: React.ReactNode}> = ({
         youtubeLink: state.youtubeLink,
       };
 
-      console.log("Product Data to be sent:", productData);
+      // console.log("Product Data to be sent:", productData);
       // Add product to database
      try {
       
        await addProduct(productData);
        dispatch({type: "SET_UPLOAD_PROGRESS", payload: 100});
-       console.log("Product uploaded successfully");
+      //  console.log("Product uploaded successfully");
        dispatch({type: "RESET_FORM"});
      } catch (error) {
        console.error("Error adding product:", error);
