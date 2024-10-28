@@ -7,7 +7,12 @@ import Visa from "../../../assets/img/banks/visa.png";
 import Mastercard from "../../../assets/img/banks/mastercard.png";
 import Nagad from "../../../assets/img/banks/Nagad.png";
 import {MdCancel} from "react-icons/md";
-import {useCart} from "@/context/commerce logic/cartcontext";
+import {useCart, CartItem} from "@/context/commerce logic/cartcontext";
+
+// Helper function to handle different ID field names
+const getProductId = (product: CartItem) => {
+  return product._id || product.id || null;
+};
 
 export default function Checkout() {
   // const [cartItems, setCartItems] = useState(cartItemsData);
@@ -18,6 +23,8 @@ export default function Checkout() {
   const calculateSubtotal = (price: number, quantity: number) => {
     return price * quantity;
   };
+
+  
 
   return (
     <div className="checkout_section">
@@ -79,28 +86,33 @@ export default function Checkout() {
           <div className="checkout_c flex flex-col gap-5 w-2/4">
             <div className="checkout_items">
               <div className="checkout_item">
-                {items.map((item) => (
-                  <div className="cart-row" key={item._id}>
-                    {/* Product Info */}
-                    <div className="cart-item product-info flex flex-row items-center justify-center">
-                      <div className="product_image flex items-center justify-center relative">
-                        <Image
-                          src={item.mainImage}
-                          alt={item.name}
-                          width={80}
-                          height={80}
-                        />
-                        <MdCancel className="absolute text-red-500 fa" />
+                {items.map((item) => {
+                  const productId = getProductId(item);
+                  if (!productId) return null; 
+                  
+                  return (
+                    <div className="cart-row" key={productId}>
+                      {/* Product Info */}
+                      <div className="cart-item product-info flex flex-row items-center justify-center">
+                        <div className="product_image flex items-center justify-center relative">
+                          <Image
+                            src={item.mainImage}
+                            alt={item.name}
+                            width={80}
+                            height={80}
+                          />
+                          <MdCancel className="absolute text-red-500 fa" />
+                        </div>
+                        <p>{item.name}</p>
                       </div>
-                      <p>{item.name}</p>
-                    </div>
 
-                    {/* Price */}
-                    <div className="cart-item price items-center justify-center flex">
-                      ${item.price}
+                      {/* Price */}
+                      <div className="cart-item price items-center justify-center flex">
+                        ${item.price}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <div className="total_con gap-4">

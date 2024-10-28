@@ -23,6 +23,10 @@ import {
 } from "react-icons/fa6";
 import Link from "next/link";
 
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
+
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
   const roundedRating = Math.round(rating);
@@ -89,7 +93,6 @@ export default function Today() {
     return products.filter((product) => product.trending === true).slice(0, 12);
   }, [products]);
 
-
   const scrollLeft = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({left: -200, behavior: "smooth"});
@@ -102,15 +105,16 @@ export default function Today() {
     }
   }, []);
 
-
+  // Update the handleHeartClick function
   const handleHeartClick = useCallback(
     (product: Product, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (isInWishlist(product._id)) {
-        removeFromWishlist(product._id);
-      } else {
+      const productId = getProductId(product);
+      if (productId && isInWishlist(productId)) {
+        removeFromWishlist(productId);
+      } else if (productId) {
         addToWishlist(product);
       }
     },
@@ -122,10 +126,13 @@ export default function Today() {
       e.preventDefault();
       e.stopPropagation();
 
-      const isViewed = viewedProducts.some((item) => item._id === product._id);
+      const productId = getProductId(product);
+      const isViewed =
+        productId &&
+        viewedProducts.some((item) => getProductId(item) === productId);
       if (isViewed) {
-        removeFromViewlist(product._id);
-      } else {
+        removeFromViewlist(productId);
+      } else if (productId) {
         addToViewed(product);
       }
     },
@@ -146,7 +153,6 @@ export default function Today() {
     [addToCart, selectedColor, selectedSize, quantity]
   );
 
-
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
 
@@ -158,7 +164,6 @@ export default function Today() {
   });
 
   // Update hearts and eyes based on wishlist and viewed products
-  
 
   useEffect(() => {
     // Update countdown every second
@@ -204,9 +209,6 @@ export default function Today() {
     return <ProductNotFound />;
   }
 
-  
-
-  
   return (
     <div className="today_section w-full flex flex-col">
       <div className="today_top flex flex-row items-center gap-2">
@@ -270,12 +272,13 @@ export default function Today() {
         ref={scrollContainerRef}
       >
         {filteredProducts.map((product, index) => {
-          const discountPrice =
-            product.price * (1 - (product.discount ?? 0) / 100);
+          const discountPrice = product.price * (1 - (product.discount ?? 0) / 100);
+
+            const productId = getProductId(product);
 
           return (
             <div className="product_item" key={index}>
-              <Link href={`/today/${product._id}`} className="itemms">
+              <Link href={`/today/${productId}`} className="itemms">
                 <div className="product_image">
                   <span className="discount">{product.discount}%</span>
                   <Image
@@ -290,7 +293,7 @@ export default function Today() {
                       className="icon-heart"
                       onClick={(e) => handleHeartClick(product, e)}
                     >
-                      {isInWishlist(product._id) ? (
+                      {productId && isInWishlist(productId) ? (
                         <FaHeart className="fas" />
                       ) : (
                         <FaRegHeart className="fa" />
@@ -300,8 +303,9 @@ export default function Today() {
                       className="icon-eye"
                       onClick={(e) => handleEyeClick(product, e)}
                     >
-                      {viewedProducts.some(
-                        (item) => item._id === product._id
+                      {productId &&
+                      viewedProducts.some(
+                        (item) => getProductId(item) === productId
                       ) ? (
                         <FaEye className="fas" />
                       ) : (

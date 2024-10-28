@@ -1,5 +1,5 @@
 "use client";
-import React, {useRef, useState, useMemo, useEffect} from "react";
+import React, {useRef, useState, useMemo, useEffect, useCallback} from "react";
 import {useRouter} from "next/navigation";
 import {useCart} from "@/context/commerce logic/cartcontext";
 import {useWishContext} from "@/context/commerce logic/view-wishcontext";
@@ -25,8 +25,9 @@ import { FilterButton } from "../filterbtn";
 import Link from "next/link";
 import {CartItem} from "../../context/commerce logic/cartcontext";
 
-
-
+const getProductId = (product: Product): string | null => {
+  return product._id || product.id || null;
+};
 
 const renderStars = (rating: number) => {
   // Round the rating to the nearest number
@@ -124,33 +125,56 @@ export default function Show() {
     callback();
   };
 
-  const handleHeartClick = (product: Product) => {
-    if (isInWishlist(product._id)) {
-      removeFromWishlist(product._id);
-    } else {
-      addToWishlist(product);
-    }
-  };
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const handleEyeClick = (product: Product) => {
-    const isViewed = viewedProducts.some((item) => item._id === product._id);
-    if (isViewed) {
-      removeFromViewlist(product._id);
-    } else {
-      addToViewed(product);
-    }
-  };
+      const productId = getProductId(product);
+      if (productId) {
+        if (isInWishlist(productId)) {
+          removeFromWishlist(productId);
+        } else {
+          addToWishlist(product);
+        }
+      }
+    },
+    [addToWishlist, removeFromWishlist, isInWishlist]
+  );
 
-  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
-    e.preventDefault();
-    const cartItem: CartItem = {
-      ...product,
-      selectedColor,
-      selectedSize,
-      quantity,
-    };
-    addToCart(cartItem);
-  };
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const productId = getProductId(product);
+      if (productId) {
+        const isViewed = viewedProducts.some(
+          (item) => getProductId(item) === productId
+        );
+        if (isViewed) {
+          removeFromViewlist(productId);
+        } else {
+          addToViewed(product);
+        }
+      }
+    },
+    [addToViewed, removeFromViewlist, viewedProducts]
+  );
+
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.preventDefault();
+      const cartItem: CartItem = {
+        ...product,
+        selectedColor,
+        selectedSize,
+        quantity,
+      };
+      addToCart(cartItem);
+    },
+    [addToCart, selectedColor, selectedSize, quantity]
+  );
 
   const handleColorChange = (index: number, color: string) => {
     setActiveColors((prev) => {
@@ -175,77 +199,84 @@ export default function Show() {
 
 
   const renderProductGrid = (products: Product[], startIndex: number = 0) =>
-    products.map((product, index) => (
-      <div className="top_item" key={product._id}>
-        {product?._id && (
-          <Link href={`/top/${product._id}`}>
-            <div className="product_image">
-              <Image
-                alt={product.name}
-                width={200}
-                height={300}
-                src={product.mainImage || "/default-image.jpg"}
-              />
-              <div className="product_icons">
-                <div
-                  className="icon-heart"
-                  onClick={(e) =>
-                    handleIconClick(e, () => handleHeartClick(product))
-                  }
-                >
-                  {isInWishlist(product._id) ? (
-                    <FaHeart className="fas" />
-                  ) : (
-                    <FaRegHeart className="fa" />
-                  )}
-                </div>
-                <div
-                  className="icon-eye"
-                  onClick={(e) =>
-                    handleIconClick(e, () => handleEyeClick(product))
-                  }
-                >
-                  {viewedProducts.some((item) => item._id === product._id) ? (
-                    <FaEye className="fas" />
-                  ) : (
-                    <FaRegEye className="fa" />
-                  )}
-                </div>
-              </div>
-              <div
-                className="product_btn"
-                onClick={(e) => handleAddToCart(e, product)}
-              >
-                <span>Add To Cart</span>
-              </div>
-            </div>
-            <div className="product_detal flex flex-col">
-              <h3>{product.name}</h3>
-              <div className="info flex flex-row gap-1 items-center">
-                <span className="price">{product.price}</span>
-                <div className="rating">
-                  <ProductRating product={product} />
-                </div>
-                <span className="reviews">
-                  ({product.rating?.toFixed(1) ?? "N/A"})
-                </span>
-              </div>
-              <div className="color-var flex flex-row gap-2 items-center relative">
-                {colors.map((color) => (
+    products.map((product, index) => {
+      const productId = getProductId(product);
+      if (!productId) return null; 
+
+      return (
+        <div className="top_item" key={productId}>
+          {productId && (
+            <Link href={`/top/${productId}`}>
+              <div className="product_image">
+                <Image
+                  alt={product.name}
+                  width={200}
+                  height={300}
+                  src={product.mainImage || "/default-image.jpg"}
+                />
+                <div className="product_icons">
                   <div
-                    key={color}
-                    className={`color-item ${color} ${
-                      activeColors[startIndex + index] === color ? "active" : ""
-                    }`}
-                    onClick={() => handleColorChange(startIndex + index, color)}
-                  ></div>
-                ))}
+                    className="icon-heart"
+                    onClick={(e) => handleHeartClick(product, e)}
+                  >
+                    {isInWishlist(productId) ? (
+                      <FaHeart className="fas" />
+                    ) : (
+                      <FaRegHeart className="fa" />
+                    )}
+                  </div>
+                  <div
+                    className="icon-eye"
+                    onClick={(e) => handleHeartClick(product, e)}
+                  >
+                    {viewedProducts.some(
+                      (item) => getProductId(item) === productId
+                    ) ? (
+                      <FaEye className="fas" />
+                    ) : (
+                      <FaRegEye className="fa" />
+                    )}
+                  </div>
+                </div>
+                <div
+                  className="product_btn"
+                  onClick={(e) => handleAddToCart(e, product)}
+                >
+                  <span>Add To Cart</span>
+                </div>
               </div>
-            </div>
-          </Link>
-        )}
-      </div>
-    ));
+              <div className="product_detal flex flex-col">
+                <h3>{product.name}</h3>
+                <div className="info flex flex-row gap-1 items-center">
+                  <span className="price">{product.price}</span>
+                  <div className="rating">
+                    <ProductRating product={product} />
+                  </div>
+                  <span className="reviews">
+                    ({product.rating?.toFixed(1) ?? "N/A"})
+                  </span>
+                </div>
+                <div className="color-var flex flex-row gap-2 items-center relative">
+                  {colors.map((color) => (
+                    <div
+                      key={color}
+                      className={`color-item ${color} ${
+                        activeColors[startIndex + index] === color
+                          ? "active"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleColorChange(startIndex + index, color)
+                      }
+                    ></div>
+                  ))}
+                </div>
+              </div>
+            </Link>
+          )}
+        </div>
+      );
+    });
 
  
 

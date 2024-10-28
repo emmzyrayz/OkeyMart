@@ -16,7 +16,9 @@ const ProductDetailsPage = ({
   const {productId} = params;
   const {products, loading} = useProductContext();
 
-  const product = products.find((p) => p._id === productId);
+  const product = products.find(
+    (p) => p._id === productId || p.id === productId
+  );
 
   if (loading) {
     return <FetchLoader />;

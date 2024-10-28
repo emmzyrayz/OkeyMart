@@ -25,6 +25,10 @@ type ProductCardProps = {
   filterTag: string;
 };
 
+const getProductId = (product: Product) => {
+  return product._id || product.id || null;
+};
+
 const renderStars = (rating: number) => {
   const fullStars = Math.floor(rating); // Full stars
   const halfStars = rating % 1 >= 0.5 ? 1 : 0; // Half star if applicable
@@ -72,7 +76,6 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   const [selectedSize] = useState("M");
   const [quantity] = useState(1);
   const {
-    // wishlist,
     viewedProducts,
     addToWishlist,
     addToViewed,
@@ -80,7 +83,6 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
     removeFromWishlist,
     isInWishlist,
   } = useWishContext();
-  // const [isFavorite, setIsFavorite] = useState(isInWishlist(product._id));
 
 
    const handleHeartClick = useCallback(
@@ -88,8 +90,11 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
        e.preventDefault();
        e.stopPropagation();
 
-       if (isInWishlist(product._id)) {
-         removeFromWishlist(product._id);
+       const productId = getProductId(product);
+       if (!productId) return;
+
+       if (isInWishlist(productId)) {
+         removeFromWishlist(productId);
        } else {
          addToWishlist(product);
        }
@@ -102,28 +107,38 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
        e.preventDefault();
        e.stopPropagation();
 
-       const isViewed = viewedProducts.some((item) => item._id === product._id);
+       const productId = getProductId(product);
+       if (!productId) return;
+
+       const isViewed = viewedProducts.some(
+         (item) => getProductId(item) === productId
+       );
        if (isViewed) {
-         removeFromViewlist(product._id);
+         removeFromViewlist(productId);
        } else {
          addToViewed(product);
        }
      },
      [addToViewed, removeFromViewlist, viewedProducts]
    );
-  const handleViewItemClick = () => {
-    
-    if (!product._id) {
-      console.error("Product ID is undefined:", product);
-      return;
-    }
 
-    // Use the correct ID field from your product object
-    const productId = product._id;
-    const url = `/${filterTag}/${productId}`;
-    console.log("Navigating to:", url);
-    router.push(url);
-  };
+
+  const handleViewItemClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const productId = getProductId(product);
+
+      if (!productId) {
+        console.error("Product ID is undefined:", product);
+        return;
+      }
+
+      const url = `/${filterTag}/${productId}`;
+      console.log("Navigating to:", url);
+      router.push(url);
+    },
+    [product, filterTag, router]
+  );
 
   const handleAddToCart = useCallback(
     (e: React.MouseEvent, product: Product) => {
@@ -139,11 +154,13 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
     [addToCart, selectedColor, selectedSize, quantity]
   );
 
+  const productId = getProductId(product);
+  if (!productId) return null;
   
 
   return (
     <>
-      <div className="product_item mb-6" key={product._id}>
+      <div className="product_item mb-6" key={productId}>
         <div className="product_image">
           <span className="discount">{product.discount}%</span>
           <Image
@@ -157,7 +174,7 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
               className="icon-heart"
               onClick={(e) => handleHeartClick(product, e)}
             >
-              {isInWishlist(product._id) ? (
+              {isInWishlist(productId) ? (
                 <FaHeart className="fas" />
               ) : (
                 <FaRegHeart className="fa" />
@@ -167,7 +184,9 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
               className="icon-eye"
               onClick={(e) => handleEyeClick(product, e)}
             >
-              {viewedProducts.some((item) => item._id === product._id) ? (
+              {viewedProducts.some(
+                (item) => getProductId(item) === productId
+              ) ? (
                 <FaEye className="fas" />
               ) : (
                 <FaRegEye className="fa" />
