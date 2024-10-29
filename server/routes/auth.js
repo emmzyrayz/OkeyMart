@@ -2,7 +2,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const authMiddleware = require('../middleware/auth')
 const router = express.Router();
 
 // Register Route
@@ -49,8 +48,5 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/profile", authMiddleware, (req, res) => {
-  res.json({message: `Welcome, user ${req.user.userId}`});
-});
 
 module.exports = router;
