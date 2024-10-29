@@ -2,10 +2,11 @@
     padding: 0px 5%;
     margin-top: 100px;
     padding-bottom: 30px;
+    height: 80vh;
 }
 
 .signup_img {
-    min-height: 761px;
+    /* min-height: 100%; */
     background: #CBE4E8;
     border-radius: 12px;
 }
@@ -82,4 +83,39 @@
 
 .btns .forgot-btn {
     color: var(--secondary2);
+}
+
+
+.google .g-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.google-signup-btn {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text2);
+    /* Font size */
+}
+
+
+.sign-re {
+    width: 371px;
+    margin-top: 5px;
+    gap: 10px;
+    height: 56px !important;
+}
+
+.sign-re span {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text2);
+    opacity: .4;
+}
+
+.sign-re .link {
+    color: var(--text2);
+    opacity: 1 !important;
+    text-decoration: underline;
 }

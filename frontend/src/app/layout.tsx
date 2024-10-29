@@ -12,6 +12,7 @@ import {CartProvider} from "@/context/commerce logic/cartcontext";
 import {ViewWishProvider} from "@/context/commerce logic/view-wishcontext";
 import {SearchProvider} from "@/context/searchcontext/searchcontext";
 import { ProductUploadProvider } from "@/context/productUpload/productUploadContext";
+import SessionWrapper from "@/context/sessionwrapper/sessionwrapper";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -85,69 +86,71 @@ export default function RootLayout({
   const {title, description} = getMetadata();
 
   return (
-    <ProductProvider>
-      <CartProvider>
-        <ViewWishProvider>
-          <SearchProvider>
-            <ProductUploadProvider>
-              <html lang="en">
-                <head>
-                  <meta charSet="UTF-8" />
-                  <title>{title}</title>
-                  <meta name="description" content={description} />
+    <SessionWrapper>
+      <ProductProvider>
+        <CartProvider>
+          <ViewWishProvider>
+            <SearchProvider>
+              <ProductUploadProvider>
+                <html lang="en">
+                  <head>
+                    <meta charSet="UTF-8" />
+                    <title>{title}</title>
+                    <meta name="description" content={description} />
 
-                  {/* og meta tags */}
-                  <meta
-                    property="og:title"
-                    content="Okey Mart - your one-stop shop for all your needs."
-                  />
-                  <meta
-                    property="og:description"
-                    content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
-                  />
-                  <meta property="og:image" content="" />
-                  <meta
-                    property="og:url"
-                    content="https://okeymart.vercel.app/"
-                  />
-                  <meta property="og:type" content="website" />
+                    {/* og meta tags */}
+                    <meta
+                      property="og:title"
+                      content="Okey Mart - your one-stop shop for all your needs."
+                    />
+                    <meta
+                      property="og:description"
+                      content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
+                    />
+                    <meta property="og:image" content="" />
+                    <meta
+                      property="og:url"
+                      content="https://okeymart.vercel.app/"
+                    />
+                    <meta property="og:type" content="website" />
 
-                  {/* twitter card tag */}
-                  <meta name="twitter:card" content="summary_large_image" />
-                  <meta
-                    name="twitter:title"
-                    content="Okey Mart - your one-stop shop for all your needs."
-                  />
-                  <meta
-                    name="twitter:description"
-                    content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
-                  />
-                  <meta name="twitter:image" content="" />
+                    {/* twitter card tag */}
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta
+                      name="twitter:title"
+                      content="Okey Mart - your one-stop shop for all your needs."
+                    />
+                    <meta
+                      name="twitter:description"
+                      content="Discover a wide range of products at Okey Mart. Enjoy fast shipping and secure payments."
+                    />
+                    <meta name="twitter:image" content="" />
 
-                  <meta
-                    name="keywords"
-                    content="eCommerce, online shopping, electronics, fashion, bill payment, cash transfer, gift cards, cryptocurrency, game currencies"
-                  />
-                </head>
-                <body>
-                  {loading && <LoadingScreen />}
-                  {!loading && (
-                    <div className="fadeIn-load">
-                      <div className="page-container">
-                        {!hideLayout && <TopBar />}
-                        <div className={`${inter.className} content`}>
-                          {children}
+                    <meta
+                      name="keywords"
+                      content="eCommerce, online shopping, electronics, fashion, bill payment, cash transfer, gift cards, cryptocurrency, game currencies"
+                    />
+                  </head>
+                  <body>
+                    {loading && <LoadingScreen />}
+                    {!loading && (
+                      <div className="fadeIn-load">
+                        <div className="page-container">
+                          {!hideLayout && <TopBar />}
+                          <div className={`${inter.className} content`}>
+                            {children}
+                          </div>
                         </div>
+                        {!hideLayout && <Footer />}
                       </div>
-                      {!hideLayout && <Footer />}
-                    </div>
-                  )}
-                </body>
-              </html>
-            </ProductUploadProvider>
-          </SearchProvider>
-        </ViewWishProvider>
-      </CartProvider>
-    </ProductProvider>
+                    )}
+                  </body>
+                </html>
+              </ProductUploadProvider>
+            </SearchProvider>
+          </ViewWishProvider>
+        </CartProvider>
+      </ProductProvider>
+    </SessionWrapper>
   );
 }

@@ -1,9 +1,53 @@
+'use client'
+
+import {useEffect, useState} from "react";
+import {useSession} from "next-auth/react";
+import {useRouter} from "next/router";
+
 import './register.css';
 import Image from 'next/image';
 import Link from 'next/link';
+import {signIn} from 'next-auth/react'
 import SignImg from '../../../assets/img/products/signin-img.png';
-import Gicon from '../../../assets/img/products/Icon-Google.svg'
+import Gicon from '../../../assets/img/products/Icon-Google.svg';
+
+
 export default function SignUp() {
+
+  const { data: session } = useSession();
+    const router = useRouter();
+    const [userData, setUser Data] = useState({ name: '', email: '' });
+
+    useEffect(() => {
+        if (session) {
+            setUser Data({ name: session.user.name || '', email: session.user.email });
+        }
+    }, [session]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        // Handle registration logic here
+        try {
+        // Save userData to your database
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(userData),
+        });
+        const data = await res.json();
+
+        if (data.message === "Registered successfully") {
+            router.push("/"); // Redirect to homepage after registration
+        } else {
+            // Handle registration errors
+        }
+    } catch (error) {
+        console.error(error);
+    }
+    };
+
     return (
       <div className="signup_section flex flex-row w-full h-full items-center justify-center">
         <div className="signup_img w-3/5">
@@ -23,12 +67,14 @@ export default function SignUp() {
             <span>Enter your details below</span>
           </div>
           <form
-            action="POST"
+            onSubmit={handleSubmit}
             className="flex flex-col relative items-center sign-form"
           >
             <input
               type="text"
               className="name"
+              value={userData.name}
+              onChange={(e) => setUser Data({ ...userData, name: e.target.value })}
               placeholder="Your Name"
               required
             />
@@ -41,18 +87,13 @@ export default function SignUp() {
             <input
               type="password"
               className="password"
-              placeholder="Your Password"
+              value={userData.email}
+              onChange={(e) => setUser Data({ ...userData, email: e.target.value })}
+              placeholder="Your Email"
               required
             />
             <input type="button" className="sign-btn" value="Create Account" />
             <div className="google flex flex-row gap-2 items-center justify-center">
-              {/* <Image
-                src={Gicon}
-                alt="google icon"
-                className="g-icon"
-                width={24}
-                height={24}
-              /> */}
               <Gicon className="g-icon" />
               <input
                 type="button"

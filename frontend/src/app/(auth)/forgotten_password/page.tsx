@@ -68,7 +68,7 @@ export default function ForgotPassword() {
 
         <form
           action="POST"
-          className="flex flex-col hidden relative items-center sign-form"
+          className="flex flex-col relative items-center sign-form"
         >
           <input
             type="text"
