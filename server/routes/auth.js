@@ -1,8 +1,11 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const NodeCache = require("node-cache"); 
 const User = require("../models/User");
 const router = express.Router();
+
+const tokenCache = new NodeCache({stdTTL: 3600});
 
 // Register Route
 router.post("/register", async (req, res) => {
@@ -47,6 +50,40 @@ router.post("/login", async (req, res) => {
     res.status(500).json({error: "Server error"});
   }
 });
+
+// Logout Route
+router.post("/logout", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (token) {
+    tokenCache.set(token, true); // Add token to cache for invalidation
+    res.status(200).json({ message: "Logged out successfully" });
+  } else {
+    res.status(400).json({ message: "Token missing" });
+  }
+});
+
+// Middleware to check token validity
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token || tokenCache.has(token)) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+// Example protected route
+router.get("/protected", verifyToken, (req, res) => {
+  res.json({ message: "Welcome to the protected route!", user: req.user });
+});
+
 
 
 module.exports = router;

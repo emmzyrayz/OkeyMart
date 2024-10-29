@@ -1,8 +1,10 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
 import {signIn, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
+import authApi, {setAuthToken} from "@/utils/authApi";
+
 import "./login.css";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,26 +13,28 @@ import Gicon from "../../../assets/img/products/Icon-Google.svg";
 import { FaGithub } from "react-icons/fa6";
 
 export default function SignIn() {
-  const {data: session} = useSession();
+  // const {data: session} = useSession();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({email: "", password: ""});
+  const [error, setError] = useState<string>("");
 
-  const handleSubmit = async (e: any) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({...formData, [e.target.name]: e.target.value});
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({email, password}),
-    });
-    const data = await res.json();
+    try {
+      const res = await authApi.post("/api/auth/login", formData);
+      const {token} = res.data;
 
-    if (data.message === "Logged in successfully") {
-      router.push("/"); // Redirect to homepage after login
-    } else {
-      // Handle invalid credentials
+      localStorage.setItem("token", token);
+      setAuthToken(token);
+      router.push("/"); // Redirect to home page after successful login
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Error signing in");
     }
   };
 
@@ -58,22 +62,26 @@ export default function SignIn() {
         >
           <input
             type="text"
+            name="email"
             className="name"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={formData.email}
+            onChange={handleChange}
             placeholder="Email or Phone Number"
             required
           />
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
             className="password"
             placeholder="Password"
             required
           />
           <div className="btns flex flex-row items-center justify-between">
-            <input type="submit" className="sign-btn" value="Sign In" />
+            <button type="submit" className="sign-btn">
+              Sign In
+            </button>
             <Link href="/forgotten_password">
               <input
                 type="button"
@@ -100,6 +108,14 @@ export default function SignIn() {
           >
             <FaGithub className="g-icon" />
           </div>
+        </div>
+        <div className="sign-re flex justify-center items-end">
+          <span>
+            Don't have an account?{" "}
+            <Link href="/signup" className="link">
+              Register
+            </Link>
+          </span>
         </div>
       </div>
     </div>
