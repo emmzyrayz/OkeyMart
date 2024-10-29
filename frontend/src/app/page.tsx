@@ -1,13 +1,9 @@
+'use client'
 
-import Action from "@/components/action/page";
-import { BestSelling } from "@/components/best-selling/page";
-import Category from "@/components/category/page";
-import Featured from "@/components/featured/page";
-import { Mbanner } from "@/components/m-banner/page";
-import Random from "@/components/random/page";
-import Show from "@/components/show/page";
-import Today from "@/components/today/page";
-// import LoadingScreen from "@/components/loadingscreen/page";
+import { signIn, useSession } from 'next-auth/react';
+import React, {useEffect} from "react";
+import {useRouter} from "next/navigation";
+
 import '@fontsource/inter/400.css';  // Inter Regular
 import '@fontsource/inter/500.css';  // Inter Medium
 import '@fontsource/inter/700.css';  // Inter Bold
@@ -15,19 +11,37 @@ import '@fontsource/inter/700.css';  // Inter Bold
 import '@fontsource/poppins/400.css';  // Poppins Regular
 import '@fontsource/poppins/500.css';  // Poppins Medium
 import '@fontsource/poppins/700.css';  // Poppins Bold
+import { HomePage } from '@/components/home/page';
+import Link from 'next/link';
 
 export default function Home() {
+  const {data: session, status} = useSession();
+  const router = useRouter();
+
+  // Redirect to /signin if the user is not logged in and the session status is "unauthenticated"
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/signin");
+    }
+  }, [status, router]);
+
+  
   return (
     <div>
-      <Mbanner />
-      {/* <LoadingScreen /> */}
-      <Today />
-      <Category />
-      <BestSelling />
-      <Random />
-      <Show />
-      <Featured />
-      <Action />
+      {session ? (
+        <div>
+          <HomePage />
+        </div>
+      ) : (
+        <div className='flex items-center justify-center w-full h-full'>
+          <h1 className="text-lg text-black font-medium">
+            You're Not logged in, You would be automatically redirected to 
+            <Link href='/signin'>
+              /signin page
+            </Link>
+          </h1>
+        </div>
+      )}
     </div>
   );
 }
