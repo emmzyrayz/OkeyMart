@@ -64,7 +64,7 @@
     border-bottom: 1px solid rgba(128, 128, 128, 0.5);
 }
 
-.sign-form input.sign-btn {
+.sign-form button.sign-btn {
     width: 371px;
     height: 56px;
     background: var(--button2);
@@ -74,7 +74,7 @@
     font-weight: 500;
 }
 
-.sign-form input.sign-btn:hover {
+.sign-form button.sign-btn:hover {
     background: var(--btn-hover);
 }
 
