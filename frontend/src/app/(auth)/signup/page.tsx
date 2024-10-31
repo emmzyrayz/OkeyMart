@@ -1,57 +1,108 @@
 "use client";
 
 import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
-import {useSession} from "next-auth/react";
+
 import {useRouter} from "next/navigation";
 import authApi from "@/utils/authApi";
 
 import "./register.css";
 import Image from "next/image";
 import Link from "next/link";
-import {signIn} from "next-auth/react";
 import SignImg from "../../../assets/img/products/signin-img.png";
-import Gicon from "../../../assets/img/products/Icon-Google.svg";
-import { FaGithub } from "react-icons/fa";
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirm_password: string;
+}
 
 export default function SignUp() {
-  // const {data: session} = useSession();
-  const [formData, setFormData] = useState({name: "", email: "", password: ""});
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm_password: "",
+  });
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  // const [userData, setUserData] = useState({name: "", email: ""});
+
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
+    setError(""); // Clear error when user types
   };
 
-  // useEffect(() => {
-  //   if (session) {
-  //     setUserData({name: session.user?.name || "", email: session.user?.email});
-  //   }
-  // }, [session]);
+  const validateForm = (): boolean => {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.confirm_password
+    ) {
+      setError("All fields are required");
+      return false;
+    }
+
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return false;
+    }
+
+    if (formData.password !== formData.confirm_password) {
+      setError("Passwords do not match");
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
     try {
-      await authApi.post("/api/auth/register", formData);
-      router.push("/signin"); // Redirect to sign-in page after successful sign-up
+      const response = await authApi.post("/auth/register", {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+
+      if (response.data) {
+        router.push("/signin");
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error signing up");
+      setError(err.response?.data?.message || "Error during registration");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
-      <div className="signup_img w-3/5">
+      <div className="signup_img w-[50%] h-fit">
         <Image
           src={SignImg}
           className="sign-logo"
           width={500}
           height={300}
           alt="Sign Up Logo"
+          priority
         />
       </div>
-      <div className="signup_container w-2/5 flex flex-col items-start justify-center">
+      <div className="signup_container w-[40%] gap-2 flex flex-col items-start justify-center relative">
         <div className="sign_head">
           <span>Create an Account</span>
         </div>
@@ -62,56 +113,71 @@ export default function SignUp() {
           onSubmit={handleSubmit}
           className="flex flex-col relative items-center sign-form"
         >
+          {error && (
+            <div className="error-message text-red-500 mb-4 w-full text-center">
+              {error}
+            </div>
+          )}
           <input
             type="text"
             name="name"
-            className="name"
+            className="name w-full"
             value={formData.name}
             onChange={handleChange}
             placeholder="Your Name"
+            disabled={isLoading}
             required
           />
           <input
             type="email"
             name="email"
-            className="email"
+            className="email w-full"
             value={formData.email}
             onChange={handleChange}
             placeholder="Your Email"
+            disabled={isLoading}
             required
+          />
+          <input
+            type="tel"
+            name="phone"
+            className="phone w-full"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="Phone Number"
+            disabled={isLoading}
           />
           <input
             type="password"
             name="password"
-            className="password"
+            className="password w-full"
             value={formData.password}
             onChange={handleChange}
             placeholder="Set Password"
+            disabled={isLoading}
             required
           />
-          <button type="submit" className="sign-btn">
-            Create Account
+          <input
+            type="password"
+            name="confirm_password"
+            className="password w-full"
+            value={formData.confirm_password}
+            onChange={handleChange}
+            placeholder="Confirm Password"
+            disabled={isLoading}
+            required
+          />
+          <button
+            type="submit"
+            className="sign-btn w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Creating Account..." : "Create Account"}
           </button>
-          {error && <p>{error}</p>}
         </form>
-        <hr className="flex border border-[--text1] w-full border-solid items-center m-3" />
+        <hr className="w-full border-[--text1] my-4 ml-[40px] " />
 
-        <div className="social_btn flex flex-row gap-2 items-center justify-center min-w-full">
-          <div
-            onClick={() => signIn("google")}
-            className="google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl]"
-          >
-            <Gicon className="g-icon" />
-          </div>
-
-          <div
-            onClick={() => signIn("github")}
-            className="google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl]"
-          >
-            <FaGithub className="g-icon" />
-          </div>
-        </div>
-        <div className="sign-re flex justify-center items-end">
+        <div className="sign-re flex justify-center w-full">
           <span>
             Already have an account?{" "}
             <Link href="/signin" className="link">

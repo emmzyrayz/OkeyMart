@@ -1,89 +1,140 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const NodeCache = require("node-cache"); 
+const NodeCache = require("node-cache");
 const User = require("../models/User");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
 
-const tokenCache = new NodeCache({stdTTL: 3600});
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+
+router.use(limiter);
+
+// Token blacklist cache
+const tokenBlacklist = new NodeCache({stdTTL: 3600}); // 1 hour TTL
 
 // Register Route
 router.post("/register", async (req, res) => {
-  const {name, email, password} = req.body;
   try {
+    const {name, email, phone, password} = req.body;
+
     // Check if user exists
-    let user = await User.findOne({email});
-    if (user) return res.status(400).json({message: "User already exists"});
+    const existingUser = await User.findOne({email: email.toLowerCase()});
+    if (existingUser) {
+      return res.status(400).json({message: "Email already registered"});
+    }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Create new user
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      phone,
+      password,
+    });
 
-    // Save new user
-    user = new User({name, email, password: hashedPassword});
     await user.save();
 
-    res.status(201).json({message: "User registered successfully"});
-  } catch (err) {
-    res.status(500).json({error: "Server error"});
+    res.status(201).json({message: "Registration successful"});
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({message: "Server error during registration"});
   }
 });
 
 // Login Route
 router.post("/login", async (req, res) => {
-  const {email, password} = req.body;
   try {
-    // Find user by email
-    const user = await User.findOne({email});
-    if (!user) return res.status(400).json({message: "User not found"});
+    const {email, password} = req.body;
 
-    // Compare passwords
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({message: "Invalid credentials"});
+    // Find user
+    const user = await User.findOne({email: email.toLowerCase()});
+    if (!user) {
+      return res.status(401).json({message: "Invalid credentials"});
+    }
 
-    // Create JWT token
-    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({message: "Invalid credentials"});
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      {expiresIn: "1h"}
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
-    res.json({token});
-  } catch (err) {
-    res.status(500).json({error: "Server error"});
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({message: "Server error during login"});
   }
 });
 
 // Logout Route
 router.post("/logout", (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
-
   if (token) {
-    tokenCache.set(token, true); // Add token to cache for invalidation
-    res.status(200).json({ message: "Logged out successfully" });
+    tokenBlacklist.set(token, true);
+    res.status(200).json({message: "Logged out successfully"});
   } else {
-    res.status(400).json({ message: "Token missing" });
+    res.status(400).json({message: "No token provided"});
   }
 });
 
-// Middleware to check token validity
+// Middleware to verify token
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token || tokenCache.has(token)) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({message: "No token provided"});
+    }
+
+    if (tokenBlacklist.has(token)) {
+      return res.status(401).json({message: "Token has been invalidated"});
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
     next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({message: "Token has expired"});
+    }
+    res.status(401).json({message: "Invalid token"});
   }
 };
 
-// Example protected route
-router.get("/protected", verifyToken, (req, res) => {
-  res.json({ message: "Welcome to the protected route!", user: req.user });
+// Protected route example
+router.get("/me", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({message: "User not found"});
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({message: "Server error"});
+  }
 });
-
-
 
 module.exports = router;
