@@ -1,7 +1,6 @@
 "use client";
 
 import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
-import {signIn, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
 import authApi, {setAuthToken} from "@/utils/authApi";
 
@@ -9,8 +8,6 @@ import "./login.css";
 import Image from "next/image";
 import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
-import Gicon from "../../../assets/img/products/Icon-Google.svg";
-import { FaGithub } from "react-icons/fa6";
 
 export default function SignIn() {
   // const {data: session} = useSession();
@@ -19,6 +16,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [formData, setFormData] = useState({email: "", password: ""});
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
@@ -37,6 +35,7 @@ export default function SignIn() {
       setError(err.response?.data?.message || "Error signing in");
     }
   };
+
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
@@ -63,10 +62,11 @@ export default function SignIn() {
           <input
             type="text"
             name="email"
-            className="name"
+            className="name w-full"
             value={formData.email}
             onChange={handleChange}
             placeholder="Email or Phone Number"
+            disabled={isLoading}
             required
           />
           <input
@@ -75,12 +75,13 @@ export default function SignIn() {
             value={formData.password}
             onChange={handleChange}
             className="password"
-            placeholder="Password"
+            placeholder="Password w-full"
+            disabled={isLoading}
             required
           />
           <div className="btns flex flex-row items-center justify-between">
-            <button type="submit" className="sign-btn">
-              Sign In
+            <button type="submit" className="sign-btn" disabled={isLoading}>
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
             <Link href="/forgotten_password">
               <input
@@ -94,21 +95,25 @@ export default function SignIn() {
 
         <hr className="flex border border-[--text1] w-full border-solid items-center m-3" />
 
-        <div className="social_btn flex flex-row gap-2 items-center justify-center min-w-full">
+        {/* <div className="social_btn flex flex-row gap-2 items-center justify-center min-w-full">
           <div
-            onClick={() => signIn("google")}
-            className="google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl]"
+            onClick={() => handleSocialSignIn("oauth_google")}
+            className={`google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl] cursor-pointer ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            <Gicon className="g-icon" />
+            <FcGoogle className="g-icon" />
           </div>
 
           <div
-            onClick={() => signIn("github")}
-            className="google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl]"
+            onClick={() => handleSocialSignIn("oauth_github")}
+            className={`google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl] cursor-pointer ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <FaGithub className="g-icon" />
           </div>
-        </div>
+        </div> */}
         <div className="sign-re flex justify-center items-end">
           <span>
             Don't have an account?{" "}
