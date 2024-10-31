@@ -72,6 +72,7 @@ export default function SignUp() {
 
     setIsLoading(true);
     try {
+      // Remove /api from the URL since it's included in the baseURL
       const response = await authApi.post("/auth/register", {
         name: formData.name,
         email: formData.email,
@@ -83,6 +84,7 @@ export default function SignUp() {
         router.push("/signin");
       }
     } catch (err: any) {
+      console.error("Registration error:", err);
       setError(err.response?.data?.message || "Error during registration");
     } finally {
       setIsLoading(false);
