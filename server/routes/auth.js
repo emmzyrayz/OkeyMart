@@ -6,6 +6,7 @@ const { encrypt } = require("../utils/encryption");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
+const authMiddleware = require("../middleware/auth");
 const resetEmail = require("../utils/email")
 
 // Rate limiting
@@ -229,7 +230,7 @@ router.post("/request-reset", async (req, res) => {
     // Send reset code via email
     const subject = "Your Password Reset Code";
     const text = `Your password reset code is: ${resetCode}`;
-    await sendEmail(user.email, subject, text);
+    await resetEmail(user.email, subject, text);
 
     res.json({ message: "Reset code sent to email" });
   } catch (error) {
