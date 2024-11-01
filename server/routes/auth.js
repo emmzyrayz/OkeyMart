@@ -277,7 +277,7 @@ router.post("/request-reset", async (req, res) => {
     }
 
     // Generate a 6-digit reset code
-    const resetCode = crypto.randomBytes(3).toString("hex");
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();;
     user.resetPasswordCode = resetCode;
     user.resetPasswordExpires = Date.now() + 3600000; // 1-hour expiration
 

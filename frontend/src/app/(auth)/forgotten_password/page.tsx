@@ -34,35 +34,48 @@ export default function ForgotPassword() {
       e.preventDefault();
       setIsLoading(true);
       try {
-        const response = await authApi.post("/api/auth/request-reset", {email});
+        const response = await authApi.post("/api/auth/request-reset", {
+          email,
+        });
         setMessage(response.data.message);
+        setCodeSent(true);
       } catch (error: any) {
+        console.error("Reset request error:", error);
         setMessage(
-          error.response?.data?.message || "Error requesting reset code"
+          error.response?.data?.message ||
+            "Error requesting reset code. Please try again."
         );
       } finally {
         setIsLoading(false);
       }
     };
 
-    const handleResetPassword = async (e: FormEvent) => {
-      e.preventDefault();
-      if (newPassword !== confirmPassword) {
-        setMessage("Passwords do not match");
-        return;
-      }
+   const handleResetPassword = async (e: FormEvent) => {
+     e.preventDefault();
+     if (newPassword !== confirmPassword) {
+       setMessage("Passwords do not match");
+       return;
+     }
 
-      try {
-        const response = await authApi.post("/api/auth/reset-password", {
-          resetToken,
-          newPassword,
-        });
-        setMessage(response.data.message);
-        setCodeSent(false); // Reset the form
-      } catch (error: any) {
-        setMessage(error.response?.data?.message || "Error resetting password");
-      }
-    };
+     setIsLoading(true);
+     try {
+       const response = await authApi.post("/api/auth/reset-password", {
+         email,
+         resetCode: resetToken,
+         newPassword,
+       });
+       setMessage(response.data.message);
+       setCodeSent(false); // Reset the form
+     } catch (error: any) {
+       console.error("Password reset error:", error);
+       setMessage(
+         error.response?.data?.message ||
+           "Error resetting password. Please try again."
+       );
+     } finally {
+       setIsLoading(false);
+     }
+   };
 
 
   return (

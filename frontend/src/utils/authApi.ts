@@ -3,10 +3,7 @@ import axios from "axios";
 import {config} from "./config";
 
 const getBaseUrl = () => {
-  if (process.env.NODE_ENV === "production") {
-    return process.env.NEXT_PUBLIC_API_URL_PRODUCTION;
-  }
-  return process.env.NEXT_PUBLIC_API_URL_DEVELOPMENT;
+  return process.env.NEXT_PUBLIC_SERVER_API_URL;
 };
 
 const authApi = axios.create({

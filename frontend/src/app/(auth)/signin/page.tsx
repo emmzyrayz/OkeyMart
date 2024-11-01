@@ -23,18 +23,25 @@ export default function SignIn() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading state before the request
+    setIsLoading(true);
     try {
       const res = await authApi.post("/api/auth/login", formData);
-      const {token} = res.data;
+      const {token, user} = res.data;
 
       localStorage.setItem("token", token);
       setAuthToken(token);
       router.push("/"); // Redirect to home page after successful login
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error signing in");
+      console.error("Login error:", err);
+      if (err.response?.status === 401) {
+        setError("Invalid email or password. Please try again.");
+      } else {
+        setError(
+          err.response?.data?.message || "Error signing in. Please try again."
+        );
+      }
     } finally {
-      setIsLoading(false); // Reset loading state
+      setIsLoading(false);
     }
   };
 
