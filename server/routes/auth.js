@@ -121,7 +121,7 @@ router.post("/login", async (req, res) => {
 });
 
 // update-profile route
-router.put("/update-profile", auth, async (req, res) => {
+router.put("/update-profile", authMiddleware, async (req, res) => {
   try {
     const {name, email, phone} = req.body;
     const userId = req.user.userId;
