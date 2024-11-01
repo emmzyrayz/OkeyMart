@@ -11,14 +11,15 @@ dotenv.config(); // Load environment variables
 
 const app = express();
 
+// Add this line before other middleware
+app.set('trust proxy', 1);  // Add this line to trust the proxy
+
 const allowedOrigins = ["http://localhost:3000", "https://okeymart.vercel.app"];
 
 // CORS configuration for Render deployment
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -27,7 +28,7 @@ const corsOptions = {
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false, // Set to false since we're using token-based auth
+  credentials: false,
 };
 
 

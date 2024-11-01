@@ -4,6 +4,7 @@ import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
 
 import {useRouter} from "next/navigation";
 import authApi from "@/utils/authApi";
+import { countries } from "@/components/input/phoneinput";
 
 import "./register.css";
 import Image from "next/image";
@@ -41,6 +42,7 @@ export default function SignUp() {
     password: {value: "", touched: false, error: ""},
     confirm_password: {value: "", touched: false, error: ""},
   });
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]); // Set default country
 
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -74,15 +76,25 @@ export default function SignUp() {
     const digitsOnly = phone.replace(/\D/g, "");
 
     if (!phone) return ""; // Allow empty phone number
-    if (digitsOnly.length !== 10) {
+    if (
+      selectedCountry.code === "NG" &&
+      digitsOnly.length !== 11 &&
+      digitsOnly.length !== 13
+    ) {
+      return "Phone number must be 11 digits (starting with 0) or 13 digits (starting with country code)";
+    }
+    if (selectedCountry.code === "US" && digitsOnly.length !== 10) {
       return "Phone number must be 10 digits";
     }
     // Check if the number starts with valid area code (assuming US numbers)
-    if (!/^[2-9]\d{2}/.test(digitsOnly)) {
+    if (selectedCountry.code === "US" && !/^[2-9]\d{2}/.test(digitsOnly)) {
       return "Invalid area code";
     }
     // Check if the exchange code is valid (second group of 3 digits)
-    if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly)) {
+    if (
+      selectedCountry.code === "US" &&
+      !/^[2-9]\d{2}[2-9]\d{6}$/.test(digitsOnly)
+    ) {
       return "Invalid phone number format";
     }
     return "";
@@ -172,31 +184,6 @@ export default function SignUp() {
           },
         }));
       }
-    }
-  };
-
-  // Handle phone number keydown to prevent invalid input
-  const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Allow: backspace, delete, tab, escape, enter, and numbers
-    if (
-      ["Backspace", "Delete", "Tab", "Escape", "Enter"].includes(e.key) ||
-      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-      (["a", "c", "v", "x"].includes(e.key.toLowerCase()) &&
-        e.ctrlKey === true) ||
-      // Allow: home, end, left, right
-      ["Home", "End", "ArrowLeft", "ArrowRight"].includes(e.key)
-    ) {
-      return;
-    }
-
-    // Prevent input if:
-    // 1. Not a number (and not a control key from above)
-    // 2. Number input would exceed max length
-    if (
-      !/^\d$/.test(e.key) ||
-      (formState.phone.value.replace(/\D/g, "").length >= 10 && !e.ctrlKey)
-    ) {
-      e.preventDefault();
     }
   };
 

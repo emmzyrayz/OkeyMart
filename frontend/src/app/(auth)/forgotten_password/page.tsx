@@ -5,6 +5,7 @@ import "./forgot-password.css";
 import Image from "next/image";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import { GridLoad } from "@/components/fetchloading/btnloading";
+import Link from "next/link";
 
 
 
@@ -130,6 +131,15 @@ export default function ForgotPassword() {
             </button>
           </form>
         )}
+
+        <div className="sign-re flex justify-center items-end">
+          <span>
+            Don't have an account?{" "}
+            <Link href="/signup" className="link">
+              Register
+            </Link>
+          </span>
+        </div>
       </div>
     </div>
   );
