@@ -1,21 +1,20 @@
 "use client";
 
-import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
+import React, { useState, ChangeEvent, FormEvent} from "react";
 import {useRouter} from "next/navigation";
 import authApi, {setAuthToken} from "@/utils/authApi";
-
+import {GridLoad} from "@/components/fetchloading/btnloading";
 import "./login.css";
 import Image from "next/image";
 import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
+import { FaEyeSlash, FaEye } from "react-icons/fa6";
 
 export default function SignIn() {
-  // const {data: session} = useSession();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [formData, setFormData] = useState({email: "", password: ""});
   const [error, setError] = useState<string>("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -24,6 +23,7 @@ export default function SignIn() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsLoading(true); // Set loading state before the request
     try {
       const res = await authApi.post("/api/auth/login", formData);
       const {token} = res.data;
@@ -33,6 +33,8 @@ export default function SignIn() {
       router.push("/"); // Redirect to home page after successful login
     } catch (err: any) {
       setError(err.response?.data?.message || "Error signing in");
+    } finally {
+      setIsLoading(false); // Reset loading state
     }
   };
 
@@ -69,51 +71,49 @@ export default function SignIn() {
             disabled={isLoading}
             required
           />
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="password"
-            placeholder="Password w-full"
-            disabled={isLoading}
-            required
-          />
-          <div className="btns flex flex-row items-center justify-between">
-            <button type="submit" className="sign-btn" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Sign In"}
-            </button>
-            <Link href="/forgotten_password">
-              <input
-                type="button"
-                className="forgot-btn"
-                value="Forget Password?"
-              />
-            </Link>
+          <div className="password-input relative">
+            <input
+              type={passwordVisible ? "text" : "password"}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="password"
+              placeholder="Password"
+              disabled={isLoading}
+              required
+            />
+            <span
+              className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
+              onClick={() => setPasswordVisible(!passwordVisible)}
+            >
+              {passwordVisible ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
+          <button
+            type="submit"
+            className="sign-btn w-full hover:shadow-lg"
+            disabled={isLoading}
+          >
+            {isLoading ? <GridLoad /> : "Sign In"}
+          </button>
         </form>
 
-        <hr className="flex border border-[--text1] w-full border-solid items-center m-3" />
-
-        {/* <div className="social_btn flex flex-row gap-2 items-center justify-center min-w-full">
-          <div
-            onClick={() => handleSocialSignIn("oauth_google")}
-            className={`google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl] cursor-pointer ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <FcGoogle className="g-icon" />
+        {error && (
+          <div className="error-message text-red-500 mb-4 w-full text-center">
+            {error}
           </div>
+        )}
 
-          <div
-            onClick={() => handleSocialSignIn("oauth_github")}
-            className={`google flex flex-row gap-2 items-center justify-center p-3 rounded-full shadow hover:shadow-xl hover:bg-[--glass-bl] cursor-pointer ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            <FaGithub className="g-icon" />
-          </div>
-        </div> */}
+        <div className="forg flex w-[371px] flex-row items-center justify-end p-2 text-[--secondary2] hover:text-[--btn-hover]">
+          <Link href="/forgotten_password">
+            <input
+              type="button"
+              className="forgot-btn cursor-pointer"
+              value="Forget Password?"
+            />
+          </Link>
+        </div>
+
         <div className="sign-re flex justify-center items-end">
           <span>
             Don't have an account?{" "}

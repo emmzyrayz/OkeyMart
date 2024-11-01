@@ -1,6 +1,8 @@
-// models/User.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+
+const rolesEnum = ["Buyer", "Seller", "Verified Seller", "Premium Seller"]; // Define role types
+const verificationStatusEnum = ["Pending", "Verified", "Rejected"];
 
 const UserSchema = new mongoose.Schema(
   {
@@ -11,27 +13,27 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      validate: {
-        validator: function (v) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-        },
-        message: (props) => `${props.value} is not a valid email!`,
-      },
     },
     phone: {type: String, trim: true},
     password: {type: String, required: true, minlength: 8},
+    role: {type: String, enum: rolesEnum, default: "Buyer"},
+    verificationStatus: {
+      type: String,
+      enum: verificationStatusEnum,
+      default: "Pending",
+    }, // Add verification status
+    isPremiumSeller: {type: Boolean, default: false},
     createdAt: {type: Date, default: Date.now},
+    resetPasswordCode: {type: String}, // Store reset code here
+    resetPasswordExpires: {type: Date},
     lastLogin: {type: Date},
   },
-  {
-    timestamps: true,
-  }
+  {timestamps: true}
 );
 
-// Hash password before saving
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
+// Password hashing
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -41,8 +43,7 @@ UserSchema.pre('save', async function(next) {
   }
 });
 
-// Method to compare passwords
-UserSchema.methods.comparePassword = async function(candidatePassword) {
+UserSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

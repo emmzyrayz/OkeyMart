@@ -1,102 +1,135 @@
 'use client'
-import {useState, useEffect} from "react";
+import {useState, ChangeEvent, FormEvent} from "react";
+import authApi from "@/utils/authApi"; 
 import "./forgot-password.css";
 import Image from "next/image";
 import SignImg from "../../../assets/img/products/signin-img.png";
-export default function ForgotPassword() {
-    const [timer, setTimer] = useState(50); // 50 seconds timer
+import { GridLoad } from "@/components/fetchloading/btnloading";
 
-    useEffect(() => {
-      if (timer > 0) {
-        const countdown = setInterval(() => {
-          setTimer((prevTimer) => prevTimer - 1);
-        }, 1000);
-        return () => clearInterval(countdown);
+
+
+export default function ForgotPassword() {
+    const [email, setEmail] = useState("");
+    const [codeSent, setCodeSent] = useState(false);
+    const [resetToken, setResetToken] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState(""); // 50 seconds timer
+
+    const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+      setEmail(e.target.value);
+    };
+
+    const handleNewPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+      setNewPassword(e.target.value);
+    };
+
+    const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+      setConfirmPassword(e.target.value);
+    };
+
+    const handleRequestReset = async (e: FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      try {
+        const response = await authApi.post("/api/auth/request-reset", {email});
+        setMessage(response.data.message);
+      } catch (error: any) {
+        setMessage(
+          error.response?.data?.message || "Error requesting reset code"
+        );
+      } finally {
+        setIsLoading(false);
       }
-    }, [timer]);
+    };
+
+    const handleResetPassword = async (e: FormEvent) => {
+      e.preventDefault();
+      if (newPassword !== confirmPassword) {
+        setMessage("Passwords do not match");
+        return;
+      }
+
+      try {
+        const response = await authApi.post("/api/auth/reset-password", {
+          resetToken,
+          newPassword,
+        });
+        setMessage(response.data.message);
+        setCodeSent(false); // Reset the form
+      } catch (error: any) {
+        setMessage(error.response?.data?.message || "Error resetting password");
+      }
+    };
 
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
-      <div className="signup_img w-3/5">
+      <div className="signup_img w-[50%] h-fit">
         <Image
           src={SignImg}
-          className="sign-logo"
+          className="sign-logo  flex items-center justify-center"
           width={500}
           height={300}
           alt="Sign Up Logo"
         />
       </div>
-      <div className="signup_container w-2/5 gap-2 flex flex-col items-start justify-center">
+      <div className="signup_container w-[40%] gap-2 flex flex-col items-start justify-center">
         <div className="sign_head">
           <span>Forgot Password?</span>
         </div>
         <div className="sign_desc">
           <span>Enter your Email below</span>
         </div>
-        <form
-          action="POST"
-          className="flex flex-col relative items-center sign-form"
-        >
-          <input
-            type="text"
-            name="email_or_phone"
-            className="name"
-            placeholder="Email or Phone Number"
-            autoComplete="off"
-            required
-          />
 
-          <div className="password-container relative w-full">
+        <p>{message}</p>
+
+        {!codeSent ? (
+          <form
+            onSubmit={handleRequestReset}
+            className="flex flex-col relative items-center sign-form"
+          >
             <input
-              type="password"
-              className="password"
-              name="code"
-              placeholder="Enter Code"
-              autoComplete="new-password"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={handleEmailChange}
+              autoComplete="off"
               required
             />
-            <span className="timer absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-600">
-              {timer}s
-            </span>
-          </div>
-
-          <div className="btns flex flex-row items-center justify-between">
-            <input type="button" className="sign-btn" value="Send Code" />
-          </div>
-        </form>
-
-        <form
-          action="POST"
-          className="flex flex-col relative items-center sign-form"
-        >
-          <input
-            type="text"
-            name="email_or_phone"
-            className="name"
-            placeholder="Enter new Password"
-            autoComplete="off"
-            required
-          />
-
-          <div className="password-container relative w-full">
+            <button type="submit" className="sign-btn" disabled={isLoading}>
+              {isLoading ? <GridLoad /> : "Send Reset Code"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword}>
+            <input
+              type="text"
+              placeholder="Enter the reset token"
+              value={resetToken}
+              onChange={(e) => setResetToken(e.target.value)}
+              required
+            />
             <input
               type="password"
-              className="password"
-              name="code"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={handleNewPasswordChange}
+              required
+            />
+            <input
+              type="password"
               placeholder="Confirm Password"
-              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
               required
             />
-            <span className="timer absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-gray-600">
-              {timer}s
-            </span>
-          </div>
-
-          <div className="btns flex flex-row items-center justify-between">
-            <input type="button" className="sign-btn" value="Confirm" />
-          </div>
-        </form>
+            <button type="submit" className="sign-btn">
+              Reset Password
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

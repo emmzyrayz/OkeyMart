@@ -5,7 +5,7 @@
 }
 
 .signup_img {
-    min-height: 761px;
+    /* min-height: 761px; */
     background: #CBE4E8;
     border-radius: 12px;
 }
@@ -38,29 +38,23 @@
     gap: 20px;
 }
 
-.sign-form input.name,
-.sign-form input.email,
-.sign-form input.password {
-    border-bottom: 1px solid rgba(128, 128, 128, 0.3);
-    transition: border-bottom-color 0.3s ease;
+.sign-form input {
+    /* border-bottom: 1px solid rgba(128, 128, 128, 0.3); */
+    /* transition: border-bottom-color 0.3s ease; */
     outline: none;
     height: 32px;
     width: 370px;
     background: transparent;
 }
 
-.sign-form input.name::placeholder,
-.sign-form input.email::placeholder,
-.sign-form input.password::placeholder {
+.sign-form input::placeholder {
     font-size: var(--fs-16);
     font-weight: 500;
     color: var(--fs-16);
     opacity: .3;
 }
 
-.sign-form input.name:hover,
-.sign-form input.email:hover,
-.sign-form input.password:hover {
+.sign-form input:hover {
     border-bottom: 1px solid rgba(128, 128, 128, 0.5);
 }
 
