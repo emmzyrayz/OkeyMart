@@ -12,6 +12,7 @@ import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import {FaEye, FaEyeSlash} from "react-icons/fa6";
 import PhoneInput from "@/components/input/phoneinput";
+import { GridLoad } from "@/components/fetchloading/btnloading";
 
 interface FormData {
   name: string;
@@ -249,7 +250,19 @@ export default function SignUp() {
       }
     } catch (err: any) {
       console.error("Registration error:", err);
-      setError(err.response?.data?.message || "Error during registration");
+      if (
+        err.response?.status === 400 &&
+        err.response?.data?.message === "Email already registered"
+      ) {
+        setError(
+          "This email is already registered. Please use a different email."
+        );
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Error during registration. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -386,7 +399,7 @@ export default function SignUp() {
             className="sign-btn w-full hover:shadow-lg"
             disabled={isLoading}
           >
-            {isLoading ? "Creating Account..." : "Create Account"}
+            {isLoading ? <GridLoad /> : "Sign In"}
           </button>
         </form>
         {/* <hr className="w-[200px] border-[--text1] my-4 ml-[40px] " /> */}

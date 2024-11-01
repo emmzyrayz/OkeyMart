@@ -16,6 +16,7 @@ import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useSearch} from "@/context/searchcontext/searchcontext";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { Product } from "@/types/product";
+import axios from "axios";
 
 export const HomeNav = () => {
   const pathname = usePathname();
@@ -90,6 +91,25 @@ const performSearch = () => {
     router.push(`/search/${encodeURIComponent(searchValue)}`);
     setIsSearchOpen(false);
   }
+};
+
+const handleLogout = async () => {
+  const token = localStorage.getItem("token");
+
+  try {
+    // Call logout endpoint to invalidate token on server
+    await axios.post("/auth/logout", null, {
+      headers: {Authorization: `Bearer ${token}`},
+    });
+  } catch (error) {
+    console.error("Failed to log out on server:", error);
+  }
+
+  // Clear the token from local storage
+  localStorage.removeItem("token");
+
+  // Redirect to the sign-in page
+  router.push("/signin");
 };
 
 
@@ -172,7 +192,9 @@ const performSearch = () => {
                       alt={product.name}
                       className="rounded-lg object-cover w-[120px] h-[100px]"
                     />
-                    <span className="font-medium text-[14px]">{product.name}</span>
+                    <span className="font-medium text-[14px]">
+                      {product.name}
+                    </span>
                   </div>
                   <hr
                     className="h-[1px] w-full border-[1px] border-solid border-[--text1] hover:border-[--text2]
@@ -232,7 +254,7 @@ const performSearch = () => {
           <CiStar className="wh" />
           <span>My Reviews</span>
         </div>
-        <div className="logout">
+        <div onClick={handleLogout} className="logout">
           <TbLogout2 className="wh" />
           <span>Logout</span>
         </div>

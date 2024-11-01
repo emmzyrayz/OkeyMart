@@ -2,8 +2,8 @@
 
 import React, {useEffect} from "react";
 import {useRouter} from "next/navigation";
-import authApi, {setAuthToken} from "@/utils/authApi";
-import axios from "axios";
+import {setAuthToken} from "@/utils/authApi";
+
 
 import '@fontsource/inter/400.css';  // Inter Regular
 import '@fontsource/inter/500.css';  // Inter Medium
@@ -29,29 +29,11 @@ export default function Home() {
     }
   }, [router]);
 
-  const handleLogout = async () => {
-    const token = localStorage.getItem("token");
-
-    try {
-      // Call logout endpoint to invalidate token on server
-      await axios.post("/auth/logout", null, {
-        headers: {Authorization: `Bearer ${token}`},
-      });
-    } catch (error) {
-      console.error("Failed to log out on server:", error);
-    }
-
-    // Clear the token from local storage
-    localStorage.removeItem("token");
-
-    // Redirect to the sign-in page
-    router.push("/signin");
-  };
+  
   
   return (
     <div>
         <div>
-          <div onClick={handleLogout} className="flex absolute p-5 bg-red-500 hover:bg-red-400 focus:opacity-50 shadow-lg top-12 right-12 rounded-lg text-lg font-medium text-white cursor-pointer"> log out</div>
           <HomePage />
         </div>
     </div>
