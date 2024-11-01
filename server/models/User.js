@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const rolesEnum = ["Buyer", "Seller", "Verified Seller", "Premium Seller"]; // Define role types
-const verificationStatusEnum = ["Pending", "Verified", "Rejected"];
+const verificationStatusEnum = ["Not Verified", "Pending", "Verified", "Rejected"];
 
 const UserSchema = new mongoose.Schema(
   {
@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema(
     verificationStatus: {
       type: String,
       enum: verificationStatusEnum,
-      default: "Pending",
+      default: "Not Verified",
     }, // Add verification status
     isPremiumSeller: {type: Boolean, default: false},
     createdAt: {type: Date, default: Date.now},
