@@ -11,6 +11,10 @@ dotenv.config(); // Load environment variables
 
 const app = express();
 
+// At the start of your application
+console.log('Encryption key status:', process.env.ENCRYPTION_KEY ? 'Set' : 'Not set');
+console.log('Encryption key length:', Buffer.from(process.env.ENCRYPTION_KEY, 'base64').length, 'bytes');
+
 // Add this line before other middleware
 app.set('trust proxy', 1);  // Add this line to trust the proxy
 
