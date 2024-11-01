@@ -47,6 +47,7 @@ router.post("/register", async (req, res) => {
       const encryptedEmail = encrypt(email.toLowerCase());
       const encryptedPhone = encrypt(phone);
       console.log("Encryption successful"); // Log after encryption
+      console.log("encrypted details:", {encryptedEmail, encryptedPhone});
 
       // Create new user with encrypted data
       const user = new User({
@@ -92,8 +93,11 @@ router.post("/login", async (req, res) => {
     }
 
     try {
+      console.log("About to encrypt:", {email: email.toLowerCase()});
       // Encrypt the email for comparison
       const encryptedEmail = encrypt(email.toLowerCase());
+      console.log("Encryption successful"); // Log after encryption
+      console.log("encrypted details:", {encryptedEmail});
 
       // Find user with encrypted email
       const user = await User.findOne({email: encryptedEmail});
