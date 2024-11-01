@@ -293,8 +293,16 @@ router.post("/reset-password", async (req, res) => {
   const { email, resetCode, newPassword } = req.body;
 
   try {
+    // Validate input
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({ message: "Email, reset code, and new password are required" });
+    }
+
+    // Encrypt the email for comparison
+    const encryptedEmail = encrypt(email.toLowerCase());
+
     const user = await User.findOne({
-      email,
+      email: encryptedEmail,
       resetPasswordCode: resetCode,
       resetPasswordExpires: { $gt: Date.now() }, // Ensure code is not expired
     });
@@ -313,7 +321,11 @@ router.post("/reset-password", async (req, res) => {
 
     res.json({ message: "Password reset successful" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Password reset error:", error);
+    res.status(500).json({ 
+      message: "Server error during password reset",
+      error: error.message 
+    });
   }
 });
 
