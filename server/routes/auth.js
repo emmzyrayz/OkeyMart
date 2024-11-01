@@ -26,6 +26,8 @@ router.post("/register", async (req, res) => {
   try {
     const {name, email, phone, password} = req.body;
 
+    console.log("Registration attempt:", {name, email, phone}); // Log the input
+
     // Validation
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
@@ -41,8 +43,10 @@ router.post("/register", async (req, res) => {
 
     try {
       // Encrypt email and phone
+      console.log("About to encrypt:", {email: email.toLowerCase(), phone}); // Log before encryption
       const encryptedEmail = encrypt(email.toLowerCase());
       const encryptedPhone = encrypt(phone);
+      console.log("Encryption successful"); // Log after encryption
 
       // Create new user with encrypted data
       const user = new User({
