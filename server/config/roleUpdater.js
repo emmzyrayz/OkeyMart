@@ -5,7 +5,7 @@ const {
   hasPurchaseHistory,
   hasSubmittedDocuments,
   isSubscribedToPremium,
-} = require("../middleware/checkRules");
+} = require("../utils/checkrules");
 
 // Define a mapping of rule names to functions
 const ruleFunctions = {
