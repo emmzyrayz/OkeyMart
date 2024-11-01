@@ -6,8 +6,9 @@ const { encrypt } = require("../utils/encryption");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
+const checkRole = require("../middleware/roleAuth");
 const authMiddleware = require("../middleware/auth");
-const resetEmail = require("../utils/email")
+const resetEmail = require("../utils/email");
 
 // Rate limiting
 const limiter = rateLimit({
