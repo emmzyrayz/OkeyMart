@@ -84,43 +84,65 @@ router.post("/login", async (req, res) => {
   try {
     const {email, password} = req.body;
 
-    // Find user
-    const user = await User.findOne({email: email.toLowerCase()});
-    if (!user) {
-      return res.status(401).json({message: "Invalid credentials"});
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
     }
 
-    // Verify password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({message: "Invalid credentials"});
+    try {
+      // Encrypt the email for comparison
+      const encryptedEmail = encrypt(email.toLowerCase());
+
+      // Find user with encrypted email
+      const user = await User.findOne({email: encryptedEmail});
+      if (!user) {
+        return res.status(401).json({message: "Invalid credentials"});
+      }
+
+      // Verify password
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(401).json({message: "Invalid credentials"});
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      // Generate token
+      const token = jwt.sign(
+        {
+          userId: user._id,
+          email: user.email, // This will be the encrypted email
+        },
+        process.env.JWT_SECRET,
+        {expiresIn: "1h"}
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: email.toLowerCase(), // Send back the original email, not the encrypted one
+          role: user.role,
+        },
+      });
+    } catch (encryptionError) {
+      console.error("Encryption error during login:", encryptionError);
+      return res.status(500).json({
+        message: "Error processing login credentials",
+        error: encryptionError.message,
+      });
     }
-
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
-    // Generate token
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      {expiresIn: "1h"}
-    );
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-    });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({message: "Server error during login"});
+    res.status(500).json({
+      message: "Server error during login",
+      error: error.message,
+    });
   }
 });
 
@@ -238,9 +260,10 @@ router.post("/request-reset", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const encryptedEmail = encrypt(email.toLowerCase());
+    const user = await User.findOne({email: encryptedEmail});
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({message: "User not found"});
     }
 
     // Generate a 6-digit reset code
@@ -255,9 +278,13 @@ router.post("/request-reset", async (req, res) => {
     const text = `Your password reset code is: ${resetCode}`;
     await resetEmail(user.email, subject, text);
 
-    res.json({ message: "Reset code sent to email" });
+    res.json({message: "Reset code sent to email"});
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Password reset request error:", error);
+    res.status(500).json({
+      message: "Server error during password reset request",
+      error: error.message,
+    });
   }
 });
 
