@@ -26,8 +26,6 @@ router.post("/register", async (req, res) => {
   try {
     const {name, email, phone, password} = req.body;
 
-    console.log("Registration attempt:", {name, email, phone}); // Log the input
-
     // Validation
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
@@ -35,42 +33,31 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // Check if user exists
-    const existingUser = await User.findOne({email: email.toLowerCase()});
+    // Encrypt email and check if user exists
+    const encryptedEmail = encrypt(email.toLowerCase());
+    const existingUser = await User.findOne({email: encryptedEmail});
     if (existingUser) {
       return res.status(400).json({message: "Email already registered"});
     }
 
-    try {
-      // Encrypt email and phone
-      console.log("About to encrypt:", {email: email.toLowerCase(), phone}); // Log before encryption
-      const encryptedEmail = encrypt(email.toLowerCase());
-      const encryptedPhone = encrypt(phone);
-      console.log("Encryption successful"); // Log after encryption
-      console.log("encrypted details:", {encryptedEmail, encryptedPhone});
+    // Encrypt phone
+    const encryptedPhone = encrypt(phone);
 
-      // Create new user with encrypted data
-      const user = new User({
-        name,
-        email: encryptedEmail,
-        phone: encryptedPhone,
-        password,
-        role: "Buyer",
-      });
+    // Create new user with encrypted data
+    const user = new User({
+      name,
+      email: encryptedEmail,
+      phone: encryptedPhone,
+      password,
+      role: "Buyer",
+    });
 
-      await user.save();
+    await user.save();
 
-      // Update user role
-      await updateRole(user._id);
+    // Update user role
+    await updateRole(user._id);
 
-      res.status(201).json({message: "Registration successful"});
-    } catch (encryptionError) {
-      console.error("Encryption error:", encryptionError);
-      return res.status(500).json({
-        message: "Error during data encryption",
-        error: encryptionError.message,
-      });
-    }
+    res.status(201).json({message: "Registration successful"});
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -85,66 +72,85 @@ router.post("/login", async (req, res) => {
   try {
     const {email, password} = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
+    // Encrypt the email for comparison
+    const encryptedEmail = encrypt(email.toLowerCase());
+
+    // Find user with encrypted email
+    const user = await User.findOne({email: encryptedEmail});
+    if (!user) {
+      return res.status(401).json({message: "Invalid credentials"});
     }
 
-    try {
-      console.log("About to encrypt:", {email: email.toLowerCase()});
-      // Encrypt the email for comparison
-      const encryptedEmail = encrypt(email.toLowerCase());
-      console.log("Encryption successful"); // Log after encryption
-      console.log("encrypted details:", {encryptedEmail});
-
-      // Find user with encrypted email
-      const user = await User.findOne({email: encryptedEmail});
-      if (!user) {
-        return res.status(401).json({message: "Invalid credentials"});
-      }
-
-      // Verify password
-      const isMatch = await user.comparePassword(password);
-      if (!isMatch) {
-        return res.status(401).json({message: "Invalid credentials"});
-      }
-
-      // Update last login
-      user.lastLogin = new Date();
-      await user.save();
-
-      // Generate token
-      const token = jwt.sign(
-        {
-          userId: user._id,
-          email: user.email, // This will be the encrypted email
-        },
-        process.env.JWT_SECRET,
-        {expiresIn: "1h"}
-      );
-
-      res.json({
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: email.toLowerCase(), // Send back the original email, not the encrypted one
-          role: user.role,
-        },
-      });
-    } catch (encryptionError) {
-      console.error("Encryption error during login:", encryptionError);
-      return res.status(500).json({
-        message: "Error processing login credentials",
-        error: encryptionError.message,
-      });
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({message: "Invalid credentials"});
     }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: decrypt(user.email), // Decrypt the email for the token
+      },
+      process.env.JWT_SECRET,
+      {expiresIn: "1h"}
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: decrypt(user.email), // Decrypt the email before sending
+        phone: decrypt(user.phone), // Decrypt the phone before sending
+        role: user.role,
+      },
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({
       message: "Server error during login",
+      error: error.message,
+    });
+  }
+});
+
+// update-profile route
+router.put("/update-profile", auth, async (req, res) => {
+  try {
+    const {name, email, phone} = req.body;
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({message: "User not found"});
+    }
+
+    if (name) user.name = name;
+    if (email) user.email = encrypt(email.toLowerCase());
+    if (phone) user.phone = encrypt(phone);
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: decrypt(user.email),
+        phone: decrypt(user.phone),
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({
+      message: "Server error during profile update",
       error: error.message,
     });
   }
@@ -271,7 +277,7 @@ router.post("/request-reset", async (req, res) => {
     }
 
     // Generate a 6-digit reset code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = crypto.randomBytes(3).toString("hex");
     user.resetPasswordCode = resetCode;
     user.resetPasswordExpires = Date.now() + 3600000; // 1-hour expiration
 
