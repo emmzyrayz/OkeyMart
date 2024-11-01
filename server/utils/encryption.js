@@ -6,6 +6,9 @@ const key = process.env.ENCRYPTION_KEY; // A 32-byte encryption key from environ
 const ivLength = 16; // AES block size
 
 function encrypt(text) {
+  if (!text) {
+    throw new Error("Input for encryption cannot be empty or undefined");
+  }
   const iv = crypto.randomBytes(ivLength);
   const cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
   let encrypted = cipher.update(text, "utf8", "hex");
