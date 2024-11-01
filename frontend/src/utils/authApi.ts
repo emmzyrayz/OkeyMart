@@ -2,8 +2,15 @@
 import axios from "axios";
 import {config} from "./config";
 
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === "production") {
+    return process.env.NEXT_PUBLIC_API_URL_PRODUCTION;
+  }
+  return process.env.NEXT_PUBLIC_API_URL_DEVELOPMENT;
+};
+
 const authApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+  baseURL: getBaseUrl(),
   headers: {
     "Content-Type": "application/json",
   },

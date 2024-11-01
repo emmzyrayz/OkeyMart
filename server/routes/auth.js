@@ -26,34 +26,52 @@ router.post("/register", async (req, res) => {
   try {
     const {name, email, phone, password} = req.body;
 
+    // Validation
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
     // Check if user exists
     const existingUser = await User.findOne({email: email.toLowerCase()});
     if (existingUser) {
       return res.status(400).json({message: "Email already registered"});
     }
 
-    // Encrypt email and phone
-    const encryptedEmail = encrypt(email.toLowerCase());
-    const encryptedPhone = encrypt(phone);
+    try {
+      // Encrypt email and phone
+      const encryptedEmail = encrypt(email.toLowerCase());
+      const encryptedPhone = encrypt(phone);
 
-    // Create new user with encrypted data
-    const user = new User({
-      name,
-      email: encryptedEmail,
-      phone: encryptedPhone,
-      password,
-      role: "Buyer", // Default role
-    });
+      // Create new user with encrypted data
+      const user = new User({
+        name,
+        email: encryptedEmail,
+        phone: encryptedPhone,
+        password,
+        role: "Buyer",
+      });
 
-    await user.save();
+      await user.save();
 
-    // Update user role based on any criteria that might apply at registration
-    await updateRole(user._id);
+      // Update user role
+      await updateRole(user._id);
 
-    res.status(201).json({message: "Registration successful"});
+      res.status(201).json({message: "Registration successful"});
+    } catch (encryptionError) {
+      console.error("Encryption error:", encryptionError);
+      return res.status(500).json({
+        message: "Error during data encryption",
+        error: encryptionError.message,
+      });
+    }
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({message: "Server error during registration"});
+    res.status(500).json({
+      message: "Server error during registration",
+      error: error.message,
+    });
   }
 });
 

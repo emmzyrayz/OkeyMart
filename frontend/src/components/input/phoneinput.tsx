@@ -13,15 +13,17 @@ interface CountryData {
 }
 
 // Sample country data - you can expand this
-const countries: CountryData[] = [
+export const countries: CountryData[] = [
   {
     code: "NG",
     flag: "🇳🇬",
     dialCode: "+234",
     format: "XXX XXX XXXX",
-    validation: /^[0-9]{10}$/,
+    // Updated validation to allow 11 digits starting with 0 or 11 digits starting with country code
+    validation: /^(0|(\+)?234)[789]\d{9}$/,
     placeholder: "801 234 5678",
-    maxLength: 10,
+    // Updated max length to allow both 11 and 13 digit formats
+    maxLength: 13,
   },
   {
     code: "US",
@@ -60,44 +62,80 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     formatPhoneNumber(value);
   }, [value]);
 
-  const formatPhoneNumber = (input: string) => {
+  const normalizePhoneNumber = (
+    input: string,
+    country: CountryData
+  ): string => {
     // Remove all non-digit characters
-    const cleaned = input.replace(/\D/g, "");
-    let formatted = cleaned;
+    let cleaned = input.replace(/\D/g, "");
 
-    // Apply country-specific formatting
+    if (country.code === "NG") {
+      // Convert +234 to 0 if present
+      if (cleaned.startsWith("234")) {
+        cleaned = "0" + cleaned.slice(3);
+      }
+      // Add leading 0 if not present and number is 10 digits
+      else if (cleaned.length === 10 && /^[789]/.test(cleaned)) {
+        cleaned = "0" + cleaned;
+      }
+    }
+
+    return cleaned;
+  };
+
+  const formatPhoneNumber = (input: string) => {
+    const normalized = normalizePhoneNumber(input, selectedCountry);
+    let formatted = normalized;
+
     if (selectedCountry.code === "NG") {
-      if (cleaned.length > 0) {
-        formatted = cleaned.match(new RegExp(".{1,3}", "g"))?.join(" ") || "";
+      // Format Nigerian numbers (11 digits)
+      if (normalized.length > 0) {
+        formatted = normalized
+          .replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3")
+          .trim();
       }
     } else if (selectedCountry.code === "US") {
-      if (cleaned.length > 0) {
-        formatted = cleaned.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
+      // Format US numbers (10 digits)
+      if (normalized.length > 0) {
+        formatted = normalized
+          .replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3")
+          .trim();
       }
     }
 
     setPhoneNumber(formatted);
-    validatePhoneNumber(formatted);
+    validatePhoneNumber(normalized);
   };
 
-  const validatePhoneNumber = (number: string) => {
-    const cleaned = number.replace(/\D/g, "");
-    let isValid = false;
-    let errorMessage = "";
+ const validatePhoneNumber = (number: string) => {
+   const normalized = normalizePhoneNumber(number, selectedCountry);
+   let isValid = false;
+   let errorMessage = "";
 
-    if (cleaned.length === 0) {
-      errorMessage = "Phone number is required";
-    } else if (cleaned.length !== selectedCountry.maxLength) {
-      errorMessage = `Phone number must be ${selectedCountry.maxLength} digits for ${selectedCountry.code}`;
-    } else if (!selectedCountry.validation.test(cleaned)) {
-      errorMessage = "Invalid phone number format";
-    } else {
-      isValid = true;
-    }
+   if (normalized.length === 0) {
+     errorMessage = "Phone number is required";
+   } else if (selectedCountry.code === "NG") {
+     if (normalized.length !== 11) {
+       errorMessage = "Nigerian phone number must be 11 digits";
+     } else if (!/^0[789]\d{9}$/.test(normalized)) {
+       errorMessage = "Invalid Nigerian phone number format";
+     } else {
+       isValid = true;
+     }
+   } else {
+     // Validation for other countries
+     if (normalized.length !== selectedCountry.maxLength) {
+       errorMessage = `Phone number must be ${selectedCountry.maxLength} digits`;
+     } else if (!selectedCountry.validation.test(normalized)) {
+       errorMessage = "Invalid phone number format";
+     } else {
+       isValid = true;
+     }
+   }
 
-    setError(errorMessage);
-    onChange(number, isValid);
-  };
+   setError(errorMessage);
+   onChange(normalized, isValid); // Send normalized number to parent
+ };
 
   const handleCountrySelect = (country: CountryData) => {
     setSelectedCountry(country);
@@ -128,8 +166,8 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                   className="flex items-center w-full px-4 py-2 text-left hover:bg-gray-100"
                   onClick={() => handleCountrySelect(country)}
                 >
-                  <span className="mr-2">{country.flag}</span>
-                  <span className="text-sm">{country.dialCode}</span>
+                  <span className="mr-1 text-[14px]">{country.flag}</span>
+                  <span className="text-[12px]">{country.dialCode}</span>
                 </button>
               ))}
             </div>
@@ -143,7 +181,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           onChange={(e) => formatPhoneNumber(e.target.value)}
           placeholder={selectedCountry.placeholder}
           disabled={disabled}
-          maxLength={selectedCountry.format.length}
+          // maxLength={selectedCountry.format.length}
         />
       </div>
     </div>
