@@ -8,7 +8,7 @@ const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
 const checkRole = require("../middleware/roleAuth");
 const authMiddleware = require("../middleware/auth");
-// const sendEmail = require("../utils/email");
+const bcrypt = require("bcrypt");
 const {sendResetPasswordEmail, sendEmail} = require("../utils/email");
 
 // Rate limiting
@@ -469,7 +469,7 @@ router.post("/verify-reset-code", async (req, res) => {
       expiresAt: user.resetPasswordExpires,
     });
 
-    
+
   } catch (error) {
     console.error("Reset code verification error:", error);
     res.status(500).json({ 
