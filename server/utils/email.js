@@ -3,9 +3,8 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail", // Use 'Gmail', 'SendGrid', etc., depending on the provider
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  // port: 587,
+  // secure: false,
   auth: {
     user: process.env.EMAIL_USER, // Email address
     pass: process.env.EMAIL_PASS, // Email password or app password
@@ -14,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 const resetEmail = async (to, subject, text) => {
   const mailOptions = {
-    from: process.env.EMAIL_WUSER,
+    from: process.env.EMAIL_USER,
     to,
     subject,
     text,
