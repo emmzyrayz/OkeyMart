@@ -8,7 +8,7 @@ const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
 const checkRole = require("../middleware/roleAuth");
 const authMiddleware = require("../middleware/auth");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const {sendResetPasswordEmail, sendEmail} = require("../utils/email");
 
 // Rate limiting
