@@ -401,20 +401,22 @@ router.post("/reset-password", async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update user document and invalidate reset code
-    await User.findByIdAndUpdate(user._id, {
-      password: hashedPassword,
-      resetPasswordCode: null,
-      resetPasswordExpires: null,
-      resetPasswordUsed: true,
-      resetPasswordAttempts: 0,
-      $push: { 
-        passwordHistory: {
-          password: hashedPassword,
-          changedAt: new Date()
-        }
-      }
-    }, 
-      { new: true }
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      {
+        password: hashedPassword,
+        resetPasswordCode: null,
+        resetPasswordExpires: null,
+        resetPasswordUsed: true,
+        resetPasswordAttempts: 0,
+        $push: {
+          passwordHistory: {
+            password: hashedPassword,
+            changedAt: new Date(),
+          },
+        },
+      },
+      {new: true}
     );
 
     console.log(`Password reset successful for user: ${updatedUser._id}`);
