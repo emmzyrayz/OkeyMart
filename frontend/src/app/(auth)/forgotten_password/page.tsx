@@ -10,73 +10,161 @@ import Link from "next/link";
 
 
 export default function ForgotPassword() {
-    const [email, setEmail] = useState("");
-    const [codeSent, setCodeSent] = useState(false);
-    const [resetToken, setResetToken] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState(""); // 50 seconds timer
+  // Form states
+  const [email, setEmail] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-    const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setEmail(e.target.value);
-    };
+  // UI states
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
+  const [timeLeft, setTimeLeft] = useState(0);
 
-    const handleNewPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setNewPassword(e.target.value);
-    };
+  // Password validation
+  const validatePassword = (password: string) => {
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
 
-    const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setConfirmPassword(e.target.value);
-    };
+    if (!minLength) return "Password must be at least 8 characters long";
+    if (!hasUpperCase)
+      return "Password must contain at least one uppercase letter";
+    if (!hasLowerCase)
+      return "Password must contain at least one lowercase letter";
+    if (!hasNumbers) return "Password must contain at least one number";
+    return "";
+  };
 
-    const handleRequestReset = async (e: FormEvent) => {
-      e.preventDefault();
-      setIsLoading(true);
-      try {
-        const response = await authApi.post("/api/auth/request-reset", {
-          email,
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setMessage("");
+    setMessageType("");
+  };
+
+  const handleResetCodeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setResetCode(value);
+    setMessage("");
+    setMessageType("");
+  };
+
+  const handleNewPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setNewPassword(e.target.value);
+    const validationError = validatePassword(e.target.value);
+    if (validationError) {
+      setMessage(validationError);
+      setMessageType("error");
+    } else {
+      setMessage("");
+      setMessageType("");
+    }
+  };
+
+  const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    if (e.target.value && e.target.value !== newPassword) {
+      setMessage("Passwords do not match");
+      setMessageType("error");
+    } else {
+      setMessage("");
+      setMessageType("");
+    }
+  };
+
+  const handleRequestReset = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
+
+    try {
+      const response = await authApi.post("/api/auth/request-reset", {email});
+      setMessage(response.data.message);
+      setMessageType("success");
+      setCodeSent(true);
+
+      // Start 30-minute countdown
+      setTimeLeft(30 * 60);
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
         });
-        setMessage(response.data.message);
-        setCodeSent(true);
-      } catch (error: any) {
-        console.error("Reset request error:", error);
-        setMessage(
-          error.response?.data?.message ||
-            "Error requesting reset code. Please try again."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      }, 1000);
+    } catch (error: any) {
+      console.error("Reset request error:", error);
+      setMessage(
+        error.response?.data?.message ||
+          "Error requesting reset code. Please try again."
+      );
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-   const handleResetPassword = async (e: FormEvent) => {
-     e.preventDefault();
-     if (newPassword !== confirmPassword) {
-       setMessage("Passwords do not match");
-       return;
-     }
 
-     setIsLoading(true);
-     try {
-       const response = await authApi.post("/api/auth/reset-password", {
-         email,
-         resetCode: resetToken,
-         newPassword,
-       });
-       setMessage(response.data.message);
-       setCodeSent(false); // Reset the form
-     } catch (error: any) {
-       console.error("Password reset error:", error);
-       setMessage(
-         error.response?.data?.message ||
-           "Error resetting password. Please try again."
-       );
-     } finally {
-       setIsLoading(false);
-     }
-   };
+  const handleResetPassword = async (e: FormEvent) => {
+    e.preventDefault();
 
+    // Validate password
+    const validationError = validatePassword(newPassword);
+    if (validationError) {
+      setMessage(validationError);
+      setMessageType("error");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setMessage("Passwords do not match");
+      setMessageType("error");
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
+
+    try {
+      const response = await authApi.post("/api/auth/reset-password", {
+        email,
+        resetCode,
+        newPassword,
+      });
+
+      setMessage(
+        "Password reset successful! You can now login with your new password."
+      );
+      setMessageType("success");
+
+      // Reset form after 3 seconds and redirect to login
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 3000);
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      setMessage(
+        error.response?.data?.message ||
+          "Error resetting password. Please try again."
+      );
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatTimeLeft = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
@@ -94,10 +182,26 @@ export default function ForgotPassword() {
           <span>Forgot Password?</span>
         </div>
         <div className="sign_desc">
-          <span>Enter your Email below</span>
+          <span>
+            {!codeSent
+              ? "Enter your Email below"
+              : "Enter the reset code sent to your email"}
+          </span>
         </div>
 
-        <p>{message}</p>
+        {message && (
+          <div
+            className={`message ${messageType} p-3 rounded-md w-full text-sm ${
+              messageType === "error"
+                ? "bg-red-100 text-red-700"
+                : messageType === "success"
+                ? "bg-green-100 text-green-700"
+                : ""
+            }`}
+          >
+            {message}
+          </div>
+        )}
 
         {!codeSent ? (
           <form
@@ -109,20 +213,36 @@ export default function ForgotPassword() {
               placeholder="Enter your email"
               value={email}
               onChange={handleEmailChange}
+              className="w-full"
               autoComplete="off"
               required
             />
-            <button type="submit" className="sign-btn" disabled={isLoading}>
+            <button
+              type="submit"
+              className="sign-btn w-full"
+              disabled={isLoading}
+            >
               {isLoading ? <GridLoad /> : "Send Reset Code"}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleResetPassword}>
+          <form
+            onSubmit={handleResetPassword}
+            className="flex flex-col relative items-center sign-form"
+          >
+            {timeLeft > 0 && (
+              <div className="text-sm text-gray-600 mb-4">
+                Code expires in: {formatTimeLeft(timeLeft)}
+              </div>
+            )}
             <input
               type="text"
-              placeholder="Enter the reset token"
-              value={resetToken}
-              onChange={(e) => setResetToken(e.target.value)}
+              placeholder="Enter 6-digit reset code"
+              value={resetCode}
+              onChange={handleResetCodeChange}
+              className="w-full"
+              pattern="\d{6}"
+              maxLength={6}
               required
             />
             <input
@@ -130,6 +250,7 @@ export default function ForgotPassword() {
               placeholder="New Password"
               value={newPassword}
               onChange={handleNewPasswordChange}
+              className="w-full"
               required
             />
             <input
@@ -137,19 +258,24 @@ export default function ForgotPassword() {
               placeholder="Confirm Password"
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
+              className="w-full"
               required
             />
-            <button type="submit" className="sign-btn">
-              Reset Password
+            <button
+              type="submit"
+              className="sign-btn w-full"
+              disabled={isLoading || !!message}
+            >
+              {isLoading ? <GridLoad /> : "Reset Password"}
             </button>
           </form>
         )}
 
-        <div className="sign-re flex justify-center items-end">
+        <div className="sign-re flex justify-center items-end w-full">
           <span>
-            Don't have an account?{" "}
-            <Link href="/signup" className="link">
-              Register
+            Remember your password?{" "}
+            <Link href="/login" className="link">
+              Login
             </Link>
           </span>
         </div>
