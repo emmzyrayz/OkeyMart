@@ -1,30 +1,85 @@
 // utils/email.js
 const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  service: "Gmail", // Use 'Gmail', 'SendGrid', etc., depending on the provider
-  // port: 587,
-  // secure: false,
-  auth: {
-    user: process.env.EMAIL_USER, // Email address
-    pass: process.env.EMAIL_PASS, // Email password or app password
-  },
-});
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: "Gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER, // Must be the email used for App Password
+      pass: process.env.EMAIL_APP_PASSWORD,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+};
 
-const resetEmail = async (to, subject, text) => {
+// HTML template for reset password email
+const createResetEmailHTML = (resetCode) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Password Reset Request</h2>
+      <p>You have requested to reset your password. Here is your reset code:</p>
+      <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; margin: 20px 0;">
+        ${resetCode}
+      </div>
+      <p>This code will expire in 30 minutes.</p>
+      <p>If you didn't request this reset, please ignore this email or contact support if you have concerns.</p>
+      <p style="color: #666; font-size: 12px;">This is an automated message, please do not reply.</p>
+    </div>
+  `;
+};
+
+const sendEmail = async ({to, subject, text, html}) => {
+  if (!to || !subject || (!text && !html)) {
+    throw new Error("Missing required email parameters");
+  }
+
+  const transporter = createTransporter();
+
+  // You can customize the display name while using the authenticated email
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: {
+      name: "OkeyMart", // This will be the display name
+      address: process.env.EMAIL_USER, // This must be your authenticated email
+    },
     to,
     subject,
     text,
+    html,
+    replyTo: process.env.EMAIL_WUSER, // Optional: Set reply-to address
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Reset code email sent successfully.");
+    await transporter.verify();
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Message sent: %s", info.messageId);
+    return {success: true, messageId: info.messageId};
   } catch (error) {
-    console.error("Error sending reset code email:", error);
+    console.error("Email sending failed:", error);
+    throw new Error(`Failed to send email: ${error.message}`);
+  } finally {
+    transporter.close();
   }
 };
 
-module.exports = resetEmail;
+const sendResetPasswordEmail = async (to, resetCode) => {
+  const subject = "OkeyMart Password Reset Code";
+  const text = `Your OkeyMart password reset code is: ${resetCode}. This code will expire in 30 minutes.`;
+  const html = createResetEmailHTML(resetCode);
+
+  try {
+    return await sendEmail({to, subject, text, html});
+  } catch (error) {
+    console.error("Failed to send reset password email:", error);
+    throw error;
+  }
+};
+
+module.exports = {
+  sendEmail,
+  sendResetPasswordEmail,
+};

@@ -8,13 +8,25 @@ const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
 const checkRole = require("../middleware/roleAuth");
 const authMiddleware = require("../middleware/auth");
-const resetEmail = require("../utils/email");
+// const sendEmail = require("../utils/email");
+const {sendResetPasswordEmail, sendEmail} = require("../utils/email");
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
 });
+
+// Constants
+const RESET_CODE_EXPIRY = 30 * 60 * 1000; // 30 minutes in milliseconds
+const RESET_CODE_LENGTH = 6;
+
+// Helper function to generate reset code
+const generateResetCode = (length = RESET_CODE_LENGTH) => {
+  const min = Math.pow(10, length - 1);
+  const max = Math.pow(10, length) - 1;
+  return Math.floor(min + Math.random() * (max - min + 1)).toString();
+};
 
 router.use(limiter);
 
@@ -267,33 +279,51 @@ router.post("/reject-verification/:userId", authMiddleware, checkRole(["Admin"])
 
 // Route to request password reset
 router.post("/request-reset", async (req, res) => {
-  const { email } = req.body;
+  const {email} = req.body;
 
   try {
-    const encryptedEmail = encrypt(email.toLowerCase());
-    const user = await User.findOne({email: encryptedEmail});
-    if (!user) {
-      return res.status(404).json({message: "User not found"});
+    // Input validation
+    if (!email) {
+      return res.status(400).json({message: "Email is required"});
     }
 
-    // Generate a 6-digit reset code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();;
-    user.resetPasswordCode = resetCode;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1-hour expiration
+    const encryptedEmail = encrypt(email.toLowerCase());
+    const user = await User.findOne({email: encryptedEmail});
 
-    await user.save();
+    if (!user) {
+      // For security, don't reveal if user exists or not
+      return res.status(200).json({
+        message:
+          "If a user with this email exists, they will receive a reset code.",
+      });
+    }
+
+    // Generate new reset code
+    const resetCode = generateResetCode();
+
+    // Update user with new reset code and expiration
+    const updates = {
+      resetPasswordCode: resetCode,
+      resetPasswordExpires: Date.now() + RESET_CODE_EXPIRY,
+      resetPasswordAttempts: 0, // Track failed attempts
+      resetPasswordUsed: false, // Track if code has been used
+    };
+
+    await User.findByIdAndUpdate(user._id, updates);
 
     // Send reset code via email
-    const subject = "Your Password Reset Code";
-    const text = `Your password reset code is: ${resetCode}`;
-    await resetEmail(user.email, subject, text);
+    await sendResetPasswordEmail(email, resetCode);
 
-    res.json({message: "Reset code sent to email"});
+    // For security, use same response whether user exists or not
+    res.json({
+      message:
+        "If a user with this email exists, they will receive a reset code.",
+    });
   } catch (error) {
     console.error("Password reset request error:", error);
     res.status(500).json({
-      message: "Server error during password reset request",
-      error: error.message,
+      message: "An error occurred while processing your request",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
@@ -303,38 +333,90 @@ router.post("/reset-password", async (req, res) => {
   const { email, resetCode, newPassword } = req.body;
 
   try {
-    // Validate input
+    // Input validation
     if (!email || !resetCode || !newPassword) {
-      return res.status(400).json({ message: "Email, reset code, and new password are required" });
+      return res.status(400).json({ 
+        message: "Email, reset code, and new password are required" 
+      });
     }
 
-    // Encrypt the email for comparison
     const encryptedEmail = encrypt(email.toLowerCase());
-
     const user = await User.findOne({
       email: encryptedEmail,
       resetPasswordCode: resetCode,
-      resetPasswordExpires: { $gt: Date.now() }, // Ensure code is not expired
+      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordUsed: false
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset code" });
+      return res.status(400).json({ 
+        message: "Invalid or expired reset code" 
+      });
     }
 
-    // Hash and save the new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    user.resetPasswordCode = undefined;
-    user.resetPasswordExpires = undefined;
+    // Check password requirements
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long"
+      });
+    }
 
-    await user.save();
+    // Hash and update password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user document and invalidate reset code
+    await User.findByIdAndUpdate(user._id, {
+      password: hashedPassword,
+      resetPasswordCode: null,
+      resetPasswordExpires: null,
+      resetPasswordUsed: true,
+      resetPasswordAttempts: 0,
+      $push: { 
+        passwordHistory: {
+          password: hashedPassword,
+          changedAt: new Date()
+        }
+      }
+    });
 
     res.json({ message: "Password reset successful" });
+
   } catch (error) {
     console.error("Password reset error:", error);
     res.status(500).json({ 
-      message: "Server error during password reset",
-      error: error.message 
+      message: "An error occurred while resetting password",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Optional: Route to verify reset code without changing password
+router.post("/verify-reset-code", async (req, res) => {
+  const { email, resetCode } = req.body;
+
+  try {
+    const encryptedEmail = encrypt(email.toLowerCase());
+    const user = await User.findOne({
+      email: encryptedEmail,
+      resetPasswordCode: resetCode,
+      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordUsed: false
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        message: "Invalid or expired reset code" 
+      });
+    }
+
+    res.json({ message: "Reset code verified successfully" });
+
+  } catch (error) {
+    console.error("Reset code verification error:", error);
+    res.status(500).json({ 
+      message: "An error occurred while verifying reset code",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
