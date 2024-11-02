@@ -1,5 +1,5 @@
 'use client'
-import {useState, ChangeEvent, FormEvent} from "react";
+import {useState, ChangeEvent, FormEvent, useEffect} from "react";
 import authApi from "@/utils/authApi"; 
 import "./forgot-password.css";
 import Image from "next/image";
@@ -21,7 +21,54 @@ export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "">("");
+
+  // Timer states
+  const [codeExpiryTime, setCodeExpiryTime] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [resendTimeLeft, setResendTimeLeft] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+
+  // Timer logic
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    if (timeLeft > 0) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [timeLeft]);
+
+  // Resend timer logic
+  useEffect(() => {
+    let resendTimer: NodeJS.Timeout;
+
+    if (resendTimeLeft > 0) {
+      resendTimer = setInterval(() => {
+        setResendTimeLeft((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (resendTimer) clearInterval(resendTimer);
+    };
+  }, [resendTimeLeft]);
 
   // Password validation
   const validatePassword = (password: string) => {
@@ -75,6 +122,17 @@ export default function ForgotPassword() {
     }
   };
 
+  const startTimers = () => {
+    // Set 30-minute expiry timer
+    const expiryTime = Date.now() + 30 * 60 * 1000;
+    setCodeExpiryTime(expiryTime);
+    setTimeLeft(30 * 60);
+
+    // Set resend cooldown timer (20 seconds)
+    setResendTimeLeft(20);
+    setCanResend(false);
+  };
+
   const handleRequestReset = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -86,18 +144,7 @@ export default function ForgotPassword() {
       setMessage(response.data.message);
       setMessageType("success");
       setCodeSent(true);
-
-      // Start 30-minute countdown
-      setTimeLeft(30 * 60);
-      const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startTimers();
     } catch (error: any) {
       console.error("Reset request error:", error);
       setMessage(
@@ -110,9 +157,40 @@ export default function ForgotPassword() {
     }
   };
 
+  const handleResendCode = async () => {
+    if (!canResend) return;
+
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
+
+    try {
+      const response = await authApi.post("/api/auth/request-reset", {email});
+      setMessage("New reset code sent successfully!");
+      setMessageType("success");
+      startTimers();
+      setResetCode(""); // Clear the previous code input
+    } catch (error: any) {
+      console.error("Resend code error:", error);
+      setMessage(
+        error.response?.data?.message ||
+          "Error sending new reset code. Please try again."
+      );
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Check if code has expired
+    if (Date.now() > codeExpiryTime) {
+      setMessage("Reset code has expired. Please request a new code.");
+      setMessageType("error");
+      return;
+    }
 
     // Validate password
     const validationError = validatePassword(newPassword);
@@ -160,7 +238,7 @@ export default function ForgotPassword() {
     }
   };
 
-  const formatTimeLeft = (seconds: number) => {
+  const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
@@ -230,11 +308,26 @@ export default function ForgotPassword() {
             onSubmit={handleResetPassword}
             className="flex flex-col relative items-center sign-form"
           >
-            {timeLeft > 0 && (
-              <div className="text-sm text-gray-600 mb-4">
-                Code expires in: {formatTimeLeft(timeLeft)}
-              </div>
-            )}
+            <div className="w-full mb-4 flex justify-between items-center">
+              <span className="text-sm text-gray-600">
+                Code expires in: {formatTime(timeLeft)}
+              </span>
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={!canResend || isLoading}
+                className={`text-sm px-3 py-1 rounded ${
+                  canResend
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                {resendTimeLeft > 0
+                  ? `Resend in ${resendTimeLeft}s`
+                  : "Resend Code"}
+              </button>
+            </div>
+
             <input
               type="text"
               placeholder="Enter 6-digit reset code"
@@ -264,7 +357,7 @@ export default function ForgotPassword() {
             <button
               type="submit"
               className="sign-btn w-full"
-              disabled={isLoading || !!message}
+              disabled={isLoading || !!message || timeLeft === 0}
             >
               {isLoading ? <GridLoad /> : "Reset Password"}
             </button>

@@ -287,6 +287,8 @@ router.post("/request-reset", async (req, res) => {
       return res.status(400).json({message: "Email is required"});
     }
 
+    console.log(`Processing reset request for email: ${email}`);
+
     const encryptedEmail = encrypt(email.toLowerCase());
     const user = await User.findOne({email: encryptedEmail});
 
@@ -301,23 +303,42 @@ router.post("/request-reset", async (req, res) => {
     // Generate new reset code
     const resetCode = generateResetCode();
 
+    console.log(`Generated reset code for ${email}: ${resetCode}`);
+
+    // Set expiration to 30 minutes from now
+    const resetPasswordExpires = new Date(Date.now() + RESET_CODE_EXPIRY);
+
     // Update user with new reset code and expiration
     const updates = {
       resetPasswordCode: resetCode,
-      resetPasswordExpires: Date.now() + RESET_CODE_EXPIRY,
+      resetPasswordExpires: resetPasswordExpires,
       resetPasswordAttempts: 0, // Track failed attempts
       resetPasswordUsed: false, // Track if code has been used
     };
 
-    await User.findByIdAndUpdate(user._id, updates);
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      updates,
+      {new: true} // Return the updated document
+    );
+
+    console.log(`Updated user reset code details:`, {
+      userId: updatedUser._id,
+      resetCode: updatedUser.resetPasswordCode,
+      expires: updatedUser.resetPasswordExpires,
+    });
+    
+
 
     // Send reset code via email
     await sendResetPasswordEmail(email, resetCode);
+    console.log(`Reset code email sent to ${email}`);
 
     // For security, use same response whether user exists or not
     res.json({
       message:
         "If a user with this email exists, they will receive a reset code.",
+      expiresAt: resetPasswordExpires,
     });
   } catch (error) {
     console.error("Password reset request error:", error);
@@ -333,6 +354,9 @@ router.post("/reset-password", async (req, res) => {
   const { email, resetCode, newPassword } = req.body;
 
   try {
+    console.log(`Processing password reset for email: ${email}`);
+
+
     // Input validation
     if (!email || !resetCode || !newPassword) {
       return res.status(400).json({ 
@@ -347,6 +371,17 @@ router.post("/reset-password", async (req, res) => {
       resetPasswordExpires: { $gt: Date.now() },
       resetPasswordUsed: false
     });
+
+    console.log(`User found for reset:`, user ? "Yes" : "No");
+    if (user) {
+      console.log(`Reset code validation:`, {
+        storedCode: user.resetPasswordCode,
+        providedCode: resetCode,
+        expires: user.resetPasswordExpires,
+        currentTime: new Date(),
+        isExpired: user.resetPasswordExpires < Date.now(),
+      });
+    }
 
     if (!user) {
       return res.status(400).json({ 
@@ -378,7 +413,11 @@ router.post("/reset-password", async (req, res) => {
           changedAt: new Date()
         }
       }
-    });
+    }, 
+      { new: true }
+    );
+
+    console.log(`Password reset successful for user: ${updatedUser._id}`);
 
     res.json({ message: "Password reset successful" });
 
@@ -396,22 +435,41 @@ router.post("/verify-reset-code", async (req, res) => {
   const { email, resetCode } = req.body;
 
   try {
+    console.log(`Verifying reset code for email: ${email}`);
+
     const encryptedEmail = encrypt(email.toLowerCase());
     const user = await User.findOne({
       email: encryptedEmail,
       resetPasswordCode: resetCode,
-      resetPasswordExpires: { $gt: Date.now() },
-      resetPasswordUsed: false
+      resetPasswordExpires: {$gt: Date.now()},
+      resetPasswordUsed: false,
+    });
+
+    console.log(`Reset code verification:`, {
+      userFound: user ? "Yes" : "No",
+      providedCode: resetCode,
+      storedCode: user?.resetPasswordCode,
+      expires: user?.resetPasswordExpires,
+      currentTime: new Date(),
     });
 
     if (!user) {
-      return res.status(400).json({ 
-        message: "Invalid or expired reset code" 
+      return res.status(400).json({
+        message: "Invalid or expired reset code",
       });
     }
 
-    res.json({ message: "Reset code verified successfully" });
+    // Update attempts count
+    await User.findByIdAndUpdate(user._id, {
+      $inc: {resetPasswordAttempts: 1},
+    });
 
+    res.json({
+      message: "Reset code verified successfully",
+      expiresAt: user.resetPasswordExpires,
+    });
+
+    
   } catch (error) {
     console.error("Reset code verification error:", error);
     res.status(500).json({ 

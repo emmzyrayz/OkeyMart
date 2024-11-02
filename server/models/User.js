@@ -27,6 +27,19 @@ const UserSchema = new mongoose.Schema(
     resetPasswordCode: {type: String}, // Store reset code here
     resetPasswordExpires: {type: Date},
     lastLogin: {type: Date},
+    resetPasswordCode: String,
+    resetPasswordExpires: Date,
+    resetPasswordUsed: Boolean,
+    resetPasswordAttempts: {
+      type: Number,
+      default: 0,
+    },
+    passwordHistory: [
+      {
+        password: String,
+        changedAt: Date,
+      },
+    ],
   },
   {timestamps: true}
 );
