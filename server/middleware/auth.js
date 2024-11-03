@@ -98,4 +98,9 @@ setInterval(() => {
   });
 }, 60000); // Check every minute
 
-module.exports = {authMiddleware, generateToken, activeTokens, authorizeRole};
+module.exports = {
+  authMiddleware: authMiddleware,
+  generateToken: generateToken,
+  activeTokens: activeTokens,
+  authorizeRole: authorizeRole,
+};
