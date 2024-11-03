@@ -204,13 +204,19 @@ const verifyToken = (req, res, next) => {
 };
 
 // Protected route example
-router.get("/me", verifyToken, async (req, res) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
     if (!user) {
       return res.status(404).json({message: "User not found"});
     }
-    res.json(user);
+
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: decrypt(user.email),
+      role: user.role,
+    });
   } catch (error) {
     res.status(500).json({message: "Server error"});
   }
@@ -478,6 +484,34 @@ router.post("/verify-reset-code", async (req, res) => {
       message: "An error occurred while verifying reset code",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+router.post("/refresh-token", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(401).json({message: "User not found"});
+    }
+
+    // Generate new token
+    const newToken = generateToken(user._id, decrypt(user.email));
+
+    res.json({
+      token: newToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: decrypt(user.email),
+        phone: decrypt(user.phone),
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    res.status(500).json({message: "Server error during token refresh"});
   }
 });
 

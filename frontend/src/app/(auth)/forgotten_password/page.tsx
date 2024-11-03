@@ -224,7 +224,7 @@ export default function ForgotPassword() {
 
       // Reset form after 3 seconds and redirect to login
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/signin";
       }, 3000);
     } catch (error: any) {
       console.error("Password reset error:", error);

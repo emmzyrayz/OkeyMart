@@ -12,6 +12,7 @@ import {CartProvider} from "@/context/commerce logic/cartcontext";
 import {ViewWishProvider} from "@/context/commerce logic/view-wishcontext";
 import {SearchProvider} from "@/context/searchcontext/searchcontext";
 import { ProductUploadProvider } from "@/context/productUpload/productUploadContext";
+import { UserProvider } from "@/context/userContext/UserContext";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -86,6 +87,7 @@ export default function RootLayout({
   const {title, description} = getMetadata();
 
   return (
+    <UserProvider>
       <ProductProvider>
         <CartProvider>
           <ViewWishProvider>
@@ -150,5 +152,6 @@ export default function RootLayout({
           </ViewWishProvider>
         </CartProvider>
       </ProductProvider>
+    </UserProvider>
   );
 }
