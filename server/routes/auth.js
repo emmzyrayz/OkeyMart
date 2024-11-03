@@ -2,12 +2,12 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const NodeCache = require("node-cache");
 const User = require("../models/User");
-const { encrypt, decrypt } = require("../utils/encryption");
+const {encrypt, decrypt} = require("../utils/encryption");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
 const updateRole = require("../config/roleUpdater");
 const checkRole = require("../middleware/roleAuth");
-const authMiddleware = require("../middleware/auth");
+const {authMiddleware, generateToken} = require("../middleware/auth");
 const bcrypt = require("bcryptjs");
 const {sendResetPasswordEmail, sendEmail} = require("../utils/email");
 
@@ -239,49 +239,59 @@ router.post("/submit-documents", authMiddleware, async (req, res) => {
     user.verificationStatus = "Pending";
     await user.save();
 
-    res.json({ message: "Documents submitted. Verification pending." });
+    res.json({message: "Documents submitted. Verification pending."});
   } catch (error) {
     console.error("Error submitting documents:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({message: "Server error"});
   }
 });
 
 // Admin-only route to approve verification
-router.post("/verify/:userId", authMiddleware, checkRole(["Admin"]), async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+router.post(
+  "/verify/:userId",
+  authMiddleware,
+  checkRole(["Admin"]),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.userId);
+      if (!user) {
+        return res.status(404).json({message: "User not found"});
+      }
+
+      user.verificationStatus = "Verified";
+      user.role = "Verified Seller"; // Update role upon successful verification
+      await user.save();
+
+      res.json({message: "User verification approved."});
+    } catch (error) {
+      console.error("Error verifying user:", error);
+      res.status(500).json({message: "Server error"});
     }
-
-    user.verificationStatus = "Verified";
-    user.role = "Verified Seller"; // Update role upon successful verification
-    await user.save();
-
-    res.json({ message: "User verification approved." });
-  } catch (error) {
-    console.error("Error verifying user:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
 
 // Admin-only route to reject verification
-router.post("/reject-verification/:userId", authMiddleware, checkRole(["Admin"]), async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+router.post(
+  "/reject-verification/:userId",
+  authMiddleware,
+  checkRole(["Admin"]),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.params.userId);
+      if (!user) {
+        return res.status(404).json({message: "User not found"});
+      }
+
+      user.verificationStatus = "Rejected";
+      await user.save();
+
+      res.json({message: "User verification rejected."});
+    } catch (error) {
+      console.error("Error rejecting verification:", error);
+      res.status(500).json({message: "Server error"});
     }
-
-    user.verificationStatus = "Rejected";
-    await user.save();
-
-    res.json({ message: "User verification rejected." });
-  } catch (error) {
-    console.error("Error rejecting verification:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
 
 // Route to request password reset
 router.post("/request-reset", async (req, res) => {
@@ -293,7 +303,7 @@ router.post("/request-reset", async (req, res) => {
       return res.status(400).json({message: "Email is required"});
     }
 
-    console.log(`Processing reset request for email: ${email}`);
+    // console.log(`Processing reset request for email: ${email}`);
 
     const encryptedEmail = encrypt(email.toLowerCase());
     const user = await User.findOne({email: encryptedEmail});
@@ -309,7 +319,7 @@ router.post("/request-reset", async (req, res) => {
     // Generate new reset code
     const resetCode = generateResetCode();
 
-    console.log(`Generated reset code for ${email}: ${resetCode}`);
+    //console.log(`Generated reset code for ${email}: ${resetCode}`);
 
     // Set expiration to 30 minutes from now
     const resetPasswordExpires = new Date(Date.now() + RESET_CODE_EXPIRY);
@@ -328,17 +338,15 @@ router.post("/request-reset", async (req, res) => {
       {new: true} // Return the updated document
     );
 
-    console.log(`Updated user reset code details:`, {
-      userId: updatedUser._id,
-      resetCode: updatedUser.resetPasswordCode,
-      expires: updatedUser.resetPasswordExpires,
-    });
-    
-
+    // console.log(`Updated user reset code details:`, {
+    //   userId: updatedUser._id,
+    //   resetCode: updatedUser.resetPasswordCode,
+    //   expires: updatedUser.resetPasswordExpires,
+    // });
 
     // Send reset code via email
     await sendResetPasswordEmail(email, resetCode);
-    console.log(`Reset code email sent to ${email}`);
+    // console.log(`Reset code email sent to ${email}`);
 
     // For security, use same response whether user exists or not
     res.json({
@@ -357,16 +365,15 @@ router.post("/request-reset", async (req, res) => {
 
 // Route to verify code and reset password
 router.post("/reset-password", async (req, res) => {
-  const { email, resetCode, newPassword } = req.body;
+  const {email, resetCode, newPassword} = req.body;
 
   try {
-    console.log(`Processing password reset for email: ${email}`);
-
+    // console.log(`Processing password reset for email: ${email}`);
 
     // Input validation
     if (!email || !resetCode || !newPassword) {
-      return res.status(400).json({ 
-        message: "Email, reset code, and new password are required" 
+      return res.status(400).json({
+        message: "Email, reset code, and new password are required",
       });
     }
 
@@ -374,31 +381,31 @@ router.post("/reset-password", async (req, res) => {
     const user = await User.findOne({
       email: encryptedEmail,
       resetPasswordCode: resetCode,
-      resetPasswordExpires: { $gt: Date.now() },
-      resetPasswordUsed: false
+      resetPasswordExpires: {$gt: Date.now()},
+      resetPasswordUsed: false,
     });
 
-    console.log(`User found for reset:`, user ? "Yes" : "No");
-    if (user) {
-      console.log(`Reset code validation:`, {
-        storedCode: user.resetPasswordCode,
-        providedCode: resetCode,
-        expires: user.resetPasswordExpires,
-        currentTime: new Date(),
-        isExpired: user.resetPasswordExpires < Date.now(),
-      });
-    }
+    // console.log(`User found for reset:`, user ? "Yes" : "No");
+    // if (user) {
+      // console.log(`Reset code validation:`, {
+      //   storedCode: user.resetPasswordCode,
+      //   providedCode: resetCode,
+      //   expires: user.resetPasswordExpires,
+      //   currentTime: new Date(),
+      //   isExpired: user.resetPasswordExpires < Date.now(),
+      // });
+    // }
 
     if (!user) {
-      return res.status(400).json({ 
-        message: "Invalid or expired reset code" 
+      return res.status(400).json({
+        message: "Invalid or expired reset code",
       });
     }
 
     // Check password requirements
     if (newPassword.length < 8) {
       return res.status(400).json({
-        message: "Password must be at least 8 characters long"
+        message: "Password must be at least 8 characters long",
       });
     }
 
@@ -425,25 +432,24 @@ router.post("/reset-password", async (req, res) => {
       {new: true}
     );
 
-    console.log(`Password reset successful for user: ${updatedUser._id}`);
+    // console.log(`Password reset successful for user: ${updatedUser._id}`);
 
-    res.json({ message: "Password reset successful" });
-
+    res.json({message: "Password reset successful"});
   } catch (error) {
     console.error("Password reset error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "An error occurred while resetting password",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
 
 // Optional: Route to verify reset code without changing password
 router.post("/verify-reset-code", async (req, res) => {
-  const { email, resetCode } = req.body;
+  const {email, resetCode} = req.body;
 
   try {
-    console.log(`Verifying reset code for email: ${email}`);
+    // console.log(`Verifying reset code for email: ${email}`);
 
     const encryptedEmail = encrypt(email.toLowerCase());
     const user = await User.findOne({
@@ -453,13 +459,13 @@ router.post("/verify-reset-code", async (req, res) => {
       resetPasswordUsed: false,
     });
 
-    console.log(`Reset code verification:`, {
-      userFound: user ? "Yes" : "No",
-      providedCode: resetCode,
-      storedCode: user?.resetPasswordCode,
-      expires: user?.resetPasswordExpires,
-      currentTime: new Date(),
-    });
+    // console.log(`Reset code verification:`, {
+    //   userFound: user ? "Yes" : "No",
+    //   providedCode: resetCode,
+    //   storedCode: user?.resetPasswordCode,
+    //   expires: user?.resetPasswordExpires,
+    //   currentTime: new Date(),
+    // });
 
     if (!user) {
       return res.status(400).json({
@@ -476,13 +482,11 @@ router.post("/verify-reset-code", async (req, res) => {
       message: "Reset code verified successfully",
       expiresAt: user.resetPasswordExpires,
     });
-
-
   } catch (error) {
     console.error("Reset code verification error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "An error occurred while verifying reset code",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });

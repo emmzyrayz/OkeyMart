@@ -136,11 +136,11 @@ const populateProducts = async () => {
       );
     }
 
-    console.log("Starting database population process...");
+    //console.log("Starting database population process...");
 
     // Clear existing products
     const deleteResult = await Product.deleteMany({});
-    console.log(`Cleared ${deleteResult.deletedCount} existing products`);
+    //console.log(`Cleared ${deleteResult.deletedCount} existing products`);
 
     const products = [];
     const numberOfProducts = 50;
@@ -202,10 +202,10 @@ const populateProducts = async () => {
       const batch = products.slice(start, end);
 
       await Product.insertMany(batch, {ordered: true});
-      console.log(`Inserted batch ${i + 1} of ${batches}`);
+      //console.log(`Inserted batch ${i + 1} of ${batches}`);
     }
 
-    console.log("Products populated successfully");
+    ////console.log("Products populated successfully");
   } catch (error) {
     console.error("Error populating products:", error);
   }

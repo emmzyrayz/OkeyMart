@@ -39,8 +39,8 @@ async function authMiddleware(req, res, next) {
     }
 
     // Update last activity time
-    tokenData.lastActivity = Date.now();
-    activeTokens.set(decoded.userId, tokenData);
+    activeToken.lastActivity = Date.now();
+    activeTokens.set(decoded.userId, activeToken);
 
     // Fetch user with role information
     const user = await User.findById(decoded.userId);
