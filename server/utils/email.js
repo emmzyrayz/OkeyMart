@@ -56,7 +56,7 @@ const sendEmail = async ({to, subject, text, html}) => {
   try {
     await transporter.verify();
     const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
+    // console.log("Message sent: %s", info.messageId);
     return {success: true, messageId: info.messageId};
   } catch (error) {
     console.error("Email sending failed:", error);
