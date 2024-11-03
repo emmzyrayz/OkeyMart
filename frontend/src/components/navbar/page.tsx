@@ -16,18 +16,92 @@ import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useSearch} from "@/context/searchcontext/searchcontext";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { Product } from "@/types/product";
+import {useUser} from "@/context/userContext/UserContext";
+import {hasPermission} from "@/utils/roleUtils";
 import axios from "axios";
 
 export const HomeNav = () => {
   const pathname = usePathname();
   const {cartState} = useCart();
   const router = useRouter();
+  const {user, logout} = useUser();
+  const {isAuthenticated, role} = user;
   const {searchValue, setSearchValue, filteredProducts, setFilteredProducts} =
     useSearch();
-  const { fetchProducts} = useProductContext();
+  const {fetchProducts} = useProductContext();
   const {wishlist} = useWishContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Define navigation items based on authentication and role
+  const getNavItems = () => {
+    const baseItems = [
+      {label: "Home", path: "/"},
+      {label: "Contact", path: "/contact"},
+      {label: "About", path: "/about"},
+    ];
+
+    if (!isAuthenticated) {
+      return [...baseItems, {label: "Sign Up", path: "/signup"}];
+    }
+
+    if (role === "buyer") {
+      return [
+        ...baseItems,
+        {label: "My Orders", path: "/orders"},
+        {label: "Wishlist", path: "/wishlist"},
+      ];
+    }
+
+    if (role === "seller") {
+      return [
+        ...baseItems,
+        {label: "My Store", path: "/store"},
+        {label: "Products", path: "/products"},
+      ];
+    }
+
+    return baseItems;
+  };
+
+  // Define user menu items based on role
+  const getUserMenuItems = () => {
+    const baseItems = [
+      {
+        label: "Manage My Account",
+        icon: FiUser,
+        path: "/profile",
+      },
+      {
+        label: "Notifications",
+        icon: FiBell,
+        path: "/notifications",
+      },
+    ];
+
+    if (user.role === "buyer") {
+      return [
+        ...baseItems,
+        {
+          label: "My Orders",
+          icon: FiShoppingBag,
+          path: "/orders",
+        },
+        {
+          label: "My Reviews",
+          icon: CiStar,
+          path: "/reviews",
+        },
+        {
+          label: "My Cancellations",
+          icon: ImCancelCircle,
+          path: "/cancellations",
+        },
+      ];
+    }
+
+    return baseItems;
+  };
 
   const getProductId = (product: Product) => {
     return product._id || product.id || null;
@@ -77,41 +151,34 @@ export const HomeNav = () => {
     }
   };
 
- const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-   e.preventDefault();
-   performSearch();
- };
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    performSearch();
+  };
 
- const handleSearchIconClick = () => {
-   performSearch();
- };
+  const handleSearchIconClick = () => {
+    performSearch();
+  };
 
-const performSearch = () => {
-  if (searchValue.trim() !== "") {
-    router.push(`/search/${encodeURIComponent(searchValue)}`);
-    setIsSearchOpen(false);
-  }
-};
+  const performSearch = () => {
+    if (searchValue.trim() !== "") {
+      router.push(`/search/${encodeURIComponent(searchValue)}`);
+      setIsSearchOpen(false);
+    }
+  };
 
-const handleLogout = async () => {
-  const token = localStorage.getItem("token");
-
-  try {
-    // Call logout endpoint to invalidate token on server
-    await axios.post("/auth/logout", null, {
-      headers: {Authorization: `Bearer ${token}`},
-    });
-  } catch (error) {
-    console.error("Failed to log out on server:", error);
-  }
-
-  // Clear the token from local storage
-  localStorage.removeItem("token");
-
-  // Redirect to the sign-in page
-  router.push("/signin");
-};
-
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.post("/auth/logout", null, {
+        headers: {Authorization: `Bearer ${token}`},
+      });
+      localStorage.removeItem("token");
+      router.push("/signin");
+    } catch (error) {
+      console.error("Failed to log out:", error);
+    }
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -149,7 +216,7 @@ const handleLogout = async () => {
       </div>
       <div className="nav_btn relative w-2/5">
         <ul className="flex flex-row w-full justify-evenly">
-          {navItems.map((item, index) => (
+          {getNavItems().map((item, index) => (
             <li key={index} className={pathname === item.path ? "active" : ""}>
               <Link href={item.path}>
                 <span>{item.label}</span>
@@ -205,29 +272,47 @@ const handleLogout = async () => {
             </div>
           )}
         </div>
-        <Link href="/wishlist">
-          <div className="liked relative">
-            <FaRegHeart className="nav-icon" />
-            {wishlist.length > 0 && (
-              <span className="absolute wishlist-count">{wishlist.length}</span>
-            )}
+        {/* Show cart and wishlist only for buyers */}
+        {isAuthenticated && role === "buyer" && (
+          <div className="flex flex-row">
+            <Link href="/wishlist">
+              <div className="liked relative">
+                <FaRegHeart className="nav-icon" />
+                {wishlist.length > 0 && (
+                  <span className="absolute wishlist-count">
+                    {wishlist.length}
+                  </span>
+                )}
+              </div>
+            </Link>
+            <Link href="/cart">
+              <div className="cart relative">
+                <TiShoppingCart className="nav-icon" />
+                {cartState.itemCount > 0 && (
+                  <span className="cart-count absolute">
+                    {cartState.itemCount}
+                  </span>
+                )}
+              </div>
+            </Link>
           </div>
-        </Link>
-        <Link href="/cart">
-          <div className="cart relative">
-            <TiShoppingCart className="nav-icon" />
-            {cartState.itemCount > 0 && (
-              <span className="cart-count absolute">{cartState.itemCount}</span>
-            )}
+        )}
+
+        {isAuthenticated ? (
+          <div className="user relative online" onClick={toggleMenu}>
+            <FaRegUserCircle className="nav-icon" />
+            <span className="absolute"></span>
           </div>
-        </Link>
-        <div className="user relative online" onClick={toggleMenu}>
-          <FaRegUserCircle className="nav-icon" />
-          <span className="absolute"></span>
-        </div>
+        ) : (
+          <Link href="/signin">
+            <div className="user">
+              <FaRegUserCircle className="nav-icon" />
+            </div>
+          </Link>
+        )}
       </div>
 
-      <div
+      {/* <div
         className={`${
           isMenuOpen ? "open" : "hidden"
         } flex navbar_menu absolute flex-col items-center justify-center`}
@@ -258,7 +343,28 @@ const handleLogout = async () => {
           <TbLogout2 className="wh" />
           <span>Logout</span>
         </div>
-      </div>
+      </div> */}
+
+      {/* User Menu Dropdown */}
+      {isMenuOpen && isAuthenticated && (
+        <div className="navbar_menu absolute flex-col items-center justify-center">
+          {getUserMenuItems().map((item, index) => (
+            <Link href={item.path} key={index}>
+              <div className="menu-item flex items-center gap-2 p-2">
+                <item.icon className="wh" />
+                <span>{item.label}</span>
+              </div>
+            </Link>
+          ))}
+          <div
+            onClick={handleLogout}
+            className="logout flex items-center gap-2 p-2 cursor-pointer"
+          >
+            <TbLogout2 className="wh" />
+            <span>Logout</span>
+          </div>
+        </div>
+      )}
 
       {/* Search Dropdown */}
       {isSearchOpen && (

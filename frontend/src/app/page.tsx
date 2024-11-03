@@ -1,9 +1,13 @@
 'use client'
 
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 import {setAuthToken} from "@/utils/authApi";
-
+import {
+  initializeActivityTracking,
+  cleanupActivityTracking,
+} from "@/utils/tokenManager";
+import { getUserRole } from "@/utils/userUtils";
 
 import '@fontsource/inter/400.css';  // Inter Regular
 import '@fontsource/inter/500.css';  // Inter Medium
@@ -16,8 +20,8 @@ import { HomePage } from '@/components/home/page';
 // import Link from 'next/link';
 
 export default function Home() {
-  // const {data: session, status} = useSession();
   const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Redirect to /signin if the user is not logged in and the session status is "unauthenticated"
   useEffect(() => {
@@ -26,7 +30,18 @@ export default function Home() {
       router.push("/signin");
     } else {
       setAuthToken(token);
+      initializeActivityTracking();
+      // Fetch user role
+      const fetchUserRole = async () => {
+        const role = await getUserRole(token); // Implement this function
+        setUserRole(role);
+      };
+      fetchUserRole();
     }
+
+    return () => {
+      cleanupActivityTracking();
+    };
   }, [router]);
 
   
