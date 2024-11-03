@@ -1,8 +1,8 @@
 // utils/tokenManager.ts
 import authApi from "./authApi";
 
-const TOKEN_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const INACTIVITY_TIMEOUT = 35 * 60 * 1000; // 35 minutes
+const TOKEN_REFRESH_INTERVAL = 25 * 60 * 1000; // 25 minutes
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 
 let refreshTokenTimeout: NodeJS.Timeout;
@@ -13,9 +13,9 @@ export const startTokenRefreshTimer = () => {
   refreshTokenTimeout = setTimeout(async () => {
     try {
       const response = await authApi.post("/api/auth/refresh-token");
-      const newToken = response.data.token;
-      if (newToken) {
-        localStorage.setItem("token", newToken);
+      const {token} = response.data;
+      if (token) {
+        localStorage.setItem("token", token);
         startTokenRefreshTimer(); // Restart the timer
       }
     } catch (error) {
@@ -27,9 +27,7 @@ export const startTokenRefreshTimer = () => {
 
 export const startInactivityTimer = () => {
   clearTimeout(inactivityTimeout);
-  inactivityTimeout = setTimeout(() => {
-    handleLogout();
-  }, INACTIVITY_TIMEOUT);
+  inactivityTimeout = setTimeout(handleLogout, INACTIVITY_TIMEOUT);
 };
 
 export const resetTimers = () => {

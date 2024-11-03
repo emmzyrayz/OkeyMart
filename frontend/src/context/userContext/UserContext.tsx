@@ -2,7 +2,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import {User, UserRole} from "@/types/user";
 import { getUserProfile } from '@/utils/userUtils'; // Your utility function to fetch user role
-import { initializeTokenManagement } from '@/utils/tokenManager';
+import {
+  initializeTokenManagement,
+  initializeActivityTracking,
+  cleanupActivityTracking,
+} from "@/utils/tokenManager";
+import authApi from '@/utils/authApi';
 
 // Define the shape of the user context
 interface UserContextType {
@@ -30,12 +35,12 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const userData = await getUserProfile(token);
+          const response = await authApi.get("/api/user/profile");
           setUser({
-            ...userData,
+            ...response.data,
             isAuthenticated: true,
           });
-          initializeTokenManagement(); // Initialize token management
+          initializeActivityTracking(); // Initialize token management
         } catch (error) {
           console.error("Failed to initialize user:", error);
           localStorage.removeItem("token");
@@ -45,21 +50,27 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
     };
 
     initializeUser();
+    return () => cleanupActivityTracking();
   }, []);
 
   const updateUserRole = (role: UserRole) => {
     setUser((prev) => ({...prev, role}));
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(defaultUser);
+  const logout = async () => {
+    try {
+      await authApi.post("/api/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      setUser(defaultUser);
+      window.location.href = "/signin";
+    }
   };
 
-  const value = useMemo(() => ({ user, setUser , updateUserRole, logout }), [user]);
-
   return (
-    <UserContext.Provider value={value}>
+    <UserContext.Provider value={{user, setUser, updateUserRole, logout}}>
       {children}
     </UserContext.Provider>
   );
