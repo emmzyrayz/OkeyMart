@@ -1,10 +1,12 @@
+// routes/user.js
 const express = require("express");
-const authMiddleware = require("../middleware/auth");
-const {decrypt} = require("../utils/encryption"); // Import decrypt function
+const auth = require("../middleware/auth"); // Import the whole module
+const {decrypt} = require("../utils/encryption");
 const User = require("../models/User");
 const router = express.Router();
 
-router.get("/profile", authMiddleware, async (req, res) => {
+// Update the route to use the middleware from the auth object
+router.get("/profile", auth.authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select("-password");
 
