@@ -20,7 +20,6 @@ app.set('trust proxy', 1);  // Add this line to trust the proxy
 
 const allowedOrigins = ["http://localhost:3000", "https://okeymart.vercel.app"];
 
-console.log("Received token:", req.header("Authorization"));
 
 // CORS configuration for Render deployment
 const corsOptions = {
