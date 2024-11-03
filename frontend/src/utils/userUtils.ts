@@ -6,7 +6,7 @@ const API_BASE_URL =
 
 export const getUserProfile = async (token: string): Promise<User> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+    const response = await axios.get(`${API_BASE_URL}/api/user/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

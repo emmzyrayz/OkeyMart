@@ -23,47 +23,76 @@ const generateToken = (userId, email) => {
   return token;
 };
 
-async function authMiddleware(req, res, next) {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
-
-  if (!token) {
-    return res.status(401).json({message: "No token, authorization denied"});
-  }
-
+const authMiddleware = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const activeToken = activeTokens.get(decoded.userId);
+    const token = req.headers.authorization?.split(" ")[1];
 
-    if (!activeToken || activeToken.token !== token) {
-      return res.status(401).json({message: "Token is not valid"});
+    if (!token) {
+      return res.status(401).json({message: "No token provided"});
     }
 
-    // Update last activity time
-    activeToken.lastActivity = Date.now();
-    activeTokens.set(decoded.userId, activeToken);
-
-    // Fetch user with role information
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
+
     if (!user) {
       return res.status(401).json({message: "User not found"});
     }
 
-    // Attach complete user object to request
     req.user = {
-      userId: decoded.userId,
-      email: decoded.email,
+      userId: user._id,
+      email: decrypt(user.email),
       role: user.role,
-      verificationStatus: user.verificationStatus,
     };
 
     next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token has expired' });
-    }
-    res.status(401).json({ message: 'Token is not valid' });
+  } catch (error) {
+    res.status(401).json({message: "Invalid token"});
   }
-}
+};
+
+// async function authMiddleware(req, res, next) {
+//   const token = req.header("Authorization")?.replace("Bearer ", "");
+
+//   if (!token) {
+//     return res.status(401).json({message: "No token, authorization denied"});
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     console.log("Decoded Token:", decoded);
+//     const activeToken = activeTokens.get(decoded.userId);
+//     console.log("Active Token Data:", activeToken);
+
+//     if (!activeToken || activeToken.token !== token) {
+//       return res.status(401).json({message: "Token is not valid"});
+//     }
+
+//     // Update last activity time
+//     activeToken.lastActivity = Date.now();
+//     activeTokens.set(decoded.userId, activeToken);
+
+//     // Fetch user with role information
+//     const user = await User.findById(decoded.userId);
+//     if (!user) {
+//       return res.status(401).json({message: "User not found"});
+//     }
+
+//     // Attach complete user object to request
+//     req.user = {
+//       userId: decoded.userId,
+//       email: decoded.email,
+//       role: user.role,
+//       verificationStatus: user.verificationStatus,
+//     };
+
+//     next();
+//   } catch (err) {
+//     if (err.name === 'TokenExpiredError') {
+//       return res.status(401).json({ message: 'Token has expired' });
+//     }
+//     res.status(401).json({ message: 'Token is not valid' });
+//   }
+// }
 
 // Role authorization middleware
 const authorizeRole = (allowedRoles) => {
