@@ -17,7 +17,7 @@ import {useSearch} from "@/context/searchcontext/searchcontext";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { Product } from "@/types/product";
 import {useUser} from "@/context/userContext/UserContext";
-import {hasPermission} from "@/utils/roleUtils";
+// import {hasPermission} from "@/utils/roleUtils";;
 import axios from "axios";
 
 export const HomeNav = () => {
@@ -100,6 +100,17 @@ export const HomeNav = () => {
       ];
     }
 
+    if (role === "seller") {
+      return [
+        ...baseItems,
+        {
+          label: "Manage Products",
+          icon: FiShoppingBag,
+          path: "/manage-products",
+        },
+      ];
+    }
+
     return baseItems;
   };
 
@@ -169,14 +180,26 @@ export const HomeNav = () => {
 
   const handleLogout = async () => {
     const token = localStorage.getItem("token");
+    const router = useRouter();
+    const {logout} = useUser(); // Get the logout function from your context
+
     try {
       await axios.post("/auth/logout", null, {
         headers: {Authorization: `Bearer ${token}`},
       });
+
+      // Clear the token from local storage
       localStorage.removeItem("token");
+
+      // Clear user state in context
+      logout(); // Call the logout function from context
+
+      // Redirect to the sign-in page
       router.push("/signin");
     } catch (error) {
       console.error("Failed to log out:", error);
+      // Optionally, show an error message to the user
+      alert("Failed to log out. Please try again.");
     }
   };
 
@@ -192,12 +215,7 @@ export const HomeNav = () => {
     }
   };
 
-  const navItems = [
-    {label: "Home", path: "/"},
-    {label: "Contact", path: "/contact"},
-    {label: "About", path: "/about"},
-    {label: "Sign Up", path: "/signup"},
-  ];
+  const navItems = getNavItems();
 
   return (
     <div className="homenav_section flex flex-row items-center justify-between relative">
@@ -216,7 +234,7 @@ export const HomeNav = () => {
       </div>
       <div className="nav_btn relative w-2/5">
         <ul className="flex flex-row w-full justify-evenly">
-          {getNavItems().map((item, index) => (
+          {navItems.map((item, index) => (
             <li key={index} className={pathname === item.path ? "active" : ""}>
               <Link href={item.path}>
                 <span>{item.label}</span>
@@ -304,46 +322,13 @@ export const HomeNav = () => {
             <span className="absolute"></span>
           </div>
         ) : (
-          <Link href="/signin">
+          <div onClick={handleLogout}>
             <div className="user">
               <FaRegUserCircle className="nav-icon" />
             </div>
-          </Link>
+          </div>
         )}
       </div>
-
-      {/* <div
-        className={`${
-          isMenuOpen ? "open" : "hidden"
-        } flex navbar_menu absolute flex-col items-center justify-center`}
-      >
-        <Link href="/profile">
-          <div className="profile">
-            <FiUser className="wh" />
-            <span>Manage My Account</span>
-          </div>
-        </Link>
-        <div className="order">
-          <FiShoppingBag className="wh" />
-          <span>My Order</span>
-        </div>
-        <div className="notification">
-          <FiBell className="wh" />
-          <span>Notifications</span>
-        </div>
-        <div className="cancel">
-          <ImCancelCircle className="wh" />
-          <span>My Cancellations</span>
-        </div>
-        <div className="reviews">
-          <CiStar className="wh" />
-          <span>My Reviews</span>
-        </div>
-        <div onClick={handleLogout} className="logout">
-          <TbLogout2 className="wh" />
-          <span>Logout</span>
-        </div>
-      </div> */}
 
       {/* User Menu Dropdown */}
       {isMenuOpen && isAuthenticated && (

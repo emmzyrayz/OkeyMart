@@ -32,13 +32,26 @@ authApi.interceptors.request.use(
 authApi.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/signin";
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const response = await authApi.post("/api/auth/refresh-token");
+        const newToken = response.data.token;
+        localStorage.setItem("token", newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return authApi(originalRequest);
+      } catch (refreshError) {
+        localStorage.removeItem("token");
+        window.location.href = "/signin";
+        return Promise.reject(refreshError);
+      }
     }
     return Promise.reject(error);
   }
 );
+
 
 export const setAuthToken = (token: string | null) => {
   if (token) {

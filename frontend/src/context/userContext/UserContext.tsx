@@ -1,7 +1,8 @@
 // context/UserContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import {User, UserRole} from "@/types/user";
 import { getUserProfile } from '@/utils/userUtils'; // Your utility function to fetch user role
+import { initializeTokenManagement } from '@/utils/tokenManager';
 
 // Define the shape of the user context
 interface UserContextType {
@@ -34,6 +35,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
             ...userData,
             isAuthenticated: true,
           });
+          initializeTokenManagement(); // Initialize token management
         } catch (error) {
           console.error("Failed to initialize user:", error);
           localStorage.removeItem("token");
@@ -54,8 +56,10 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
     setUser(defaultUser);
   };
 
+  const value = useMemo(() => ({ user, setUser , updateUserRole, logout }), [user]);
+
   return (
-    <UserContext.Provider value={{user, setUser, updateUserRole, logout}}>
+    <UserContext.Provider value={value}>
       {children}
     </UserContext.Provider>
   );

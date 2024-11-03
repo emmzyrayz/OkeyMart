@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent} from "react";
+import React, { useState, ChangeEvent, FormEvent, useEffect} from "react";
 import {useRouter} from "next/navigation";
 import authApi, {setAuthToken} from "@/utils/authApi";
 import {GridLoad} from "@/components/fetchloading/btnloading";
@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import { FaEyeSlash, FaEye } from "react-icons/fa6";
+import { initializeTokenManagement, startTokenRefreshTimer } from "@/utils/tokenManager";
 
 export default function SignIn() {
   const router = useRouter();
@@ -30,21 +31,23 @@ export default function SignIn() {
 
       localStorage.setItem("token", token);
       setAuthToken(token);
-      router.push("/"); // Redirect to home page after successful login
+      initializeTokenManagement(); // Initialize token management
+      router.push("/");
     } catch (err: any) {
       console.error("Login error:", err);
-      if (err.response?.status === 401) {
-        setError("Invalid email or password. Please try again.");
-      } else {
-        setError(
-          err.response?.data?.message || "Error signing in. Please try again."
-        );
-      }
+      setError(err.response?.data?.message || "Error signing in");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Optional: Set the token on component mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setAuthToken(token); // Set the token in the authApi instance
+    }
+  }, []);
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
