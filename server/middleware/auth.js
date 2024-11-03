@@ -23,32 +23,48 @@ const generateToken = (userId, email) => {
   return token;
 };
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).json({message: "No token, authorization denied"});
+  }
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({message: "No token provided"});
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(401).json({message: "User not found"});
-    }
-
-    req.user = {
-      userId: user._id,
-      email: decrypt(user.email),
-      role: user.role,
-    };
-
+    req.user = decoded;
     next();
-  } catch (error) {
-    res.status(401).json({message: "Invalid token"});
+  } catch (err) {
+    res.status(401).json({message: "Token is not valid"});
   }
 };
+
+// const authMiddleware = async (req, res, next) => {
+//   try {
+//     const token = req.headers.authorization?.split(" ")[1];
+
+//     if (!token) {
+//       return res.status(401).json({message: "No token provided"});
+//     }
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const user = await User.findById(decoded.userId);
+
+//     if (!user) {
+//       return res.status(401).json({message: "User not found"});
+//     }
+
+//     req.user = {
+//       userId: user._id,
+//       email: decrypt(user.email),
+//       role: user.role,
+//     };
+
+//     next();
+//   } catch (error) {
+//     res.status(401).json({message: "Invalid token"});
+//   }
+// };
 
 // async function authMiddleware(req, res, next) {
 //   const token = req.header("Authorization")?.replace("Bearer ", "");

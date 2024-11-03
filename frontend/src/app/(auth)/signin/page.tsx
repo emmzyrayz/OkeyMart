@@ -10,11 +10,13 @@ import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import { FaEyeSlash, FaEye } from "react-icons/fa6";
 import { initializeTokenManagement, startTokenRefreshTimer } from "@/utils/tokenManager";
+import {useUser} from "@/context/userContext/UserContext";
 
 export default function SignIn() {
   const router = useRouter();
+  const {setUser} = useUser();
   const [formData, setFormData] = useState({email: "", password: ""});
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,16 +28,16 @@ export default function SignIn() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const res = await authApi.post("/api/auth/login", formData);
-      const {token, user} = res.data;
+      const response = await authApi.post("/api/auth/login", formData);
+      const {token, user} = response.data;
 
-      localStorage.setItem("token", token);
       setAuthToken(token);
-      initializeTokenManagement(); // Initialize token management
-      router.push("/");
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.response?.data?.message || "Error signing in");
+      setUser(user);
+      startTokenRefreshTimer();
+      router.push("/"); // Redirect to the dashboard
+    } catch (error) {
+      setError("Invalid email or password");
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -72,11 +74,11 @@ export default function SignIn() {
           className="flex flex-col relative items-center sign-form"
         >
           <input
-            type="text"
+            type="email"
             name="email"
             className="name w-full"
             value={formData.email}
-            onChange={handleChange}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
             placeholder="Email or Phone Number"
             disabled={isLoading}
             required
@@ -86,7 +88,9 @@ export default function SignIn() {
               type={passwordVisible ? "text" : "password"}
               name="password"
               value={formData.password}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData({...formData, password: e.target.value})
+              }
               className="password"
               placeholder="Password"
               disabled={isLoading}

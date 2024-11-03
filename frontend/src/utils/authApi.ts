@@ -1,20 +1,17 @@
 // utils/authApi.ts
 import axios from "axios";
-import {config} from "./config";
 
-const getBaseUrl = () => {
-  return process.env.NEXT_PUBLIC_SERVER_API_URL;
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_API_URL;
 
 const authApi = axios.create({
-  baseURL: getBaseUrl(),
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: false,
+  // withCredentials: true,
 });
 
-// Add request interceptor
+// Request interceptor
 authApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -28,7 +25,7 @@ authApi.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
+// Response interceptor
 authApi.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -38,9 +35,9 @@ authApi.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const response = await authApi.post("/api/auth/refresh-token");
-        const newToken = response.data.token;
-        localStorage.setItem("token", newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        const { token } = response.data;
+        localStorage.setItem("token", token);
+        originalRequest.headers.Authorization = `Bearer ${token}`;
         return authApi(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem("token");
