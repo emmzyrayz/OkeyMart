@@ -162,10 +162,23 @@ router.post("/register", generalLimiter, async (req, res) => {
 
     await user.save();
 
-    // Generate verification token
-    const verificationToken = user.generateVerificationToken();
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-    await sendVerificationEmail(email, verificationLink);
+    const verificationToken = jwt.sign(
+      {userId: user._id},
+      process.env.JWT_SECRET,
+      {expiresIn: "24h"}
+    );
+
+    user.emailVerification = {
+      verificationToken,
+      isVerified: false,
+      verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    };
+
+    await user.save();
+
+    // Generate verification URL with the token
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    await sendVerificationEmail(email, verificationUrl);
 
     res
       .status(201)
@@ -181,20 +194,40 @@ router.post("/register", generalLimiter, async (req, res) => {
 
 // Email Verification Route
 router.post("/verify-email", async (req, res) => {
-  const {token} = req.body;
-
   try {
-    const user = await User.findOne({
-      "emailVerification.verificationToken": token,
-    });
-    if (!user) {
-      return res.status(400).json({message: "Invalid or expired token"});
+    const {token} = req.body;
+
+    if (!token) {
+      return res.status(400).json({message: "Verification token is required"});
     }
 
-    user.verifyEmail(); // Call the method to set email as verified
+    // Verify the JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findOne({
+      _id: decoded.userId,
+      "emailVerification.verificationToken": token,
+      "emailVerification.isVerified": false,
+      "emailVerification.verificationTokenExpires": {$gt: new Date()},
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({message: "Invalid or expired verification token"});
+    }
+
+    // Update user verification status
+    user.emailVerification.isVerified = true;
+    user.emailVerification.verificationToken = undefined;
+    user.emailVerification.verifiedAt = new Date();
+
     await user.save();
 
-    res.json({message: "Email verified successfully"});
+    res.json({
+      message: "Email verified successfully",
+      success: true,
+    });
   } catch (error) {
     console.error("Email verification error:", error);
     res.status(500).json({message: "Server error during email verification"});
