@@ -129,10 +129,12 @@ router.post("/register", generalLimiter, async (req, res) => {
       return res.status(400).json({message: "Invalid email format"});
     }
 
-    if (!password?.match(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)) {
+    if (
+      !password?.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/)
+    ) {
       return res.status(400).json({
         message:
-          "Password must be at least 8 characters and contain letters and numbers",
+          "Password must be at least 8 characters long and contain letters, numbers, and special characters.",
       });
     }
 
