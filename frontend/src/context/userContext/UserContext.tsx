@@ -35,7 +35,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const response = await authApi.get("/api/user/profile");
+          const response = await authApi.get("/api/auth/me");
           setUser({
             ...response.data,
             isAuthenticated: true,
