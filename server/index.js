@@ -18,8 +18,21 @@ const app = express();
 // Add this line before other middleware
 app.set('trust proxy', 1);  // Add this line to trust the proxy
 
-const allowedOrigins = ["http://localhost:3000", "https://okeymart.vercel.app"];
+// Allowed origins (consider moving to environment variables)
+const allowedOrigins = [
+  "http://localhost:3000", 
+  "https://okeymart.vercel.app",
+  process.env.FRONTEND_URL // Add your frontend URL from .env
+].filter(Boolean); // Remove any undefined values
 
+// Global rate limiter
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests, please try again later.'
+});
 
 // CORS configuration for Render deployment
 const corsOptions = {
@@ -37,14 +50,28 @@ const corsOptions = {
 };
 
 
-// Connect to MongoDB
-connectDB();
 
+// Middleware
+app.use(helmet()); // Add security headers
+app.use(globalRateLimiter); // Apply global rate limiting
 app.use(cors(corsOptions));
-app.use(express.json());
+// app.use(express.json());
+app.use(
+  express.json({
+    limit: "10mb", // Limit payload size
+  })
+);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
 
 // Optional: Add error handling for CORS errors
 app.use((err, req, res, next) => {
+  console.error("CORS Error:", err);
+  
   if (err.message === 'Not allowed by CORS') {
     res.status(403).json({
       message: 'CORS error: Origin not allowed',
@@ -55,19 +82,46 @@ app.use((err, req, res, next) => {
   }
 });
 
+// Connect to MongoDB
+connectDB();
+
 app.use("/api/products", productRoutes); // Your existing product routes
 app.use("/api", populateRoutes); // Add the populate route
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 
-// Health check endpoint for Render
+// Health check endpoint for deployment platforms
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    allowedOrigins: allowedOrigins
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err);
+  res.status(500).json({
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'production' ? {} : err.message
+  });
 });
 
 const PORT = process.env.PORT || 10000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log("Allowed origins:", allowedOrigins);
 });
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+    process.exit(0);
+  });
+});
+
+module.exports = app;
