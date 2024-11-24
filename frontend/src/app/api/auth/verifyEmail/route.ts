@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     // Forward the verification request to your backend
     const response = await axios.post(
-      `${process.env.BACKEND_URL}/api/auth/verify-email`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-email`,
       {token},
       {
         headers: {

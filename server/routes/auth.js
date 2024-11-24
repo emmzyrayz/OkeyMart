@@ -197,12 +197,42 @@ router.post("/verify-email", async (req, res) => {
   try {
     const {token} = req.body;
 
+    // Log the received token for debugging
+    console.log("Received verification token:", token);
+
     if (!token) {
       return res.status(400).json({message: "Verification token is required"});
     }
 
-    // Verify the JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Additional token validation
+    if (typeof token !== "string" || token.trim() === "") {
+      return res.status(400).json({message: "Invalid token format"});
+    }
+
+    // Verify the JWT token with error handling
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (verifyError) {
+      console.error("JWT Verification Error:", verifyError);
+
+      // Provide more detailed error information
+      if (verifyError.name === "JsonWebTokenError") {
+        return res.status(400).json({
+          message: "Invalid token",
+          error: verifyError.message,
+        });
+      }
+
+      if (verifyError.name === "TokenExpiredError") {
+        return res.status(400).json({
+          message: "Token has expired",
+          error: verifyError.message,
+        });
+      }
+
+      throw verifyError;
+    }
 
     const user = await User.findOne({
       _id: decoded.userId,
@@ -230,7 +260,10 @@ router.post("/verify-email", async (req, res) => {
     });
   } catch (error) {
     console.error("Email verification error:", error);
-    res.status(500).json({message: "Server error during email verification"});
+    res.status(500).json({
+      message: "Server error during email verification",
+      error: error.message,
+    });
   }
 });
 

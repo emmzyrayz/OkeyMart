@@ -26,7 +26,9 @@ const EmailVerificationPage = () => {
       }
 
       try {
-        const response = await axios.post("/api/auth/verify-email", {token});
+        const response = await axios.post("/api/auth/verifyEmail", {
+          token: token,
+        });
 
         setStatus({
           loading: false,
