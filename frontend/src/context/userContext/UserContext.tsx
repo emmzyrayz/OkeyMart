@@ -37,10 +37,13 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
         try {
           const response = await authApi.get("/api/auth/me");
           setUser({
-            ...response.data,
+            id: response.data._id,
+            name: response.data.name,
+            email: response.data.email,
+            role: response.data.role,
             isAuthenticated: true,
           });
-          initializeActivityTracking(); // Initialize token management
+          initializeTokenManagement(); // Initialize token management
         } catch (error) {
           console.error("Failed to initialize user:", error);
           localStorage.removeItem("token");
