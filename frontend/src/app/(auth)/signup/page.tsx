@@ -241,7 +241,7 @@ export default function SignUp() {
       const response = await authApi.post("/api/auth/register", {
         name: formState.name.value,
         email: formState.email.value,
-        phone: formState.phone.value,
+        phone: formState.phone.value.replace(/\D/g, ""),
         password: formState.password.value,
       });
 
@@ -399,7 +399,7 @@ export default function SignUp() {
             className="sign-btn w-full hover:shadow-lg"
             disabled={isLoading}
           >
-            {isLoading ? <GridLoad /> : "Sign In"}
+            {isLoading ? <GridLoad /> : "Sign Up"}
           </button>
         </form>
         {/* <hr className="w-[200px] border-[--text1] my-4 ml-[40px] " /> */}

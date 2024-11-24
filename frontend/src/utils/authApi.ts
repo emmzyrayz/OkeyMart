@@ -20,9 +20,7 @@ authApi.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor
@@ -31,15 +29,21 @@ authApi.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle 401 unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
+        // Adjust the refresh token endpoint to match your backend
         const response = await authApi.post("/api/auth/refresh-token");
-        const { token } = response.data;
+        const {token} = response.data;
+
         localStorage.setItem("token", token);
+        authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         originalRequest.headers.Authorization = `Bearer ${token}`;
+
         return authApi(originalRequest);
       } catch (refreshError) {
+        // Logout user if refresh fails
         localStorage.removeItem("token");
         window.location.href = "/signin";
         return Promise.reject(refreshError);
