@@ -55,7 +55,7 @@ const corsOptions = {
 
 // Middleware
 app.use(helmet()); // Add security headers
-app.use(globalRateLimiter); // Apply global rate limiting
+app.use(globalLimiter); // Apply global rate limiting
 app.use(cors(corsOptions));
 // app.use(express.json());
 app.use(
