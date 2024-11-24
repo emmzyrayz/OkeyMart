@@ -156,7 +156,7 @@ router.post("/register", generalLimiter, async (req, res) => {
       password,
       role: "Buyer",
       emailVerification: {isVerified: false}, // Set email verification
-      verificationStatus: "not_verified",
+      verificationStatus: "Not Verified",
       verificationBadge: {isVerified: false},
     });
 
