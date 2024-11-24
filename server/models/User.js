@@ -68,12 +68,6 @@ const UserSchema = new mongoose.Schema(
       minlength: 8,
     },
     emailVerification: emailVerificationSchema,
-    passwordHistory: [
-      {
-        password: String,
-        changedAt: Date,
-      },
-    ],
     resetPassword: {
       code: String,
       expires: Date,
@@ -128,8 +122,6 @@ const UserSchema = new mongoose.Schema(
       default: "active",
     },
     createdAt: {type: Date, default: Date.now},
-    resetPasswordCode: {type: String}, // Store reset code here
-    resetPasswordExpires: {type: Date},
     resetPasswordCode: String,
     resetPasswordExpires: Date,
     resetPasswordUsed: Boolean,
@@ -158,11 +150,16 @@ UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    const hashedPassword = await bcrypt.hash(this.password, salt); // Hash the password
+    
+    // Initialize password history if not already done
+    if (!this.passwordHistory) {
+      this.passwordHistory = [];
+    }
 
     // Add to password history before updating
     this.passwordHistory.push({
-      password: hashedPassword,
+      password: hashedPassword, // Use the hashed password here
       changedAt: new Date(),
     });
 
@@ -171,7 +168,7 @@ UserSchema.pre("save", async function (next) {
       this.passwordHistory = this.passwordHistory.slice(-5);
     }
 
-    this.password = hashedPassword;
+    this.password = hashedPassword; // Set the hashed password
     next();
   } catch (error) {
     next(error);
