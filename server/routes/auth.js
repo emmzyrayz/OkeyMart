@@ -192,76 +192,124 @@ router.post("/register", generalLimiter, async (req, res) => {
   }
 });
 
+
 // Email Verification Route
 router.post("/verify-email", async (req, res) => {
   try {
     const {token} = req.body;
-
-    // Log the received token for debugging
-    console.log("Received verification token:", token);
 
     if (!token) {
       return res.status(400).json({message: "Verification token is required"});
     }
 
     // Additional token validation
-    if (typeof token !== "string" || token.trim() === "") {
-      return res.status(400).json({message: "Invalid token format"});
-    }
+        if (typeof token !== "string" || token.trim() === "") {
+          return res.status(400).json({message: "Invalid token format"});
+        }
 
-    // Verify the JWT token with error handling
-    let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verify the JWT token with more comprehensive error handling
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      const user = await User.findOne({
+        _id: decoded.userId,
+        "emailVerification.verificationToken": token,
+        "emailVerification.isVerified": false,
+        "emailVerification.verificationTokenExpires": {$gt: new Date()},
+      });
+
+      if (!user) {
+        return res.status(400).json({
+          message: "Invalid or expired verification token",
+          // Optional: Include email for client-side handling
+          email: user ? decrypt(user.email) : null,
+        });
+      }
+
+      // Invalidate the current verification token after successful verification
+      user.emailVerification = {
+        isVerified: true,
+        verificationToken: null,
+        verificationTokenExpires: null,
+        verifiedAt: new Date(),
+      };
+
+      await user.save();
+
+      res.json({
+        message: "Email verified successfully",
+        success: true,
+        email: decrypt(user.email),
+      });
     } catch (verifyError) {
-      console.error("JWT Verification Error:", verifyError);
-
-      // Provide more detailed error information
-      if (verifyError.name === "JsonWebTokenError") {
-        return res.status(400).json({
-          message: "Invalid token",
-          error: verifyError.message,
-        });
-      }
-
+      let errorMessage = "Invalid token";
       if (verifyError.name === "TokenExpiredError") {
-        return res.status(400).json({
-          message: "Token has expired",
-          error: verifyError.message,
-        });
+        errorMessage = "Verification token has expired";
       }
 
-      throw verifyError;
+      return res.status(400).json({
+        message: errorMessage,
+        error: verifyError.message,
+      });
     }
-
-    const user = await User.findOne({
-      _id: decoded.userId,
-      "emailVerification.verificationToken": token,
-      "emailVerification.isVerified": false,
-      "emailVerification.verificationTokenExpires": {$gt: new Date()},
-    });
-
-    if (!user) {
-      return res
-        .status(400)
-        .json({message: "Invalid or expired verification token"});
-    }
-
-    // Update user verification status
-    user.emailVerification.isVerified = true;
-    user.emailVerification.verificationToken = undefined;
-    user.emailVerification.verifiedAt = new Date();
-
-    await user.save();
-
-    res.json({
-      message: "Email verified successfully",
-      success: true,
-    });
   } catch (error) {
     console.error("Email verification error:", error);
     res.status(500).json({
       message: "Server error during email verification",
+      error: error.message,
+    });
+  }
+});
+
+// Resend Verification Route
+router.post("/resend-verification", async (req, res) => {
+  try {
+    const {email} = req.body;
+    const encryptedEmail = encrypt(email.toLowerCase());
+
+    const user = await User.findOne({
+      email: encryptedEmail,
+      "emailVerification.isVerified": false,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "No pending email verification found for this account.",
+      });
+    }
+
+    // Invalidate previous verification token
+    user.emailVerification.verificationToken = null;
+    user.emailVerification.verificationTokenExpires = null;
+
+    // Generate new verification token
+    const newVerificationToken = jwt.sign(
+      {userId: user._id},
+      process.env.JWT_SECRET,
+      {expiresIn: "24h"}
+    );
+
+    user.emailVerification = {
+      verificationToken: newVerificationToken,
+      isVerified: false,
+      verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+
+    await user.save();
+
+    // Generate verification URL
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${newVerificationToken}`;
+    await sendVerificationEmail(email, verificationUrl);
+
+    res.json({
+      message:
+        "A new verification email has been sent. Please check your inbox.",
+      resent: true,
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({
+      message: "Error resending verification email",
       error: error.message,
     });
   }
@@ -277,6 +325,8 @@ router.post("/login", authLimiter, async (req, res) => {
 
     // Find user with encrypted email
     const user = await User.findOne({email: encryptedEmail});
+
+    // verify if user exist
     if (!user) {
       return res.status(401).json({message: "Invalid credentials"});
     }
@@ -289,6 +339,7 @@ router.post("/login", authLimiter, async (req, res) => {
 
     // Check email verification status
     if (!user.emailVerification.isVerified) {
+      
       // Check if the existing verification token is expired
       const isTokenExpired =
         !user.emailVerification.verificationTokenExpires ||
@@ -296,16 +347,28 @@ router.post("/login", authLimiter, async (req, res) => {
 
       if (isTokenExpired) {
         // Generate a new verification token
-        const newVerificationToken = user.generateVerificationToken();
+        const newVerificationToken = jwt.sign(
+          {userId: user._id},
+          process.env.JWT_SECRET,
+          {expiresIn: "24h"}
+        );
+
+        user.emailVerification = {
+          verificationToken: newVerificationToken,
+          isVerified: false,
+          verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        };
+
         await user.save();
 
-        // Send a new verification email
-        const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${newVerificationToken}`;
-        await sendVerificationEmail(email, verificationLink);
+        // Send new verification email
+        const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${newVerificationToken}`;
+        await sendVerificationEmail(email, verificationUrl);
 
         return res.status(403).json({
           message: "Email not verified. A new verification link has been sent.",
           resendVerification: true,
+          email: email,
         });
       }
 
@@ -314,6 +377,7 @@ router.post("/login", authLimiter, async (req, res) => {
         message:
           "Email not verified. Please check your email for the verification link.",
         verificationPending: true,
+        email: email,
       });
     }
 

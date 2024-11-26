@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
           error.response?.data?.message ||
           "Server error during email verification",
         success: false,
+        // Include email if available in the error response
+        ...(error.response?.data?.email && {
+          email: error.response.data.email,
+        }),
       },
       {status: error.response?.status || 500}
     );

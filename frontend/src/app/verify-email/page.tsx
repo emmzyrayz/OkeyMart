@@ -7,6 +7,7 @@ const EmailVerificationPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const [email, setEmail] = useState("");
 
   const [status, setStatus] = useState({
     loading: true,
@@ -47,11 +48,35 @@ const EmailVerificationPage = () => {
           message:
             error.response?.data?.message || "Email verification failed.",
         });
+
+        // If verification fails, try to extract email from error response
+        if (error.response?.data?.email) {
+          setEmail(error.response.data.email);
+        }
       }
     };
 
     verifyEmail();
   }, [token, router]);
+
+  const handleResendVerification = async () => {
+    try {
+      // Prompt for email if not already known
+      const userEmail = email || prompt("Please enter your email:");
+
+      if (!userEmail) return;
+
+      const response = await axios.post("/api/auth/resend-verification", {
+        email: userEmail,
+      });
+
+      alert(response.data.message);
+    } catch (error: any) {
+      alert(
+        error.response?.data?.message || "Failed to resend verification email"
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -107,7 +132,7 @@ const EmailVerificationPage = () => {
               <p className="mt-2 text-sm text-gray-500">{status.message}</p>
               {!status.success && (
                 <button
-                  onClick={() => router.push("/resend-verification")}
+                  onClick={handleResendVerification}
                   className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Resend Verification Email
