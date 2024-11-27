@@ -19,15 +19,15 @@ const generateToken = (userId, email, role) => {
     lastActivity: Date.now(),
   };
 
-  activeTokens.set(userId, tokenData);
+  activeTokens.set(userId.toString(), tokenData);
   return token;
 };
 
 const updateTokenActivity = (userId) => {
-  const tokenData = activeTokens.get(userId);
+  const tokenData = activeTokens.get(userId.toString());
   if (tokenData) {
     tokenData.lastActivity = Date.now();
-    activeTokens.set(userId, tokenData);
+    activeTokens.set(userId.toString(), tokenData);
   }
 };
 
@@ -161,7 +161,7 @@ const authorizeRole = (allowedRoles) => {
 
 // Token management functions
 const revokeToken = (userId) => {
-  return activeTokens.del(userId);
+ return activeTokens.del(userId.toString());
 };
 
 const refreshToken = async (userId) => {
