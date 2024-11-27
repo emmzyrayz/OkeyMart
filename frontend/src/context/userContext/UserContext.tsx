@@ -1,13 +1,13 @@
 // context/UserContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import {User, UserRole} from "@/types/user";
-import { getUserProfile } from '@/utils/userUtils'; // Your utility function to fetch user role
 import {
   initializeTokenManagement,
   initializeActivityTracking,
   cleanupActivityTracking,
 } from "@/utils/tokenManager";
 import authApi from '@/utils/authApi';
+import router from 'next/router';
 
 // Define the shape of the user context
 interface UserContextType {
@@ -43,11 +43,14 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
             role: response.data.role,
             isAuthenticated: true,
           });
-          initializeTokenManagement(); // Initialize token management
+          initializeTokenManagement();
+          initializeActivityTracking();  // Initialize token management
         } catch (error) {
           console.error("Failed to initialize user:", error);
           localStorage.removeItem("token");
           setUser(defaultUser);
+          // Optional: Redirect to login or show a notification
+          router.push("/signin");
         }
       }
     };

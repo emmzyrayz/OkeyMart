@@ -1,7 +1,9 @@
 // utils/authApi.ts
+
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_SERVER_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+console.log("API Base URL:", API_BASE_URL);
 
 const authApi = axios.create({
   baseURL: API_BASE_URL,

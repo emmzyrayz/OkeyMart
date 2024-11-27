@@ -207,6 +207,7 @@ export default function SignUp() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
     // Mark all fields as touched
     const updatedFormState = Object.keys(formState).reduce(
