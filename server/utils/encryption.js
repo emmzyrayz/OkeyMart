@@ -15,6 +15,12 @@ if (!process.env.ENCRYPTION_KEY || !process.env.ENCRYPTION_IV) {
 }
 
 function encrypt(text) {
+  // Strict type checking
+  if (typeof text !== "string") {
+    console.error("Encryption input is not a string:", typeof text, text);
+    throw new Error(`Encryption requires a string. Received: ${typeof text}`);
+  }
+  
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   let encrypted = cipher.update(text, "utf8", "hex");
   encrypted += cipher.final("hex");

@@ -317,29 +317,39 @@ router.post("/resend-verification", async (req, res) => {
 
 // Login Route
 router.post("/login", authLimiter, async (req, res) => {
-  console.log("Raw Request Body:", req.body);
-  
+  console.log("Raw Request Body:", JSON.stringify(req.body, null, 2));
+
+  // Log additional request details
+  console.log("Request Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Content-Type:", req.get("Content-Type"));
+
   // Validate request body structure
-  if (!req.body || typeof req.body !== 'object') {
+  if (!req.body || typeof req.body !== "object") {
     return res.status(400).json({
       message: "Invalid request body",
-      error: "Request body must be a valid JSON object"
+      error: "Request body must be a valid JSON object",
     });
   }
+ 
 
 
   try {
     const {email, password} = req.body;
 
-    // Additional validation
-    if (!email || !password) {
+    // Add explicit type checking and conversion
+    console.log("Email type:", typeof email);
+    console.log("Email value:", email);
+
+    if (typeof email !== "string") {
       return res.status(400).json({
-        message: "Email and password are required",
+        message: "Invalid email format",
+        emailType: typeof email,
+        emailValue: email,
       });
     }
 
     // Encrypt the email for comparison
-    const encryptedEmail = encrypt(email.toLowerCase());
+    const encryptedEmail = encrypt(email.trim().toLowerCase());
 
     // Find user with encrypted email
     const user = await User.findOne({email: encryptedEmail});
@@ -418,9 +428,14 @@ router.post("/login", authLimiter, async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    console.error("Complete error object:", error);
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       message: "Error Logging in",
       error: error.message,
+      errorType: error.name,
     });
   }
 });
