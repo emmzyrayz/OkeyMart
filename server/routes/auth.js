@@ -317,8 +317,26 @@ router.post("/resend-verification", async (req, res) => {
 
 // Login Route
 router.post("/login", authLimiter, async (req, res) => {
+  console.log("Raw Request Body:", req.body);
+  
+  // Validate request body structure
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({
+      message: "Invalid request body",
+      error: "Request body must be a valid JSON object"
+    });
+  }
+
+
   try {
     const {email, password} = req.body;
+
+    // Additional validation
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
 
     // Encrypt the email for comparison
     const encryptedEmail = encrypt(email.toLowerCase());
@@ -339,7 +357,6 @@ router.post("/login", authLimiter, async (req, res) => {
 
     // Check email verification status
     if (!user.emailVerification.isVerified) {
-      
       // Check if the existing verification token is expired
       const isTokenExpired =
         !user.emailVerification.verificationTokenExpires ||
