@@ -84,9 +84,24 @@ router.delete(
 
 // Add to Wishlist
 router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
+  console.log("Add to Wishlist Request:", {
+    body: req.body,
+    user: req.user,
+    headers: req.headers,
+  });
+
+
   try {
     const {product} = req.body;
     const userId = req.user.userId;
+
+    // Validate product data
+    if (!product || !product._id) {
+      return res.status(400).json({
+        message: "Invalid product data",
+        error: "Product ID is required",
+      });
+    }
 
     let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
@@ -112,10 +127,17 @@ router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
       wishlist: userShopping.wishlist,
     });
   } catch (error) {
-    console.error("Add to wishlist error:", error);
-    res
-      .status(500)
-      .json({message: "Error adding to wishlist", error: error.message});
+    console.error("Full Add to Wishlist Error:", {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+
+    res.status(500).json({
+      message: "Error adding to wishlist",
+      error: error.message,
+      fullError: process.env.NODE_ENV !== "production" ? error : undefined,
+    });
   }
 });
 

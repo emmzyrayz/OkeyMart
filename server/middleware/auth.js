@@ -31,24 +31,16 @@ const updateTokenActivity = (userId) => {
   }
 };
 
-// const authMiddleware = (req, res, next) => {
-//   const token = req.header("Authorization")?.replace("Bearer ", "");
-
-//   if (!token) {
-//     return res.status(401).json({message: "No token, authorization denied"});
-//   }
-
-//   try {
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//     req.user = decoded;
-//     next();
-//   } catch (err) {
-//     res.status(401).json({message: "Token is not valid"});
-//   }
-// };
-
 const authMiddleware = async (req, res, next) => {
   try {
+    // Log incoming request details
+    console.log("Auth Middleware Incoming Request:", {
+      headers: req.headers,
+      body: req.body,
+      method: req.method,
+      url: req.url,
+    });
+
     // 1. Token Extraction and Basic Validation
     const token = req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
@@ -125,11 +117,17 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Auth Middleware Error:", error);
-    res.status(500).json({
+    console.error("Auth Middleware Error:", {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+
+    res.status(401).json({
       error: true,
-      message: "Internal authentication error",
-      code: "AUTH_ERROR",
+      message: "Authentication failed",
+      details:
+        process.env.NODE_ENV !== "production" ? error.message : undefined,
     });
   }
 };

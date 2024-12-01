@@ -10,7 +10,8 @@ import React, {
   useEffect,
 } from "react";
 import {Product} from "@/types/product";
-import authApi from "@/utils/authApi";
+import authApi, { setAuthToken } from "@/utils/authApi";
+import axios from "axios";
 // import {toast} from "react-toastify";
 
 // Helper function for getting product ID
@@ -388,6 +389,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
 
   // Enhanced Cart Methods with Server Sync
   const addToCart = useCallback(async (product: CartItem) => {
+    // Debug token check
+    const token = localStorage.getItem("token");
+    console.log("Current Token:", token);
+
+    if (!token) {
+      console.error("No authentication token found");
+      // Optionally redirect to login or show a login prompt
+      return;
+    }
     try {
       // Optimistically update local state
       dispatch({type: "ADD_TO_CART", payload: product});
@@ -481,12 +491,40 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         return;
       }
 
+      // Enhanced token checking
+      const checkToken = () => {
+        // Check multiple sources for token
+        const localStorageToken = localStorage.getItem("token");
+        const cookieToken = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("token="))
+          ?.split("=")[1];
+
+        return localStorageToken || cookieToken;
+      };
+
+      const token = checkToken();
+
+      if (!token) {
+        console.error("No authentication token found");
+        // Optionally redirect to login or show a login prompt
+        window.location.href = "/signin";
+        return;
+      }
+
       // Optimistically add to local state
       dispatch({type: "ADD_TO_WISHLIST", payload: product});
 
       try {
         // Sync with server
-        await authApi.post("/api/shopping/add-to-wishlist", {product});
+        const response = await authApi.post("/api/shopping/add-to-wishlist", {
+          product: {
+            ...product,
+            _id: productId, // Ensure _id is included
+          },
+        });
+
+        console.log("Wishlist Add Response:", response.data);
 
         // Log user activity
         dispatch({
@@ -498,11 +536,29 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
           },
         });
       } catch (error) {
-        // Revert local state if server sync fails
-        dispatch({type: "REMOVE_FROM_WISHLIST", payload: productId});
+        // More detailed error handling
+        if (axios.isAxiosError(error)) {
+          console.error("Wishlist Add Error:", {
+            response: error.response?.data,
+            status: error.response?.status,
+            headers: error.response?.headers,
+          });
 
-        // toast.error("Failed to add product to wishlist. Please try again.");
-        console.error("Error adding to wishlist:", error);
+          // Check for specific authentication errors
+          if (error.response?.status === 401) {
+            // Redirect to login or refresh token
+            localStorage.removeItem("token");
+            document.cookie =
+              "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = "/signin";
+          }
+        }
+
+        // Revert local state if server sync fails
+        dispatch({
+          type: "REMOVE_FROM_WISHLIST",
+          payload: productId,
+        });
       }
     },
     [shoppingState.wishlist]
