@@ -14,9 +14,9 @@ export type Permission =
 
 // Define role permissions for non-null roles only
 export const ROLE_PERMISSIONS: Record<Exclude<UserRole, null>, Permission[]> = {
-  buyer: ["view_products", "add_to_cart", "view_orders", "manage_wishlist"],
-  seller: ["view_products", "manage_products", "view_orders", "manage_store"],
-  admin: ["view_products", "manage_products", "manage_users", "manage_roles"],
+  Buyer: ["view_products", "add_to_cart", "view_orders", "manage_wishlist"],
+  Seller: ["view_products", "manage_products", "view_orders", "manage_store"],
+  Admin: ["view_products", "manage_products", "manage_users", "manage_roles"],
 } as const;
 
 // Type-safe permission check function

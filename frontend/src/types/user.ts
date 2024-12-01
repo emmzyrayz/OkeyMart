@@ -18,4 +18,4 @@ export interface User {
   isAuthenticated: boolean;
 }
 
-export type UserRole = "buyer" | "seller" | "admin" | null;
+export type UserRole = "Buyer" | "Seller" | "Admin" | null;

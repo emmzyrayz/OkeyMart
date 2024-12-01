@@ -167,7 +167,6 @@
     z-index: 999;
     top: 120px;
     right: 20px;
-    height: 10px;
     font-size: var(--fs-16);
     font-weight: 500;
     padding: 10px;
@@ -175,7 +174,7 @@
 }
 
 .navbar_menu.open {
-    height: auto;
+    height: 100%;
     opacity: 1;
 }
 
@@ -257,11 +256,6 @@
     }
 }
 
-.navbar_menu .profile,
-.navbar_menu .order,
-.navbar_menu .notification,
-.navbar_menu .cancel,
-.navbar_menu .reviews,
 .navbar_menu .logout {
     display: flex;
     flex-direction: row;

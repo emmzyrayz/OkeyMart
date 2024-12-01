@@ -31,10 +31,47 @@ export default function SignIn() {
       const response = await authApi.post("/api/auth/login", formData);
       const {token, user} = response.data;
 
+      // Store token in localStorage
+      localStorage.setItem("token", token);
+
+      // Store user data for persistence
+      localStorage.setItem(
+        "userData",
+        JSON.stringify({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        })
+      );
+
       setAuthToken(token);
-      setUser(user);
+
+      // Update user context with full user object
+      setUser({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAuthenticated: true,
+      });
+
       startTokenRefreshTimer();
-      router.push("/"); // Redirect to the dashboard
+
+      // Role-based redirection
+      switch (user.role) {
+        case "Buyer":
+          router.push("/");
+          break;
+        case "Seller":
+          router.push("/store");
+          break;
+        case "Admin":
+          router.push("/admin-dashboard");
+          break;
+        default:
+          router.push("/");
+      }
     } catch (error) {
       setError("Invalid email or password");
       setIsLoading(false);

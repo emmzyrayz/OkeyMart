@@ -11,27 +11,23 @@ import {ImCancelCircle} from "react-icons/im";
 import {CiStar} from "react-icons/ci";
 import {TbLogout2} from "react-icons/tb";
 import {HamburgerMenu} from "../hamburger/page";
-import {useCart} from "@/context/commerce logic/cartcontext";
-import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useSearch} from "@/context/searchcontext/searchcontext";
 import {useProductContext} from "@/context/productContext/productcontext";
 import { Product } from "@/types/product";
 import {useUser} from "@/context/userContext/UserContext";
-// import {hasPermission} from "@/utils/roleUtils";;
-import axios from "axios";
+import { useShoppingContext } from "@/context/shoppingContext";
 
 export const HomeNav = () => {
   const pathname = usePathname();
-  const {cartState} = useCart();
   const router = useRouter();
   const {user, logout} = useUser();
   const {isAuthenticated, role} = user;
   const {searchValue, setSearchValue, filteredProducts, setFilteredProducts} =
     useSearch();
   const {fetchProducts} = useProductContext();
-  const {wishlist} = useWishContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const {cartState, wishlist} = useShoppingContext();
 
   // Define navigation items based on authentication and role
   const getNavItems = () => {
@@ -45,7 +41,7 @@ export const HomeNav = () => {
       return [...baseItems, {label: "Sign Up", path: "/signup"}];
     }
 
-    if (role === "buyer") {
+    if (role === "Buyer") {
       return [
         ...baseItems,
         {label: "My Orders", path: "/orders"},
@@ -53,7 +49,7 @@ export const HomeNav = () => {
       ];
     }
 
-    if (role === "seller") {
+    if (role === "Seller") {
       return [
         ...baseItems,
         {label: "My Store", path: "/store"},
@@ -79,7 +75,7 @@ export const HomeNav = () => {
       },
     ];
 
-    if (user.role === "buyer") {
+    if (user.role === "Buyer") {
       return [
         ...baseItems,
         {
@@ -100,7 +96,7 @@ export const HomeNav = () => {
       ];
     }
 
-    if (role === "seller") {
+    if (role === "Seller") {
       return [
         ...baseItems,
         {
@@ -179,27 +175,10 @@ export const HomeNav = () => {
   };
 
   const handleLogout = async () => {
-    const token = localStorage.getItem("token");
-    const router = useRouter();
-    const {logout} = useUser(); // Get the logout function from your context
-
     try {
-      await axios.post("/auth/logout", null, {
-        headers: {Authorization: `Bearer ${token}`},
-      });
-
-      // Clear the token from local storage
-      localStorage.removeItem("token");
-
-      // Clear user state in context
-      logout(); // Call the logout function from context
-
-      // Redirect to the sign-in page
-      router.push("/signin");
+      logout(); // Using the logout method from UserContext
     } catch (error) {
       console.error("Failed to log out:", error);
-      // Optionally, show an error message to the user
-      alert("Failed to log out. Please try again.");
     }
   };
 
@@ -291,7 +270,7 @@ export const HomeNav = () => {
           )}
         </div>
         {/* Show cart and wishlist only for buyers */}
-        {isAuthenticated && role === "buyer" && (
+        {isAuthenticated && role === "Buyer" && (
           <div className="flex flex-row">
             <Link href="/wishlist">
               <div className="liked relative">
@@ -335,7 +314,7 @@ export const HomeNav = () => {
         <div className="navbar_menu absolute flex-col items-center justify-center">
           {getUserMenuItems().map((item, index) => (
             <Link href={item.path} key={index}>
-              <div className="menu-item flex items-center gap-2 p-2">
+              <div className="menu-item flex items-center gap-2 p-2 text-[--text] hover:bg-[--light-blur] rounded-md cursor-pointer">
                 <item.icon className="wh" />
                 <span>{item.label}</span>
               </div>
@@ -343,7 +322,7 @@ export const HomeNav = () => {
           ))}
           <div
             onClick={handleLogout}
-            className="logout flex items-center gap-2 p-2 cursor-pointer"
+            className="logout flex items-center gap-2 p-2 cursor-pointer hover:bg-[--light-blur] rounded-md"
           >
             <TbLogout2 className="wh" />
             <span>Logout</span>

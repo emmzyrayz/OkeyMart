@@ -1,7 +1,5 @@
 "use client";
-import React, {useCallback, 
-  // useEffect,
-   useMemo, useState} from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import {
   FaEye,
   FaHeart,
@@ -15,13 +13,11 @@ import Image from "next/image";
 import "./best-selling.css";
 import FetchLoader from "../fetchloading/page";
 import {useProductContext} from "@/context/productContext/productcontext";
-import {useCart} from "@/context/commerce logic/cartcontext";
 import {Product} from "@/types/product";
 import {useRouter} from "next/navigation";
 import { ProductNotFound } from "../product-notfound/page";
-import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import Link from "next/link";
-import {CartItem} from "../../context/commerce logic/cartcontext";
+import { useShoppingContext, CartItem, createCartItem } from "@/context/shoppingContext";
 
 const getProductId = (product: Product) => {
   return product._id || product.id || null;
@@ -72,17 +68,16 @@ const ProductRating = ({product}: {product: Product}) => {
 
 export const BestSelling = () => {
   const router = useRouter();
-  const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
-    // wishlist,
+    addToCart,
     viewedProducts,
     addToWishlist,
     addToViewed,
     removeFromViewlist,
     removeFromWishlist,
     isInWishlist,
-  } = useWishContext();
+  } = useShoppingContext();
 
   const [selectedColor] = useState("purple");
   const [selectedSize] = useState("M");
@@ -133,12 +128,10 @@ export const BestSelling = () => {
   const handleAddToCart = useCallback(
     (e: React.MouseEvent, product: Product) => {
       e.preventDefault();
-      const cartItem: CartItem = {
-        ...product,
-        selectedColor,
-        selectedSize,
-        quantity,
-      };
+      const cartItem = createCartItem(product, quantity, {
+        color: selectedColor,
+        size: selectedSize,
+      });
       addToCart(cartItem);
     },
     [addToCart, selectedColor, selectedSize, quantity]

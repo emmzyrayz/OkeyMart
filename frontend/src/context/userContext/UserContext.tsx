@@ -30,34 +30,26 @@ const UserContext = createContext<UserContextType | null>(null);
 export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
   const [user, setUser] = useState<User>(defaultUser);
 
-  useEffect(() => {
-    const initializeUser = async () => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          const response = await authApi.get("/api/auth/me");
-          setUser({
-            id: response.data._id,
-            name: response.data.name,
-            email: response.data.email,
-            role: response.data.role,
-            isAuthenticated: true,
-          });
-          initializeTokenManagement();
-          initializeActivityTracking();  // Initialize token management
-        } catch (error) {
-          console.error("Failed to initialize user:", error);
-          localStorage.removeItem("token");
-          setUser(defaultUser);
-          // Optional: Redirect to login or show a notification
-          router.push("/signin");
-        }
-      }
-    };
+ useEffect(() => {
+   const token = localStorage.getItem("token");
+   const storedUserData = localStorage.getItem("userData");
 
-    initializeUser();
-    return () => cleanupActivityTracking();
-  }, []);
+   if (token && storedUserData) {
+     const userData = JSON.parse(storedUserData);
+     setUser({
+       id: userData.id,
+       name: userData.name,
+       email: userData.email,
+       role: userData.role,
+       isAuthenticated: true,
+     });
+
+     initializeTokenManagement();
+     initializeActivityTracking();
+   }
+
+   return () => cleanupActivityTracking();
+ }, []);
 
   const updateUserRole = (role: UserRole) => {
     setUser((prev) => ({...prev, role}));
@@ -70,6 +62,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
       console.error("Logout error:", error);
     } finally {
       localStorage.removeItem("token");
+      localStorage.removeItem("userData");
       setUser(defaultUser);
       window.location.href = "/signin";
     }

@@ -8,8 +8,6 @@ import {useProductContext} from "@/context/productContext/productcontext";
 import { FilterButton } from "../filterbtn";
 import {Product} from "@/types/product";
 import {ProductNotFound} from "../product-notfound/page";
-import { CartItem, useCart } from "@/context/commerce logic/cartcontext";
-import { useWishContext } from "@/context/commerce logic/view-wishcontext";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -22,6 +20,7 @@ import {
   FaStarHalf,
 } from "react-icons/fa6";
 import Link from "next/link";
+import { createCartItem, useShoppingContext } from "@/context/shoppingContext";
 
 const getProductId = (product: Product) => {
   return product._id || product.id || null;
@@ -71,17 +70,16 @@ const ProductRating = ({product}: {product: Product}) => {
 
 export default function Today() {
   const router = useRouter();
-  const {addToCart} = useCart();
   const {products, loading} = useProductContext();
   const {
-    // wishlist,
-    viewedProducts,
+    addToCart,
     addToWishlist,
-    addToViewed,
-    removeFromViewlist,
     removeFromWishlist,
     isInWishlist,
-  } = useWishContext();
+    viewedProducts,
+    addToViewed,
+    removeFromViewlist,
+  } = useShoppingContext();
 
   const [selectedColor] = useState("purple");
   const [selectedSize] = useState("M");
@@ -142,12 +140,10 @@ export default function Today() {
   const handleAddToCart = useCallback(
     (e: React.MouseEvent, product: Product) => {
       e.preventDefault();
-      const cartItem: CartItem = {
-        ...product,
-        selectedColor,
-        selectedSize,
-        quantity,
-      };
+      const cartItem = createCartItem(product, quantity, {
+        color: selectedColor,
+        size: selectedSize,
+      });
       addToCart(cartItem);
     },
     [addToCart, selectedColor, selectedSize, quantity]
