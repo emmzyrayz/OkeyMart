@@ -119,6 +119,79 @@ router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
   }
 });
 
+// Remove from Wishlist
+router.delete(
+  "/remove-from-wishlist/:productId",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      const productId = req.params.productId;
+
+      const userShopping = await UserShopping.findOne({user: userId});
+      if (!userShopping) {
+        return res.status(404).json({message: "Shopping context not found"});
+      }
+
+      userShopping.wishlist = userShopping.wishlist.filter(
+        (item) => item.product.toString() !== productId
+      );
+
+      await userShopping.save();
+
+      res.status(200).json({
+        message: "Product removed from wishlist",
+        wishlist: userShopping.wishlist,
+      });
+    } catch (error) {
+      console.error("Remove from wishlist error:", error);
+      res
+        .status(500)
+        .json({message: "Error removing from wishlist", error: error.message});
+    }
+  }
+);
+
+// Add Viewed Product
+router.post("/add-viewed-product", authMiddleware, async (req, res) => {
+  try {
+    const {product} = req.body;
+    const userId = req.user.userId;
+
+    let userShopping = await UserShopping.findOne({user: userId});
+    if (!userShopping) {
+      userShopping = new UserShopping({user: userId});
+    }
+
+    // Prevent duplicate viewed products
+    const existingViewedItem = userShopping.viewedProducts.find(
+      (item) => item.product.toString() === product._id
+    );
+
+    if (!existingViewedItem) {
+      userShopping.viewedProducts.push({
+        product: product._id,
+        viewedAt: new Date(),
+      });
+    }
+
+    // Keep only last 20 viewed products
+    userShopping.viewedProducts = userShopping.viewedProducts.slice(-20);
+
+    await userShopping.save();
+
+    res.status(200).json({
+      message: "Product added to viewed products",
+      viewedProducts: userShopping.viewedProducts,
+    });
+  } catch (error) {
+    console.error("Add viewed product error:", error);
+    res
+      .status(500)
+      .json({message: "Error adding viewed product", error: error.message});
+  }
+});
+
 // Log User Activity
 router.post("/log-activity", authMiddleware, async (req, res) => {
   try {
@@ -185,6 +258,51 @@ router.get("/user-data", authMiddleware, async (req, res) => {
     res
       .status(500)
       .json({message: "Error fetching shopping data", error: error.message});
+  }
+});
+
+// Update Entire Shopping Context
+router.post("/update-context", authMiddleware, async (req, res) => {
+  try {
+    const {
+      cart,
+      wishlist,
+      viewedProducts,
+      searchHistory,
+      userActivities,
+    } = req.body;
+    const userId = req.user.userId;
+
+    let userShopping = await UserShopping.findOne({user: userId});
+    if (!userShopping) {
+      userShopping = new UserShopping({user: userId});
+    }
+
+    // Update cart
+    userShopping.cart = cart;
+
+    // Update wishlist
+    userShopping.wishlist = wishlist;
+
+    // Update viewed products
+    userShopping.viewedProducts = viewedProducts;
+
+    // Update search history
+    userShopping.searchHistory = searchHistory;
+
+    // Update user activities
+    userShopping.userActivities = userActivities;
+
+    await userShopping.save();
+
+    res.status(200).json({
+      message: "Shopping context updated successfully",
+    });
+  } catch (error) {
+    console.error("Update shopping context error:", error);
+    res
+      .status(500)
+      .json({message: "Error updating shopping context", error: error.message});
   }
 });
 

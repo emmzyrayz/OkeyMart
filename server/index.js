@@ -8,6 +8,7 @@ const productRoutes = require("./routes/productRoutes");
 const populateRoutes = require("./routes/populate/populate");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const shoppingRoutes = require("./routes/shopping");
 
 dotenv.config(); // Load environment variables
 
@@ -91,6 +92,7 @@ app.use("/api/products", productRoutes); // Your existing product routes
 app.use("/api", populateRoutes); // Add the populate route
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/shopping", shoppingRoutes);
 
 // Health check endpoint for deployment platforms
 app.get("/health", (req, res) => {
