@@ -5,7 +5,7 @@ import Image from "next/image";
 import {FaAngleUp, FaAngleDown} from "react-icons/fa";
 import {MdCancel} from "react-icons/md";
 import Link from "next/link";
-import { CartItem, useCart } from "@/context/commerce logic/cartcontext";
+import { CartItem, useShoppingContext } from "@/context/shoppingContext";
 
 // Example product data, this can come from state or props
 
@@ -16,8 +16,7 @@ const getProductId = (product: CartItem) => {
 
 
 export default function Cart() {
-  const {cartState, updateQuantity, removeFromCart} = useCart();
-  const {items} = cartState;
+  const {cartState, removeFromCart, updateQuantity} = useShoppingContext();
 
   // Function to handle quantity change
   const handleQuantityChange = (item: CartItem, action: string) => {
@@ -62,9 +61,9 @@ export default function Cart() {
           </div>
 
           {/* Product Rows */}
-          {items.map((item: CartItem) => {
+          {cartState.items.map((item: CartItem) => {
             const productId = getProductId(item);
-            if (!productId) return null; 
+            if (!productId) return null;
 
             return (
               <div className="cart-row" key={productId}>
@@ -149,7 +148,7 @@ export default function Cart() {
                 <p className="sub_total_head">Subtotal:</p>
                 <p className="sub_total_price">
                   $
-                  {items
+                  {cartState.items
                     .reduce(
                       (acc, item) =>
                         acc + calculateSubtotal(item.price, item.quantity),
@@ -166,7 +165,7 @@ export default function Cart() {
                 <p>Total: </p>
                 <span>
                   $
-                  {items
+                  {cartState.items
                     .reduce(
                       (acc, item) =>
                         acc + calculateSubtotal(item.price, item.quantity),

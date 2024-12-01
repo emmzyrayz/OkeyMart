@@ -15,10 +15,7 @@ import {useCallback, useState} from "react";
 import React from "react";
 import {useRouter} from "next/navigation";
 import {Product} from "@/types/product";
-import {useCart} from "@/context/commerce logic/cartcontext";
-// import Link from "next/link";
-import { CartItem } from '../../context/commerce logic/cartcontext';
-import { useWishContext } from "@/context/commerce logic/view-wishcontext";
+import { useShoppingContext, createCartItem, CartItem } from "@/context/shoppingContext";
 
 type ProductCardProps = {
   product: Product;
@@ -70,58 +67,56 @@ const ProductRating = ({rating}: {rating: number}) => {
 };
 
 export const ProductCard = ({product, filterTag}: ProductCardProps) => {
-  const {addToCart} = useCart();
   const router = useRouter();
-  const [selectedColor ] = useState("purple");
+  const [selectedColor] = useState("purple");
   const [selectedSize] = useState("M");
   const [quantity] = useState(1);
   const {
+    addToCart,
     viewedProducts,
     addToWishlist,
     addToViewed,
     removeFromViewlist,
     removeFromWishlist,
     isInWishlist,
-  } = useWishContext();
+  } = useShoppingContext(); // Updated context
 
+  const handleHeartClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-   const handleHeartClick = useCallback(
-     (product: Product, e: React.MouseEvent) => {
-       e.preventDefault();
-       e.stopPropagation();
+      const productId = getProductId(product);
+      if (!productId) return;
 
-       const productId = getProductId(product);
-       if (!productId) return;
+      if (isInWishlist(productId)) {
+        removeFromWishlist(productId);
+      } else {
+        addToWishlist(product);
+      }
+    },
+    [addToWishlist, removeFromWishlist, isInWishlist]
+  );
 
-       if (isInWishlist(productId)) {
-         removeFromWishlist(productId);
-       } else {
-         addToWishlist(product);
-       }
-     },
-     [addToWishlist, removeFromWishlist, isInWishlist]
-   );
+  const handleEyeClick = useCallback(
+    (product: Product, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-   const handleEyeClick = useCallback(
-     (product: Product, e: React.MouseEvent) => {
-       e.preventDefault();
-       e.stopPropagation();
+      const productId = getProductId(product);
+      if (!productId) return;
 
-       const productId = getProductId(product);
-       if (!productId) return;
-
-       const isViewed = viewedProducts.some(
-         (item) => getProductId(item) === productId
-       );
-       if (isViewed) {
-         removeFromViewlist(productId);
-       } else {
-         addToViewed(product);
-       }
-     },
-     [addToViewed, removeFromViewlist, viewedProducts]
-   );
-
+      const isViewed = viewedProducts.some(
+        (item) => getProductId(item) === productId
+      );
+      if (isViewed) {
+        removeFromViewlist(productId);
+      } else {
+        addToViewed(product);
+      }
+    },
+    [addToViewed, removeFromViewlist, viewedProducts]
+  );
 
   const handleViewItemClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -143,12 +138,10 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
   const handleAddToCart = useCallback(
     (e: React.MouseEvent, product: Product) => {
       e.preventDefault();
-      const cartItem: CartItem = {
-        ...product,
-        selectedColor,
-        selectedSize,
-        quantity,
-      };
+      const cartItem = createCartItem(product, quantity, {
+        color: selectedColor,
+        size: selectedSize,
+      });
       addToCart(cartItem);
     },
     [addToCart, selectedColor, selectedSize, quantity]
@@ -156,7 +149,6 @@ export const ProductCard = ({product, filterTag}: ProductCardProps) => {
 
   const productId = getProductId(product);
   if (!productId) return null;
-  
 
   return (
     <>

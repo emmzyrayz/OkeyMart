@@ -12,9 +12,8 @@ import {
 import {TbTruckDelivery} from "react-icons/tb";
 import {PiArrowsCounterClockwise} from "react-icons/pi";
 import {Product} from "@/types/product";
-import {useWishContext} from "@/context/commerce logic/view-wishcontext";
 import {useState, useEffect} from "react";
-import {useCart, CartItem} from "@/context/commerce logic/cartcontext";
+import { useShoppingContext, createCartItem } from "@/context/shoppingContext";
 
 const getProductId = (product: Product): string | null => {
   return product._id || product.id || null;
@@ -59,9 +58,14 @@ const ProductRating = ({rating}: {rating: number}) => {
 
 export const ProductInfo = ({product}: {product: Product}) => {
   const {category} = product;
-  const {addToWishlist, removeFromWishlist, isInWishlist, addToViewed} =
-    useWishContext();
-  const {addToCart} = useCart();
+  const {
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    addToViewed,
+    addToCart,
+  } = useShoppingContext();
+
 
   const productId = getProductId(product);
 
@@ -109,13 +113,11 @@ export const ProductInfo = ({product}: {product: Product}) => {
   };
 
   const handleAddToCart = () => {
-    const productWithDetails: CartItem = {
-      ...product,
-      selectedColor,
-      selectedSize,
-      quantity,
-    };
-    addToCart(productWithDetails);
+    const cartItem = createCartItem(product, quantity, {
+      color: selectedColor,
+      size: selectedSize,
+    });
+    addToCart(cartItem);
   };
 
   return (
