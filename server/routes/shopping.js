@@ -5,15 +5,26 @@ const UserShopping = require("../models/usershopping"); // New model
 const User = require("../models/User");
 
 // Add to Cart
-router.post("/add-to-cart", authMiddleware, async (req, res) => {
+router.post("/add-to-cart/:userId", authMiddleware, async (req, res) => {
   try {
-    const {product, quantity, additionalData} = req.body;
-    const userId = req.user.userId;
+    const {email, product, quantity, additionalData} = req.body;
+    const userId = req.params.userId;
+
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({message: "Unauthorized"});
+    }
 
     // Find or create user shopping document
     let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
       userShopping = new UserShopping({user: userId});
+    }
+
+    // Validate product exists
+    const existingProduct = await Product.findById(product._id);
+    if (!existingProduct) {
+      return res.status(404).json({message: "Product not found"});
     }
 
     // Check if product already exists in cart
@@ -50,50 +61,51 @@ router.post("/add-to-cart", authMiddleware, async (req, res) => {
 });
 
 // Remove from Cart
-router.delete(
-  "/remove-from-cart/:productId",
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const userId = req.user.userId;
-      const productId = req.params.productId;
+router.delete("/remove-from-cart/:userId/:productId", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const productId = req.params.productId;
+    const { email } = req.body;
 
-      const userShopping = await UserShopping.findOne({user: userId});
-      if (!userShopping) {
-        return res.status(404).json({message: "Shopping context not found"});
-      }
-
-      userShopping.cart = userShopping.cart.filter(
-        (item) => item.product.toString() !== productId
-      );
-
-      await userShopping.save();
-
-      res.status(200).json({
-        message: "Product removed from cart",
-        cart: userShopping.cart,
-      });
-    } catch (error) {
-      console.error("Remove from cart error:", error);
-      res
-        .status(500)
-        .json({message: "Error removing from cart", error: error.message});
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
     }
+
+    const userShopping = await UserShopping.findOne({ user: userId });
+    if (!userShopping) {
+      return res.status(404).json({ message: "Shopping context not found" });
+    }
+
+    userShopping.cart = userShopping.cart.filter(
+      (item) => item.product.toString() !== productId
+    );
+
+    await userShopping.save();
+
+    res.status(200).json({
+      message: "Product removed from cart",
+      cart: userShopping.cart,
+    });
+  } catch (error) {
+    console.error("Remove from cart error:", error);
+    res.status(500).json({ 
+      message: "Error removing from cart", 
+      error: error.message 
+    });
   }
-);
+});
 
 // Add to Wishlist
-router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
-  console.log("Add to Wishlist Request:", {
-    body: req.body,
-    user: req.user,
-    headers: req.headers,
-  });
-
-
+router.post("/add-to-wishlist/:userId", authMiddleware, async (req, res) => {
   try {
-    const {product} = req.body;
-    const userId = req.user.userId;
+    const { email, product } = req.body;
+    const userId = req.params.userId;
+
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
 
     // Validate product data
     if (!product || !product._id) {
@@ -103,9 +115,15 @@ router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
       });
     }
 
-    let userShopping = await UserShopping.findOne({user: userId});
+    // Validate product exists
+    const existingProduct = await Product.findById(product._id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    let userShopping = await UserShopping.findOne({ user: userId });
     if (!userShopping) {
-      userShopping = new UserShopping({user: userId});
+      userShopping = new UserShopping({ user: userId });
     }
 
     // Prevent duplicate wishlist items
@@ -127,7 +145,7 @@ router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
       wishlist: userShopping.wishlist,
     });
   } catch (error) {
-    console.error("Full Add to Wishlist Error:", {
+    console.error("Add to Wishlist Error:", {
       error: error.message,
       stack: error.stack,
       name: error.name,
@@ -136,53 +154,66 @@ router.post("/add-to-wishlist", authMiddleware, async (req, res) => {
     res.status(500).json({
       message: "Error adding to wishlist",
       error: error.message,
-      fullError: process.env.NODE_ENV !== "production" ? error : undefined,
     });
   }
 });
 
 // Remove from Wishlist
-router.delete(
-  "/remove-from-wishlist/:productId",
-  authMiddleware,
-  async (req, res) => {
-    try {
-      const userId = req.user.userId;
-      const productId = req.params.productId;
+router.delete("/remove-from-wishlist/:userId/:productId", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const productId = req.params.productId;
+    const { email } = req.body;
 
-      const userShopping = await UserShopping.findOne({user: userId});
-      if (!userShopping) {
-        return res.status(404).json({message: "Shopping context not found"});
-      }
-
-      userShopping.wishlist = userShopping.wishlist.filter(
-        (item) => item.product.toString() !== productId
-      );
-
-      await userShopping.save();
-
-      res.status(200).json({
-        message: "Product removed from wishlist",
-        wishlist: userShopping.wishlist,
-      });
-    } catch (error) {
-      console.error("Remove from wishlist error:", error);
-      res
-        .status(500)
-        .json({message: "Error removing from wishlist", error: error.message});
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
     }
+
+    const userShopping = await UserShopping.findOne({ user: userId });
+    if (!userShopping) {
+      return res.status(404).json({ message: "Shopping context not found" });
+    }
+
+    userShopping.wishlist = userShopping.wishlist.filter(
+      (item) => item.product.toString() !== productId
+    );
+
+    await userShopping.save();
+
+    res.status(200).json({
+      message: "Product removed from wishlist",
+      wishlist: userShopping.wishlist,
+    });
+  } catch (error) {
+    console.error("Remove from wishlist error:", error);
+    res.status(500).json({ 
+      message: "Error removing from wishlist", 
+      error: error.message 
+    });
   }
-);
+});
 
 // Add Viewed Product
-router.post("/add-viewed-product", authMiddleware, async (req, res) => {
+router.post("/add-viewed-product/:userId", authMiddleware, async (req, res) => {
   try {
-    const {product} = req.body;
-    const userId = req.user.userId;
+    const { email, product } = req.body;
+    const userId = req.params.userId;
 
-    let userShopping = await UserShopping.findOne({user: userId});
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Validate product exists
+    const existingProduct = await Product.findById(product._id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    let userShopping = await UserShopping.findOne({ user: userId });
     if (!userShopping) {
-      userShopping = new UserShopping({user: userId});
+      userShopping = new UserShopping({ user: userId });
     }
 
     // Prevent duplicate viewed products
@@ -200,7 +231,7 @@ router.post("/add-viewed-product", authMiddleware, async (req, res) => {
     // Keep only last 20 viewed products
     userShopping.viewedProducts = userShopping.viewedProducts.slice(-20);
 
-    await userShopping.save();
+    await userShopping .save();
 
     res.status(200).json({
       message: "Product added to viewed products",
@@ -208,21 +239,27 @@ router.post("/add-viewed-product", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Add viewed product error:", error);
-    res
-      .status(500)
-      .json({message: "Error adding viewed product", error: error.message});
+    res.status(500).json({ 
+      message: "Error adding viewed product", 
+      error: error.message 
+    });
   }
 });
 
 // Log User Activity
-router.post("/log-activity", authMiddleware, async (req, res) => {
+router.post("/log-activity/:userId", authMiddleware, async (req, res) => {
   try {
-    const {type, details} = req.body;
-    const userId = req.user.userId;
+    const { type, details } = req.body;
+    const userId = req.params.userId;
 
-    let userShopping = await UserShopping.findOne({user: userId});
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    let userShopping = await UserShopping.findOne({ user: userId });
     if (!userShopping) {
-      userShopping = new UserShopping({user: userId});
+      userShopping = new UserShopping({ user: userId });
     }
 
     userShopping.userActivities.push({
@@ -242,18 +279,24 @@ router.post("/log-activity", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Log activity error:", error);
-    res
-      .status(500)
-      .json({message: "Error logging activity", error: error.message});
+    res.status(500).json({ 
+      message: "Error logging activity", 
+      error: error.message 
+    });
   }
 });
 
 // Get User Shopping Data
-router.get("/user-data", authMiddleware, async (req, res) => {
+router.get("/user-data/:userId", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.params.userId;
 
-    const userShopping = await UserShopping.findOne({user: userId})
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const userShopping = await UserShopping.findOne({ user: userId })
       .populate("cart.product")
       .populate("wishlist.product")
       .lean();
@@ -277,14 +320,15 @@ router.get("/user-data", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Fetch user shopping data error:", error);
-    res
-      .status(500)
-      .json({message: "Error fetching shopping data", error: error.message});
+    res.status(500).json({ 
+      message: "Error fetching shopping data", 
+      error: error.message 
+    });
   }
 });
 
 // Update Entire Shopping Context
-router.post("/update-context", authMiddleware, async (req, res) => {
+router.post("/update-context/:userId", authMiddleware, async (req, res) => {
   try {
     const {
       cart,
@@ -293,11 +337,16 @@ router.post("/update-context", authMiddleware, async (req, res) => {
       searchHistory,
       userActivities,
     } = req.body;
-    const userId = req.user.userId;
+    const userId = req.params.userId;
 
-    let userShopping = await UserShopping.findOne({user: userId});
+    // Verify user matches the authenticated user
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    let userShopping = await UserShopping.findOne({ user: userId });
     if (!userShopping) {
-      userShopping = new UserShopping({user: userId});
+      userShopping = new UserShopping({ user: userId });
     }
 
     // Update cart
@@ -322,9 +371,10 @@ router.post("/update-context", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Update shopping context error:", error);
-    res
-      .status(500)
-      .json({message: "Error updating shopping context", error: error.message});
+    res.status(500).json({ 
+      message: "Error updating shopping context", 
+      error: error.message 
+    });
   }
 });
 

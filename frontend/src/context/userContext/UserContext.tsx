@@ -5,6 +5,7 @@ import {
   initializeTokenManagement,
   initializeActivityTracking,
   cleanupActivityTracking,
+  handleLogout,
 } from "@/utils/tokenManager";
 import authApi from '@/utils/authApi';
 import router from 'next/router';
@@ -32,24 +33,48 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
 
  useEffect(() => {
    const token = localStorage.getItem("token");
+   const tokenTimestamp = localStorage.getItem("tokenTimestamp");
    const storedUserData = localStorage.getItem("userData");
 
-   if (token && storedUserData) {
-     const userData = JSON.parse(storedUserData);
-     setUser({
-       id: userData.id,
-       name: userData.name,
-       email: userData.email,
-       role: userData.role,
-       isAuthenticated: true,
-     });
+   // Check if token exists and is within valid time
+   if (token && tokenTimestamp) {
+     const currentTime = Date.now();
+     const tokenAge = currentTime - parseInt(tokenTimestamp, 10);
 
-     initializeTokenManagement();
-     initializeActivityTracking();
+     // Define your token expiry time (e.g., 30 minutes)
+     const TOKEN_EXPIRY = 30 * 60 * 1000; // 30 minutes
+
+     if (tokenAge > TOKEN_EXPIRY) {
+       // Token has expired
+       handleLogout();
+       return;
+     }
+
+     if (storedUserData) {
+       const userData = JSON.parse(storedUserData);
+       setUser({
+         id: userData.id,
+         name: userData.name,
+         email: userData.email,
+         role: userData.role,
+         isAuthenticated: true,
+       });
+
+       initializeTokenManagement();
+       const cleanup = initializeActivityTracking();
+
+       // Cleanup function
+       return () => {
+         cleanup();
+         cleanupActivityTracking();
+       };
+     }
    }
 
+   // Cleanup if no valid token
    return () => cleanupActivityTracking();
  }, []);
+
 
   const updateUserRole = (role: UserRole) => {
     setUser((prev) => ({...prev, role}));
@@ -61,6 +86,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      handleLogout();
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
       setUser(defaultUser);
