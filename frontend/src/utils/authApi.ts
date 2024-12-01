@@ -24,6 +24,15 @@ authApi.interceptors.request.use(
       token = localStorage.getItem("token");
     }
 
+    console.log("Request Interceptor Token Check:", {
+      hasToken: !!token,
+      tokenLength: token ? token.length : 0,
+      url: config.url,
+      method: config.method,
+    });
+
+
+
     // Fallback to checking cookies if available
     if (!token && typeof document !== "undefined") {
       const cookies = document.cookie.split(";");

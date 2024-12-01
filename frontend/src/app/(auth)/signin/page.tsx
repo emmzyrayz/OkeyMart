@@ -9,7 +9,11 @@ import Image from "next/image";
 import Link from "next/link";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import { FaEyeSlash, FaEye } from "react-icons/fa6";
-import { initializeTokenManagement, startTokenRefreshTimer } from "@/utils/tokenManager";
+import {
+  initializeTokenManagement,
+  startTokenRefreshTimer,
+  handleLogout,
+} from "@/utils/tokenManager";
 import {useUser} from "@/context/userContext/UserContext";
 
 export default function SignIn() {
@@ -22,17 +26,39 @@ export default function SignIn() {
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Validate input
+    if (!formData.email || !formData.password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
     setIsLoading(true);
+    setError("");
+
     try {
-      const response = await authApi.post("/api/auth/login", formData);
+      // const response = await authApi.post("/api/auth/login", formData);
+      const response = await authApi.post("/api/auth/login", {
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
       const {token, user} = response.data;
 
-      // Store token in localStorage
+      // Validate token and user data
+      if (!token || !user) {
+        throw new Error("Invalid response from server");
+      }
+
+      // Store token with timestamp for expiry tracking
       localStorage.setItem("token", token);
+      localStorage.setItem("tokenTimestamp", Date.now().toString());
 
       // Store user data for persistence
       localStorage.setItem(
@@ -56,6 +82,8 @@ export default function SignIn() {
         isAuthenticated: true,
       });
 
+      // Initialize token management
+      initializeTokenManagement();
       startTokenRefreshTimer();
 
       // Role-based redirection
@@ -72,21 +100,70 @@ export default function SignIn() {
         default:
           router.push("/");
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Comprehensive error handling
+      console.error("Login Error:", error);
+
+      let errorMessage = "An unexpected error occurred";
+
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        switch (error.response.status) {
+          case 401:
+            errorMessage = "Invalid email or password";
+            break;
+          case 403:
+            errorMessage = "Account is suspended or not verified";
+            break;
+          case 500:
+            errorMessage = "Server error. Please try again later.";
+            break;
+          default:
+            errorMessage = error.response.data.message || errorMessage;
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = "No response from server. Please check your connection.";
+      } else {
+        // Something happened in setting up the request
+        errorMessage = error.message || "Login failed. Please try again.";
+      }
+
       setError("Invalid email or password");
-      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Optional: Set the token on component mount
+  // Check for existing token on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      setAuthToken(token); // Set the token in the authApi instance
+    const tokenTimestamp = localStorage.getItem("tokenTimestamp");
+
+    if (token && tokenTimestamp) {
+      const currentTime = Date.now();
+      const tokenAge = currentTime - parseInt(tokenTimestamp, 10);
+
+      // Define token expiry (30 minutes)
+      const TOKEN_EXPIRY = 30 * 60 * 1000; // 30 minutes
+
+      if (tokenAge > TOKEN_EXPIRY) {
+        // Token has expired
+        handleLogout();
+      } else {
+        // Token is still valid, try to initialize token management
+        try {
+          initializeTokenManagement();
+
+          // Optionally redirect to home or dashboard if already logged in
+          router.push("/");
+        } catch (error) {
+          console.error("Token initialization error:", error);
+          handleLogout();
+        }
+      }
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
@@ -115,7 +192,7 @@ export default function SignIn() {
             name="email"
             className="name w-full"
             value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            onChange={handleChange}
             placeholder="Email or Phone Number"
             disabled={isLoading}
             required
@@ -125,9 +202,7 @@ export default function SignIn() {
               type={passwordVisible ? "text" : "password"}
               name="password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({...formData, password: e.target.value})
-              }
+              onChange={handleChange}
               className="password"
               placeholder="Password"
               disabled={isLoading}

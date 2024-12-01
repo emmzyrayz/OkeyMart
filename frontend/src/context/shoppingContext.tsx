@@ -10,7 +10,7 @@ import React, {
   useEffect,
 } from "react";
 import {Product} from "@/types/product";
-import authApi, { setAuthToken } from "@/utils/authApi";
+import authApi from "@/utils/authApi";
 import axios from "axios";
 // import {toast} from "react-toastify";
 
@@ -111,6 +111,15 @@ interface ShoppingContextType {
   // User Activity methods
   userActivities: UserActivity[];
   logUserActivity: (activity: UserActivity) => void;
+
+  userInfo: UserInfo;
+  setUserInfo: React.Dispatch<React.SetStateAction<UserInfo>>;
+}
+
+interface UserInfo {
+  id: string;
+  email: string;
+  isAuthenticated: boolean;
 }
 
 const ShoppingContext = createContext<ShoppingContextType | undefined>(
@@ -326,6 +335,12 @@ const shoppingReducer = (
 export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   children,
 }) => {
+  const [userInfo, setUserInfo] = useState<UserInfo>({
+    id: "",
+    email: "",
+    isAuthenticated: false,
+  });
+
   const [shoppingState, dispatch] = useReducer(shoppingReducer, {
     cart: {
       items: [],
@@ -340,8 +355,19 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   });
 
   const syncShoppingContext = useCallback(async () => {
+    // Only attempt sync if user is authenticated
+    if (!userInfo.isAuthenticated) return;
+
     try {
-      const response = await authApi.get("/api/shopping/user-data");
+      const response = await authApi.get(
+        `/api/shopping/user-data/${userInfo.id}`,
+        {
+          params: {
+            email: userInfo.email,
+          },
+        }
+      );
+
       const {
         cart = [],
         wishlist = [],
@@ -385,56 +411,79 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         });
       }
     }
-  }, []);
+  }, [userInfo.isAuthenticated, userInfo.id, userInfo.email]);
 
-  // Enhanced Cart Methods with Server Sync
-  const addToCart = useCallback(async (product: CartItem) => {
-    // Debug token check
-    const token = localStorage.getItem("token");
-    console.log("Current Token:", token);
+  const saveShoppingContextToServer = useCallback(async () => {
+    // Only save if user is authenticated
+    if (!userInfo.isAuthenticated) return;
 
-    if (!token) {
-      console.error("No authentication token found");
-      // Optionally redirect to login or show a login prompt
-      return;
-    }
     try {
-      // Optimistically update local state
-      dispatch({type: "ADD_TO_CART", payload: product});
-
-      // Attempt to sync with server
-      await authApi.post("/api/shopping/add-to-cart", {
-        product,
-        quantity: product.quantity,
-        additionalData: product.additionalData,
-      });
-
-      // Log user activity
-      dispatch({
-        type: "LOG_USER_ACTIVITY",
-        payload: {
-          type: "ADD_TO_CART",
-          productId: getProductId(product) || "",
-          details: {quantity: product.quantity},
-          timestamp: Date.now(),
-        },
+      await authApi.post(`/api/shopping/update-context/${userInfo.id}`, {
+        email: userInfo.email,
+        cart: shoppingState.cart.items,
+        wishlist: shoppingState.wishlist,
+        viewedProducts: shoppingState.viewedProducts,
+        searchHistory: shoppingState.searchHistory,
+        userActivities: shoppingState.userActivities,
       });
     } catch (error) {
-      // Revert local state if server sync fails
-      dispatch({
-        type: "REMOVE_FROM_CART",
-        payload: getProductId(product) || "",
-      });
-
-      // Notify user of error
-      // toast.error("Failed to add product to cart. Please try again.");
-
-      console.error("Error adding to cart:", error);
+      console.error("Error saving shopping context to server:", error);
     }
-  }, []);
+  }, [userInfo.isAuthenticated, userInfo.id, userInfo.email, shoppingState]);
+
+  // Enhanced Cart Methods with Server Sync
+  const addToCart = useCallback(
+    async (product: CartItem) => {
+      // Check user authentication before proceeding
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot add to cart.");
+        return;
+      }
+
+      try {
+        // Optimistically update local state
+        dispatch({type: "ADD_TO_CART", payload: product});
+
+        await authApi.post(`/api/shopping/add-to-cart/${userInfo.id}`, {
+          email: userInfo.email,
+          product,
+          quantity: product.quantity,
+          additionalData: product.additionalData,
+        });
+
+        // Log user activity
+        dispatch({
+          type: "LOG_USER_ACTIVITY",
+          payload: {
+            type: "ADD_TO_CART",
+            productId: getProductId(product) || "",
+            details: {quantity: product.quantity},
+            timestamp: Date.now(),
+          },
+        });
+      } catch (error) {
+        // Revert local state if server sync fails
+        dispatch({
+          type: "REMOVE_FROM_CART",
+          payload: getProductId(product) || "",
+        });
+
+        // Notify user of error
+        // toast.error("Failed to add product to cart. Please try again.");
+
+        console.error("Error adding to cart:", error);
+      }
+    },
+    [userInfo.isAuthenticated, userInfo.id, userInfo.email]
+  );
 
   const removeFromCart = useCallback(
     async (productId: string) => {
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot add to cart.");
+        return;
+      }
+
       // Find the product to be removed (for potential rollback)
       const removedProduct = shoppingState.cart.items.find(
         (item) => getProductId(item) === productId
@@ -444,8 +493,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       dispatch({type: "REMOVE_FROM_CART", payload: productId});
 
       try {
-        // Attempt to sync removal with server
-        await authApi.delete(`/api/shopping/remove-from-cart/${productId}`);
+        // Attempt to sync removal with server using user ID and email
+        await authApi.delete(
+          `/api/shopping/remove-from-cart/${userInfo.id}/${productId}`,
+          {
+            data: {
+              email: userInfo.email,
+            },
+          }
+        );
       } catch (error) {
         // Rollback if server sync fails
         if (removedProduct) {
@@ -456,7 +512,12 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         console.error("Error removing from cart:", error);
       }
     },
-    [shoppingState.cart.items]
+    [
+      userInfo.isAuthenticated,
+      userInfo.id,
+      userInfo.email,
+      shoppingState.cart.items,
+    ]
   );
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
@@ -479,6 +540,12 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   // Wishlist Methods
   const addToWishlist = useCallback(
     async (product: Product) => {
+      // Check user authentication before proceeding
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot add to wishlist.");
+        return;
+      }
+
       // Check if product is already in wishlist
       const productId = getProductId(product);
       if (!productId) return;
@@ -491,38 +558,21 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         return;
       }
 
-      // Enhanced token checking
-      const checkToken = () => {
-        // Check multiple sources for token
-        const localStorageToken = localStorage.getItem("token");
-        const cookieToken = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="))
-          ?.split("=")[1];
-
-        return localStorageToken || cookieToken;
-      };
-
-      const token = checkToken();
-
-      if (!token) {
-        console.error("No authentication token found");
-        // Optionally redirect to login or show a login prompt
-        window.location.href = "/signin";
-        return;
-      }
-
       // Optimistically add to local state
       dispatch({type: "ADD_TO_WISHLIST", payload: product});
 
       try {
-        // Sync with server
-        const response = await authApi.post("/api/shopping/add-to-wishlist", {
-          product: {
-            ...product,
-            _id: productId, // Ensure _id is included
-          },
-        });
+        // Sync with server using user ID and email
+        const response = await authApi.post(
+          `/api/shopping/add-to-wishlist/${userInfo.id}`,
+          {
+            email: userInfo.email,
+            product: {
+              ...product,
+              _id: productId, // Ensure _id is included
+            },
+          }
+        );
 
         console.log("Wishlist Add Response:", response.data);
 
@@ -561,11 +611,22 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         });
       }
     },
-    [shoppingState.wishlist]
+    [
+      userInfo.isAuthenticated,
+      userInfo.id,
+      userInfo.email,
+      shoppingState.wishlist,
+    ]
   );
 
   const removeFromWishlist = useCallback(
     async (productId: string) => {
+      // Check user authentication before proceeding
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot remove from wishlist.");
+        return;
+      }
+
       // Find the product to be removed (for potential rollback)
       const removedProduct = shoppingState.wishlist.find(
         (item) => getProductId(item) === productId
@@ -575,8 +636,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       dispatch({type: "REMOVE_FROM_WISHLIST", payload: productId});
 
       try {
-        // Attempt to sync removal with server
-        await authApi.delete(`/api/shopping/remove-from-wishlist/${productId}`);
+        // Attempt to sync removal with server using user ID and email
+        await authApi.delete(
+          `/api/shopping/remove-from-wishlist/${userInfo.id}/${productId}`,
+          {
+            data: {
+              email: userInfo.email,
+            },
+          }
+        );
       } catch (error) {
         // Rollback if server sync fails
         if (removedProduct) {
@@ -589,7 +657,12 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         console.error("Error removing from wishlist:", error);
       }
     },
-    [shoppingState.wishlist]
+    [
+      userInfo.isAuthenticated,
+      userInfo.id,
+      userInfo.email,
+      shoppingState.wishlist,
+    ]
   );
 
   const clearWishlist = useCallback(() => {
@@ -606,31 +679,43 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   );
 
   // Viewed Products Methods
-  const addToViewed = useCallback(async (product: Product) => {
-    const productId = getProductId(product);
-    if (!productId) return;
+  const addToViewed = useCallback(
+    async (product: Product) => {
+      // Check user authentication before proceeding
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot log viewed product.");
+        return;
+      }
 
-    // Optimistically add to local state
-    dispatch({type: "ADD_VIEWED_PRODUCT", payload: product});
+      const productId = getProductId(product);
+      if (!productId) return;
 
-    try {
-      // Sync with server
-      await authApi.post("/api/shopping/add-viewed-product", {product});
+      // Optimistically add to local state
+      dispatch({type: "ADD_VIEWED_PRODUCT", payload: product});
 
-      // Log user activity
-      dispatch({
-        type: "LOG_USER_ACTIVITY",
-        payload: {
-          type: "VIEW_PRODUCT",
-          productId,
-          timestamp: Date.now(),
-        },
-      });
-    } catch (error) {
-      // Potential silent failure or minimal handling for viewed products
-      console.warn("Failed to log viewed product:", error);
-    }
-  }, []);
+      try {
+        // Sync with server using user ID and email
+        await authApi.post(`/api/shopping/add-viewed-product/${userInfo.id}`, {
+          email: userInfo.email,
+          product,
+        });
+
+        // Log user activity
+        dispatch({
+          type: "LOG_USER_ACTIVITY",
+          payload: {
+            type: "VIEW_PRODUCT",
+            productId,
+            timestamp: Date.now(),
+          },
+        });
+      } catch (error) {
+        // Potential silent failure or minimal handling for viewed products
+        console.warn("Failed to log viewed product:", error);
+      }
+    },
+    [userInfo.isAuthenticated, userInfo.id, userInfo.email]
+  );
 
   const removeFromViewlist = useCallback((productId: string) => {
     dispatch({type: "REMOVE_VIEWED_PRODUCT", payload: productId});
@@ -687,6 +772,12 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
 
   // Search Methods
   const logSearch = useCallback((keyword: string, products?: Product[]) => {
+    // Check user authentication before logging
+    if (!userInfo.isAuthenticated) {
+      console.warn("User not authenticated. Cannot log search.");
+      return;
+    }
+
     dispatch({type: "ADD_SEARCH_KEYWORD", payload: keyword});
 
     if (products) {
@@ -698,11 +789,28 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       type: "LOG_USER_ACTIVITY",
       payload: {
         type: "SEARCH",
-        details: {keyword},
+        details: {
+          keyword,
+          userId: userInfo.id,
+          email: userInfo.email,
+        },
         timestamp: Date.now(),
       },
     });
-  }, []);
+
+    // Optional: Send search to server
+    try {
+      authApi.post(`/api/shopping/log-search/${userInfo.id}`, {
+        email: userInfo.email,
+        keyword,
+        products,
+      });
+    } catch (error) {
+      console.warn("Failed to log search to server:", error);
+    }
+  },
+  [userInfo.isAuthenticated, userInfo.id, userInfo.email]
+);
 
   // User Activity Logging Method
   const logUserActivity = useCallback((activity: UserActivity) => {
@@ -717,53 +825,51 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
     }
   }, []);
 
-  const saveShoppingContextToServer = async () => {
-    try {
-      await authApi.post("/api/shopping/update-context", {
-        cart: shoppingState.cart.items,
-        wishlist: shoppingState.wishlist,
-        viewedProducts: shoppingState.viewedProducts,
-        searchHistory: shoppingState.searchHistory,
-        userActivities: shoppingState.userActivities,
-      });
-    } catch (error) {
-      console.error("Error saving shopping context to server:", error);
+  // const saveShoppingContextToServer = async () => {
+  //   try {
+  //     await authApi.post("/api/shopping/update-context", {
+  //       cart: shoppingState.cart.items,
+  //       wishlist: shoppingState.wishlist,
+  //       viewedProducts: shoppingState.viewedProducts,
+  //       searchHistory: shoppingState.searchHistory,
+  //       userActivities: shoppingState.userActivities,
+  //     });
+  //   } catch (error) {
+  //     console.error("Error saving shopping context to server:", error);
+  //   }
+  // };
+
+  // Sync and save effects
+  useEffect(() => {
+    if (userInfo.isAuthenticated) {
+      // Initial sync when user becomes authenticated
+      syncShoppingContext();
+
+      // Periodic sync
+      const syncInterval = setInterval(syncShoppingContext, 5 * 60 * 1000);
+
+      return () => clearInterval(syncInterval);
     }
-  };
+  }, [userInfo.isAuthenticated, syncShoppingContext]);
 
-  // Sync shopping context
   useEffect(() => {
-    const syncShoppingContext = async () => {
-      // Your sync logic here
-    };
+    if (userInfo.isAuthenticated) {
+      // Periodic save
+      const saveInterval = setInterval(
+        saveShoppingContextToServer,
+        5 * 60 * 1000
+      );
 
-    syncShoppingContext();
+      // Save before page unload
+      const handleBeforeUnload = () => saveShoppingContextToServer();
+      window.addEventListener("beforeunload", handleBeforeUnload);
 
-    const syncInterval = setInterval(syncShoppingContext, 5 * 60 * 1000); // Every 5 minutes
-
-    return () => clearInterval(syncInterval);
-  }, [syncShoppingContext]);
-
-  // Save shopping context
-  useEffect(() => {
-    const saveShoppingContextToServer = async () => {
-      // Your save logic here
-    };
-
-    const saveInterval = setInterval(
-      saveShoppingContextToServer,
-      5 * 60 * 1000
-    ); // Every 5 minutes
-
-    // Save on component unmount or before page unload
-    const handleBeforeUnload = () => saveShoppingContextToServer();
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      clearInterval(saveInterval);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [saveShoppingContextToServer]);
+      return () => {
+        clearInterval(saveInterval);
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
+    }
+  }, [userInfo.isAuthenticated, saveShoppingContextToServer]);
 
   // Create context value
   const contextValue = useMemo(
@@ -797,8 +903,13 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       // User Activities
       userActivities: shoppingState.userActivities,
       logUserActivity,
+
+      userInfo,
+      setUserInfo,
     }),
     [
+      shoppingState,
+      userInfo,
       shoppingState,
       addToCart,
       removeFromCart,
