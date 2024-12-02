@@ -574,10 +574,12 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         return;
       }
 
-      // Optimistically add to local state
-      dispatch({type: "ADD_TO_WISHLIST", payload: product});
+      
 
       try {
+        // Optimistically add to local state
+        dispatch({type: "ADD_TO_WISHLIST", payload: product});
+
         // Sync with server using user ID and email
         const response = await authApi.post(
           `/api/shopping/add-to-wishlist/${userInfo.id}`,

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const {authMiddleware} = require("../middleware/auth");
 const UserShopping = require("../models/usershopping"); // New model
+const Product = require("../models/products")
 const User = require("../models/User");
 const rateLimit = require("express-rate-limit");
 
@@ -28,11 +28,30 @@ router.post("/add-to-cart/:userId", generalLimiter, async (req, res) => {
     const {email, product, quantity, additionalData} = req.body;
     const userId = req.params.userId;
 
+    console.log("Add to Cart Request:", {
+      userId,
+      email,
+      productId: product?._id,
+      quantity,
+      additionalData,
+    });
+
     // Verify user matches the authenticated user
-    if (req.user.userId !== userId) {
+    if (!req.user || req.user.userId !== userId) {
+      console.warn("Unauthorized cart add attempt:", {
+        requestUserId: userId,
+        authenticatedUserId: req.user?.userId,
+      });
       return res.status(403).json({message: "Unauthorized"});
     }
 
+    // More robust product validation
+    if (!product || !product._id) {
+      return res.status(400).json({
+        message: "Invalid product data",
+        error: "Product ID is required",
+      });
+    }
     // Find or create user shopping document
     let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
@@ -42,6 +61,7 @@ router.post("/add-to-cart/:userId", generalLimiter, async (req, res) => {
     // Validate product exists
     const existingProduct = await Product.findById(product._id);
     if (!existingProduct) {
+      console.error("Product not found:", product._id);
       return res.status(404).json({message: "Product not found"});
     }
 
@@ -71,10 +91,22 @@ router.post("/add-to-cart/:userId", generalLimiter, async (req, res) => {
       cart: userShopping.cart,
     });
   } catch (error) {
-    console.error("Add to cart error:", error);
-    res
-      .status(500)
-      .json({message: "Error adding to cart", error: error.message});
+    console.error("Add to cart error - DETAILED:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      requestBody: req.body,
+      requestParams: req.params,
+    });
+
+    res.status(500).json({
+      message: "Error adding to cart",
+      error: error.message,
+      details: {
+        name: error.name,
+        code: error.code,
+      },
+    });
   }
 });
 
@@ -86,11 +118,27 @@ router.delete(
     try {
       const userId = req.params.userId;
       const productId = req.params.productId;
-      const {email} = req.body;
+      console.log("Add to Wishlist Request:", {
+        userId,
+        email,
+        productId: product?._id,
+      });
 
-      // Verify user matches the authenticated user
-      if (req.user.userId !== userId) {
+      // More robust authentication check
+      if (!req.user || req.user.userId !== userId) {
+        console.warn("Unauthorized wishlist add attempt:", {
+          requestUserId: userId,
+          authenticatedUserId: req.user?.userId,
+        });
         return res.status(403).json({message: "Unauthorized"});
+      }
+
+      // Validate product data
+      if (!product || !product._id) {
+        return res.status(400).json({
+          message: "Invalid product data",
+          error: "Product ID is required",
+        });
       }
 
       const userShopping = await UserShopping.findOne({user: userId});
@@ -109,10 +157,21 @@ router.delete(
         cart: userShopping.cart,
       });
     } catch (error) {
-      console.error("Remove from cart error:", error);
+      console.error("Add to Wishlist Error - DETAILED:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        requestBody: req.body,
+        requestParams: req.params,
+      });
+
       res.status(500).json({
-        message: "Error removing from cart",
+        message: "Error adding to wishlist",
         error: error.message,
+        details: {
+          name: error.name,
+          code: error.code,
+        },
       });
     }
   }
