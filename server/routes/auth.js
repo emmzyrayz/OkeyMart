@@ -814,15 +814,43 @@ router.post("/verify-reset-code", async (req, res) => {
 
 router.post("/refresh-token", authMiddleware, async (req, res) => {
   try {
+    console.log("Refresh Token Request:", {
+      userId: req.user?.userId,
+      requestHeaders: req.headers,
+    });
+
     const userId = req.user.userId;
-    const user = await User.findById(userId);
+
+    // Find user with additional checks
+    const user = await User.findById(userId).select(
+      "name email phone role verificationStatus isActive"
+    );
 
     if (!user) {
-      return res.status(401).json({message: "User not found"});
+      console.warn(`Refresh token attempt for non-existent user: ${userId}`);
+      return res.status(401).json({
+        message: "User not found",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    // Optional: Check user account status
+    if (user.isActive === false) {
+      console.warn(`Refresh token attempt for inactive user: ${userId}`);
+      return res.status(401).json({
+        message: "Account is inactive",
+        code: "ACCOUNT_INACTIVE",
+      });
     }
 
     // Generate new token
     const newToken = generateToken(user._id, decrypt(user.email));
+
+    console.log("Token Refresh Successful:", {
+      userId: user._id,
+      email: decrypt(user.email),
+      role: user.role,
+    });
 
     res.json({
       token: newToken,
@@ -836,8 +864,33 @@ router.post("/refresh-token", authMiddleware, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Token refresh error:", error);
-    res.status(500).json({message: "Server error during token refresh"});
+    console.error("Comprehensive Token Refresh Error:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      userId: req.user?.userId,
+    });
+
+    // Differentiate between different types of errors
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        message: "Invalid token",
+        code: "TOKEN_INVALID",
+      });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Token expired",
+        code: "TOKEN_EXPIRED",
+      });
+    }
+
+    // Generic server error for unexpected issues
+    res.status(500).json({
+      message: "Server error during token refresh",
+      code: "SERVER_ERROR",
+    });
   }
 });
 
