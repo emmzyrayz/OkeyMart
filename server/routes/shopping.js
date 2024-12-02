@@ -4,8 +4,25 @@ const {authMiddleware} = require("../middleware/auth");
 const UserShopping = require("../models/usershopping"); // New model
 const User = require("../models/User");
 
+// Enhanced rate limiting
+const createLimiter = (windowMs, max, message) =>
+  rateLimit({
+    windowMs,
+    max,
+    message: {message},
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+// General rate limiter for all routes
+const generalLimiter = createLimiter(
+  15 * 60 * 1000, // 15 minutes
+  100, // 100 requests per window
+  "Too many requests from this IP. Please try again later."
+);
+
 // Add to Cart
-router.post("/add-to-cart/:userId", authMiddleware, async (req, res) => {
+router.post("/add-to-cart/:userId", generalLimiter, async (req, res) => {
   try {
     const {email, product, quantity, additionalData} = req.body;
     const userId = req.params.userId;
@@ -61,50 +78,54 @@ router.post("/add-to-cart/:userId", authMiddleware, async (req, res) => {
 });
 
 // Remove from Cart
-router.delete("/remove-from-cart/:userId/:productId", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const productId = req.params.productId;
-    const { email } = req.body;
+router.delete(
+  "/remove-from-cart/:userId/:productId",
+  generalLimiter,
+  async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const productId = req.params.productId;
+      const {email} = req.body;
 
-    // Verify user matches the authenticated user
-    if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      // Verify user matches the authenticated user
+      if (req.user.userId !== userId) {
+        return res.status(403).json({message: "Unauthorized"});
+      }
+
+      const userShopping = await UserShopping.findOne({user: userId});
+      if (!userShopping) {
+        return res.status(404).json({message: "Shopping context not found"});
+      }
+
+      userShopping.cart = userShopping.cart.filter(
+        (item) => item.product.toString() !== productId
+      );
+
+      await userShopping.save();
+
+      res.status(200).json({
+        message: "Product removed from cart",
+        cart: userShopping.cart,
+      });
+    } catch (error) {
+      console.error("Remove from cart error:", error);
+      res.status(500).json({
+        message: "Error removing from cart",
+        error: error.message,
+      });
     }
-
-    const userShopping = await UserShopping.findOne({ user: userId });
-    if (!userShopping) {
-      return res.status(404).json({ message: "Shopping context not found" });
-    }
-
-    userShopping.cart = userShopping.cart.filter(
-      (item) => item.product.toString() !== productId
-    );
-
-    await userShopping.save();
-
-    res.status(200).json({
-      message: "Product removed from cart",
-      cart: userShopping.cart,
-    });
-  } catch (error) {
-    console.error("Remove from cart error:", error);
-    res.status(500).json({ 
-      message: "Error removing from cart", 
-      error: error.message 
-    });
   }
-});
+);
 
 // Add to Wishlist
-router.post("/add-to-wishlist/:userId", authMiddleware, async (req, res) => {
+router.post("/add-to-wishlist/:userId", generalLimiter, async (req, res) => {
   try {
-    const { email, product } = req.body;
+    const {email, product} = req.body;
     const userId = req.params.userId;
 
     // Verify user matches the authenticated user
     if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({message: "Unauthorized"});
     }
 
     // Validate product data
@@ -118,12 +139,12 @@ router.post("/add-to-wishlist/:userId", authMiddleware, async (req, res) => {
     // Validate product exists
     const existingProduct = await Product.findById(product._id);
     if (!existingProduct) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({message: "Product not found"});
     }
 
-    let userShopping = await UserShopping.findOne({ user: userId });
+    let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
-      userShopping = new UserShopping({ user: userId });
+      userShopping = new UserShopping({user: userId});
     }
 
     // Prevent duplicate wishlist items
@@ -159,61 +180,65 @@ router.post("/add-to-wishlist/:userId", authMiddleware, async (req, res) => {
 });
 
 // Remove from Wishlist
-router.delete("/remove-from-wishlist/:userId/:productId", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const productId = req.params.productId;
-    const { email } = req.body;
+router.delete(
+  "/remove-from-wishlist/:userId/:productId",
+  generalLimiter,
+  async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const productId = req.params.productId;
+      const {email} = req.body;
 
-    // Verify user matches the authenticated user
-    if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      // Verify user matches the authenticated user
+      if (req.user.userId !== userId) {
+        return res.status(403).json({message: "Unauthorized"});
+      }
+
+      const userShopping = await UserShopping.findOne({user: userId});
+      if (!userShopping) {
+        return res.status(404).json({message: "Shopping context not found"});
+      }
+
+      userShopping.wishlist = userShopping.wishlist.filter(
+        (item) => item.product.toString() !== productId
+      );
+
+      await userShopping.save();
+
+      res.status(200).json({
+        message: "Product removed from wishlist",
+        wishlist: userShopping.wishlist,
+      });
+    } catch (error) {
+      console.error("Remove from wishlist error:", error);
+      res.status(500).json({
+        message: "Error removing from wishlist",
+        error: error.message,
+      });
     }
-
-    const userShopping = await UserShopping.findOne({ user: userId });
-    if (!userShopping) {
-      return res.status(404).json({ message: "Shopping context not found" });
-    }
-
-    userShopping.wishlist = userShopping.wishlist.filter(
-      (item) => item.product.toString() !== productId
-    );
-
-    await userShopping.save();
-
-    res.status(200).json({
-      message: "Product removed from wishlist",
-      wishlist: userShopping.wishlist,
-    });
-  } catch (error) {
-    console.error("Remove from wishlist error:", error);
-    res.status(500).json({ 
-      message: "Error removing from wishlist", 
-      error: error.message 
-    });
   }
-});
+);
 
 // Add Viewed Product
-router.post("/add-viewed-product/:userId", authMiddleware, async (req, res) => {
+router.post("/add-viewed-product/:userId", generalLimiter, async (req, res) => {
   try {
-    const { email, product } = req.body;
+    const {email, product} = req.body;
     const userId = req.params.userId;
 
     // Verify user matches the authenticated user
     if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({message: "Unauthorized"});
     }
 
     // Validate product exists
     const existingProduct = await Product.findById(product._id);
     if (!existingProduct) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({message: "Product not found"});
     }
 
-    let userShopping = await UserShopping.findOne({ user: userId });
+    let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
-      userShopping = new UserShopping({ user: userId });
+      userShopping = new UserShopping({user: userId});
     }
 
     // Prevent duplicate viewed products
@@ -231,7 +256,7 @@ router.post("/add-viewed-product/:userId", authMiddleware, async (req, res) => {
     // Keep only last 20 viewed products
     userShopping.viewedProducts = userShopping.viewedProducts.slice(-20);
 
-    await userShopping .save();
+    await userShopping.save();
 
     res.status(200).json({
       message: "Product added to viewed products",
@@ -239,27 +264,27 @@ router.post("/add-viewed-product/:userId", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Add viewed product error:", error);
-    res.status(500).json({ 
-      message: "Error adding viewed product", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error adding viewed product",
+      error: error.message,
     });
   }
 });
 
 // Log User Activity
-router.post("/log-activity/:userId", authMiddleware, async (req, res) => {
+router.post("/log-activity/:userId", generalLimiter, async (req, res) => {
   try {
-    const { type, details } = req.body;
+    const {type, details} = req.body;
     const userId = req.params.userId;
 
     // Verify user matches the authenticated user
     if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({message: "Unauthorized"});
     }
 
-    let userShopping = await UserShopping.findOne({ user: userId });
+    let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
-      userShopping = new UserShopping({ user: userId });
+      userShopping = new UserShopping({user: userId});
     }
 
     userShopping.userActivities.push({
@@ -279,24 +304,24 @@ router.post("/log-activity/:userId", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Log activity error:", error);
-    res.status(500).json({ 
-      message: "Error logging activity", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error logging activity",
+      error: error.message,
     });
   }
 });
 
 // Get User Shopping Data
-router.get("/user-data/:userId", authMiddleware, async (req, res) => {
+router.get("/user-data/:userId", generalLimiter, async (req, res) => {
   try {
     const userId = req.params.userId;
 
     // Verify user matches the authenticated user
     if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({message: "Unauthorized"});
     }
 
-    const userShopping = await UserShopping.findOne({ user: userId })
+    const userShopping = await UserShopping.findOne({user: userId})
       .populate("cart.product")
       .populate("wishlist.product")
       .lean();
@@ -320,33 +345,28 @@ router.get("/user-data/:userId", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Fetch user shopping data error:", error);
-    res.status(500).json({ 
-      message: "Error fetching shopping data", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error fetching shopping data",
+      error: error.message,
     });
   }
 });
 
 // Update Entire Shopping Context
-router.post("/update-context/:userId", authMiddleware, async (req, res) => {
+router.post("/update-context/:userId", generalLimiter, async (req, res) => {
   try {
-    const {
-      cart,
-      wishlist,
-      viewedProducts,
-      searchHistory,
-      userActivities,
-    } = req.body;
+    const {cart, wishlist, viewedProducts, searchHistory, userActivities} =
+      req.body;
     const userId = req.params.userId;
 
     // Verify user matches the authenticated user
     if (req.user.userId !== userId) {
-      return res.status(403).json({ message: "Unauthorized" });
+      return res.status(403).json({message: "Unauthorized"});
     }
 
-    let userShopping = await UserShopping.findOne({ user: userId });
+    let userShopping = await UserShopping.findOne({user: userId});
     if (!userShopping) {
-      userShopping = new UserShopping({ user: userId });
+      userShopping = new UserShopping({user: userId});
     }
 
     // Update cart
@@ -371,9 +391,9 @@ router.post("/update-context/:userId", authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error("Update shopping context error:", error);
-    res.status(500).json({ 
-      message: "Error updating shopping context", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error updating shopping context",
+      error: error.message,
     });
   }
 });
