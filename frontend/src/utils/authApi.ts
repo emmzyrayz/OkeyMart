@@ -1,9 +1,82 @@
 // utils/authApi.ts
 
 import axios from "axios";
+import { handleLogout } from "./tokenManager";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 // console.log("API Base URL:", API_BASE_URL);
+
+// Define interfaces for error data and modal
+interface ErrorDetails {
+  userId?: string;
+  reason?: string;
+  suspendedAt?: string;
+  [key: string]: any;
+}
+
+interface ModalProps {
+  title: string;
+  message: string;
+  details?: ErrorDetails;
+}
+
+// Placeholder for modal service (you'll need to implement this)
+const modalService = {
+  show: (props: ModalProps) => {
+    // Implementation depends on your modal library or custom modal component
+    console.warn('Modal would be shown:', props);
+    
+    // Example using browser alert (replace with your actual modal implementation)
+    alert(`${props.title}\n${props.message}`);
+  }
+};
+
+// Utility functions for different account status scenarios
+function handleAccountSuspended(errorData: { details?: ErrorDetails } = {}) {
+  // Show suspension details
+  modalService.show({
+    title: "Account Suspended",
+    message: "Your account has been temporarily suspended.",
+    details: errorData.details
+  });
+  handleLogout();
+}
+
+function handleAccountBanned(errorData: { details?: ErrorDetails } = {}) {
+  // Show permanent ban details
+  modalService.show({
+    title: "Account Banned",
+    message: "Your account has been permanently banned.",
+    details: errorData.details
+  });
+  handleLogout();
+}
+
+function handleAccountInactive(errorData: { details?: ErrorDetails } = {}) {
+  // Show account inactivity details
+  modalService.show({
+    title: "Account Inactive",
+    message: "Your account is currently inactive.",
+    details: errorData.details
+  });
+  handleLogout();
+}
+
+function handleAccountDisabled(errorData: { details?: ErrorDetails } = {}) {
+  // Log the disabled account details
+  console.warn('Account Disabled:', errorData);
+  
+  // Show a specific modal or notification
+  modalService.show({
+    title: "Account Disabled",
+    message: "Your account has been disabled.",
+    details: errorData.details
+  });
+  
+  // Logout the user
+  handleLogout();
+}
+
 
 const authService = {
   async refreshToken() {
@@ -88,62 +161,129 @@ authApi.interceptors.request.use(
 );
 
 // Response interceptor
+// authApi.interceptors.response.use(
+//   (response) => {
+//     // Log successful responses
+//     console.log("Response Interceptor Success:", {
+//       url: response.config.url,
+//       status: response.status,
+//     });
+//     return response;
+//   },
+//   async (error) => {
+//     const originalRequest = error.config;
+
+    
+
+//     // Detailed error logging
+//     console.error("Response Interceptor Error:", {
+//       status: error.response?.status,
+//       data: error.response?.data,
+//       url: error.config?.url,
+//       method: error.config?.method,
+//     });
+
+//     // Handle 401 unauthorized errors
+//     if (error.response?.status === 401 && !originalRequest._retry) {
+//       originalRequest._retry = true;
+//       try {
+//         console.log("Attempting token refresh");
+
+//         // Attempt to refresh the token
+//         const response = await authApi.post("/api/auth/refresh-token");
+//         const {token, user} = response.data;
+
+//         // Update token in storage
+//         localStorage.setItem("token", token);
+
+//         // Optional: Update user data
+//         if (user) {
+//           localStorage.setItem("userData", JSON.stringify(user));
+//         }
+
+//         // Update axios and original request headers
+//         authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+//         originalRequest.headers["Authorization"] = `Bearer ${token}`;
+
+//         // Retry the original request
+//         return authApi(originalRequest);
+//       } catch (refreshError) {
+//         console.error("Token refresh failed:", refreshError);
+
+//         // Logout user if refresh fails
+//         localStorage.removeItem("token");
+//         window.location.href = "/signin";
+//         return Promise.reject(refreshError);
+//       }
+//     }
+//     return Promise.reject(error);
+//   }
+// );
+
 authApi.interceptors.response.use(
-  (response) => {
-    // Log successful responses
-    console.log("Response Interceptor Success:", {
-      url: response.config.url,
-      status: response.status,
-    });
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Detailed error logging
-    console.error("Response Interceptor Error:", {
-      status: error.response?.status,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method,
-    });
+    // More comprehensive error handling
+    if (error.response?.status === 401) {
+      const errorCode = error.response.data?.code;
 
-    // Handle 401 unauthorized errors
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        console.log("Attempting token refresh");
+      console.log("Authentication Error:", {
+        code: errorCode,
+        message: error.response.data?.message,
+        path: originalRequest.url,
+      });
 
-        // Attempt to refresh the token
-        const response = await authApi.post("/api/auth/refresh-token");
-        const {token, user} = response.data;
+      // Different handling based on error code
+     switch (errorCode) {
+       case "ACCOUNT_SUSPENDED":
+         handleAccountSuspended(error.response.data);
+         break;
+       case "ACCOUNT_BANNED":
+         handleAccountBanned(error.response.data);
+         break;
+       case "ACCOUNT_INACTIVE":
+       case "ACCOUNT_INVALID_STATUS":
+         handleAccountInactive(error.response.data);
+         break;
 
-        // Update token in storage
-        localStorage.setItem("token", token);
+       // Existing token refresh logic
+       case "TOKEN_EXPIRED":
+       case "TOKEN_INVALID":
+         if (!originalRequest._retry) {
+           originalRequest._retry = true;
+           try {
+             const response = await authApi.post("/api/auth/refresh-token");
+             const {token, user} = response.data;
 
-        // Optional: Update user data
-        if (user) {
-          localStorage.setItem("userData", JSON.stringify(user));
-        }
+             setAuthToken(token);
 
-        // Update axios and original request headers
-        authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        originalRequest.headers["Authorization"] = `Bearer ${token}`;
+             return authApi(originalRequest);
+           } catch (refreshError) {
+             handleLogout();
+             return Promise.reject(refreshError);
+           }
+         }
+         break;
 
-        // Retry the original request
-        return authApi(originalRequest);
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-
-        // Logout user if refresh fails
-        localStorage.removeItem("token");
-        window.location.href = "/signin";
-        return Promise.reject(refreshError);
-      }
+       default:
+         handleLogout();
+         break;
+     }
     }
+
     return Promise.reject(error);
   }
 );
+
+// Utility functions
+// Utility functions for different account status scenarios
+
+function showAccountDisabledModal(_details: any) {
+  // Implement a user-friendly modal explaining account status
+  // You might want to show different messages based on the reason
+}
 
 
 export const setAuthToken = (token: string | null) => {
