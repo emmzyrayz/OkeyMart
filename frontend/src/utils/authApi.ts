@@ -5,6 +5,47 @@ import axios from "axios";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 // console.log("API Base URL:", API_BASE_URL);
 
+const authService = {
+  async refreshToken() {
+    try {
+      console.log("Attempting to refresh token");
+
+      // Get the current token for the refresh request
+      const currentToken = localStorage.getItem("token");
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/refresh-token`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${currentToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const {token, user} = response.data;
+
+      if (!token) {
+        throw new Error("No token received in refresh response");
+      }
+
+      // Update token in storage
+      localStorage.setItem("token", token);
+
+      // Optionally update user data
+      if (user) {
+        localStorage.setItem("userData", JSON.stringify(user));
+      }
+
+      return token;
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      throw error;
+    }
+  },
+};
+
 const authApi = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -17,12 +58,7 @@ const authApi = axios.create({
 authApi.interceptors.request.use(
   (config) => {
     // Check for token in both localStorage and cookies
-    let token;
-
-    // Try localStorage first
-    if (typeof window !== "undefined") {
-      token = localStorage.getItem("token");
-    }
+    const token = localStorage.getItem("token");
 
     console.log("Request Interceptor Token Check:", {
       hasToken: !!token,
@@ -30,19 +66,6 @@ authApi.interceptors.request.use(
       url: config.url,
       method: config.method,
     });
-
-
-
-    // Fallback to checking cookies if available
-    if (!token && typeof document !== "undefined") {
-      const cookies = document.cookie.split(";");
-      const tokenCookie = cookies.find((cookie) =>
-        cookie.trim().startsWith("token=")
-      );
-      if (tokenCookie) {
-        token = tokenCookie.split("=")[1];
-      }
-    }
 
     console.log("Token in interceptor:", {
       hasToken: !!token,
@@ -90,16 +113,24 @@ authApi.interceptors.response.use(
       originalRequest._retry = true;
       try {
         console.log("Attempting token refresh");
-        // Adjust the refresh token endpoint to match your backend
+
+        // Attempt to refresh the token
         const response = await authApi.post("/api/auth/refresh-token");
-        const {token} = response.data;
+        const {token, user} = response.data;
 
-        console.log("Token refreshed successfully");
-
+        // Update token in storage
         localStorage.setItem("token", token);
-        authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        originalRequest.headers.Authorization = `Bearer ${token}`;
 
+        // Optional: Update user data
+        if (user) {
+          localStorage.setItem("userData", JSON.stringify(user));
+        }
+
+        // Update axios and original request headers
+        authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        originalRequest.headers["Authorization"] = `Bearer ${token}`;
+
+        // Retry the original request
         return authApi(originalRequest);
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
