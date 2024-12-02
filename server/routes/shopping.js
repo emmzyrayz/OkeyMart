@@ -3,6 +3,7 @@ const router = express.Router();
 const {authMiddleware} = require("../middleware/auth");
 const UserShopping = require("../models/usershopping"); // New model
 const User = require("../models/User");
+const rateLimit = require("express-rate-limit");
 
 // Enhanced rate limiting
 const createLimiter = (windowMs, max, message) =>
