@@ -12,7 +12,8 @@ import React, {
 import {Product} from "@/types/product";
 import authApi from "@/utils/authApi";
 import axios from "axios";
-// import {toast} from "react-toastify";
+import { useUser } from "./userContext/UserContext";
+import router from "next/router";
 
 // Helper function for getting product ID
 const getProductId = (product: Product): string | null => {
@@ -335,10 +336,11 @@ const shoppingReducer = (
 export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   children,
 }) => {
+  const {user, logout} = useUser();
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    id: "",
-    email: "",
-    isAuthenticated: false,
+    id: user.id,
+    email: user.email,
+    isAuthenticated: user.isAuthenticated,
   });
 
   const [shoppingState, dispatch] = useReducer(shoppingReducer, {
@@ -353,6 +355,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
     recentSearchProducts: [],
     userActivities: [],
   });
+
+  // Update userInfo when user context changes
+  useEffect(() => {
+    setUserInfo({
+      id: user.id,
+      email: user.email,
+      isAuthenticated: user.isAuthenticated,
+    });
+  }, [user]);
 
   const syncShoppingContext = useCallback(async () => {
     // Only attempt sync if user is authenticated
@@ -434,9 +445,11 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   // Enhanced Cart Methods with Server Sync
   const addToCart = useCallback(
     async (product: CartItem) => {
-      // Check user authentication before proceeding
-      if (!userInfo.isAuthenticated) {
+      // Use user from UserContext directly
+      if (!user.isAuthenticated) {
         console.warn("User not authenticated. Cannot add to cart.");
+        // Optional: Redirect to login or show login modal
+        // router.push("/signin");
         return;
       }
 
@@ -444,12 +457,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
         // Optimistically update local state
         dispatch({type: "ADD_TO_CART", payload: product});
 
-        await authApi.post(`/api/shopping/add-to-cart/${userInfo.id}`, {
-          email: userInfo.email,
-          product,
-          quantity: product.quantity,
-          additionalData: product.additionalData,
-        });
+        await authApi.post(
+          `/api/shopping/add-to-cart/${userInfo.id}`,
+          {
+            email: userInfo.email,
+            product,
+            quantity: product.quantity,
+            additionalData: product.additionalData,
+          }
+        );
 
         // Log user activity
         dispatch({
@@ -771,46 +787,47 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   }, [shoppingState.cart.items]);
 
   // Search Methods
-  const logSearch = useCallback((keyword: string, products?: Product[]) => {
-    // Check user authentication before logging
-    if (!userInfo.isAuthenticated) {
-      console.warn("User not authenticated. Cannot log search.");
-      return;
-    }
+  const logSearch = useCallback(
+    (keyword: string, products?: Product[]) => {
+      // Check user authentication before logging
+      if (!userInfo.isAuthenticated) {
+        console.warn("User not authenticated. Cannot log search.");
+        return;
+      }
 
-    dispatch({type: "ADD_SEARCH_KEYWORD", payload: keyword});
+      dispatch({type: "ADD_SEARCH_KEYWORD", payload: keyword});
 
-    if (products) {
-      dispatch({type: "ADD_SEARCH_PRODUCTS", payload: products});
-    }
+      if (products) {
+        dispatch({type: "ADD_SEARCH_PRODUCTS", payload: products});
+      }
 
-    // Log search activity
-    dispatch({
-      type: "LOG_USER_ACTIVITY",
-      payload: {
-        type: "SEARCH",
-        details: {
-          keyword,
-          userId: userInfo.id,
-          email: userInfo.email,
+      // Log search activity
+      dispatch({
+        type: "LOG_USER_ACTIVITY",
+        payload: {
+          type: "SEARCH",
+          details: {
+            keyword,
+            userId: userInfo.id,
+            email: userInfo.email,
+          },
+          timestamp: Date.now(),
         },
-        timestamp: Date.now(),
-      },
-    });
-
-    // Optional: Send search to server
-    try {
-      authApi.post(`/api/shopping/log-search/${userInfo.id}`, {
-        email: userInfo.email,
-        keyword,
-        products,
       });
-    } catch (error) {
-      console.warn("Failed to log search to server:", error);
-    }
-  },
-  [userInfo.isAuthenticated, userInfo.id, userInfo.email]
-);
+
+      // Optional: Send search to server
+      try {
+        authApi.post(`/api/shopping/log-search/${userInfo.id}`, {
+          email: userInfo.email,
+          keyword,
+          products,
+        });
+      } catch (error) {
+        console.warn("Failed to log search to server:", error);
+      }
+    },
+    [userInfo.isAuthenticated, userInfo.id, userInfo.email]
+  );
 
   // User Activity Logging Method
   const logUserActivity = useCallback((activity: UserActivity) => {
@@ -823,6 +840,21 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
     } catch (error) {
       console.warn("Failed to log analytics:", error);
     }
+  }, []);
+
+  const handleShoppingContextLogout = useCallback(() => {
+    // Clear local shopping state
+    dispatch({type: "CLEAR_CART"});
+    dispatch({type: "CLEAR_WISHLIST"});
+    dispatch({type: "CLEAR_VIEWED_PRODUCTS"});
+    // dispatch({type: "CLEAR_SEARCH_HISTORY"});
+
+    // Reset user info
+    setUserInfo({
+      id: "",
+      email: "",
+      isAuthenticated: false,
+    });
   }, []);
 
   // const saveShoppingContextToServer = async () => {
@@ -841,16 +873,16 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
 
   // Sync and save effects
   useEffect(() => {
-    if (userInfo.isAuthenticated) {
-      // Initial sync when user becomes authenticated
+    // If user becomes unauthenticated, clear shopping context
+    if (!user.isAuthenticated) {
+      dispatch({type: "CLEAR_CART"});
+      dispatch({type: "CLEAR_WISHLIST"});
+      dispatch({type: "CLEAR_VIEWED_PRODUCTS"});
+    } else {
+      // Sync shopping context when user becomes authenticated
       syncShoppingContext();
-
-      // Periodic sync
-      const syncInterval = setInterval(syncShoppingContext, 5 * 60 * 1000);
-
-      return () => clearInterval(syncInterval);
     }
-  }, [userInfo.isAuthenticated, syncShoppingContext]);
+  }, [user.isAuthenticated]);
 
   useEffect(() => {
     if (userInfo.isAuthenticated) {

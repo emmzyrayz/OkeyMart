@@ -32,19 +32,19 @@ const createLimiter = (windowMs, max, message) =>
 // General rate limiter for all routes
 const generalLimiter = createLimiter(
   15 * 60 * 1000, // 15 minutes
-  100, // 100 requests per window
+  9000, // 100 requests per window
   "Too many requests from this IP. Please try again later."
 );
 
 // Specific rate limiters
 const authLimiter = createLimiter(
   15 * 60 * 1000,
-  5,
+  5000,
   "Too many authentication attempts. Please try again later."
 );
 const resetLimiter = createLimiter(
   60 * 60 * 1000,
-  3,
+  3000,
   "Too many reset attempts. Please try again in an hour."
 );
 
