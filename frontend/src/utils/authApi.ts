@@ -120,10 +120,15 @@ export const setAuthToken = (token: string | null) => {
     console.log("Setting auth token");
     localStorage.setItem("token", token);
     authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+    // Optional: Set in cookies for cross-domain support
+    document.cookie = `token=${token}; path=/; secure; samesite=strict`;
   } else {
     console.log("Removing auth token");
     localStorage.removeItem("token");
     delete authApi.defaults.headers.common["Authorization"];
+    // Clear token cookie
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   }
 };
 
