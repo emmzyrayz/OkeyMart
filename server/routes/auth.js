@@ -822,9 +822,7 @@ router.post("/refresh-token", authMiddleware, async (req, res) => {
     const userId = req.user.userId;
 
     // Find user with additional checks
-    const user = await User.findById(userId).select(
-      "name email phone role verificationStatus isActive"
-    );
+    const user = await User.findById(userId);
 
     if (!user) {
       console.warn(`Refresh token attempt for non-existent user: ${userId}`);
@@ -834,12 +832,15 @@ router.post("/refresh-token", authMiddleware, async (req, res) => {
       });
     }
 
-    // Optional: Check user account status
-    if (user.isActive === false) {
-      console.warn(`Refresh token attempt for inactive user: ${userId}`);
+    // Comprehensive account status validation
+    if (user.status !== "active") {
       return res.status(401).json({
-        message: "Account is inactive",
+        message: "Account is not active",
         code: "ACCOUNT_INACTIVE",
+        details: {
+          status: user.status,
+          verificationStatus: user.verificationStatus,
+        },
       });
     }
 
@@ -861,6 +862,7 @@ router.post("/refresh-token", authMiddleware, async (req, res) => {
         phone: decrypt(user.phone),
         role: user.role,
         verificationStatus: user.verificationStatus,
+        status: user.status,
       },
     });
   } catch (error) {

@@ -92,11 +92,70 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    // Enhanced logging for user status
+    console.log("User Status Check:", {
+      userId: decoded.userId,
+      userStatus: user.status,
+      role: user.role,
+      verificationStatus: user.verificationStatus,
+      requestPath: req.path,
+    });
+
+    // More comprehensive account status validation
+    switch (user.status) {
+      case "active":
+        // Account is good to proceed
+        break;
+      case "suspended":
+        return res.status(401).json({
+          error: true,
+          message: "Account is suspended",
+          code: "ACCOUNT_SUSPENDED",
+          details: {
+            userId: user._id,
+            suspendedAt: user.updatedAt, // Assuming you want to show when it was suspended
+          },
+        });
+      case "banned":
+        return res.status(401).json({
+          error: true,
+          message: "Account is banned",
+          code: "ACCOUNT_BANNED",
+          details: {
+            userId: user._id,
+          },
+        });
+      default:
+        return res.status(401).json({
+          error: true,
+          message: "Invalid account status",
+          code: "ACCOUNT_INVALID_STATUS",
+          details: {
+            currentStatus: user.status,
+          },
+        });
+    }
+
     if (!user.isActive) {
+      console.warn("Account Disabled Details:", {
+        userId: decoded.userId,
+        email: decoded.email,
+        disabledReason: user.disabledReason, // Add this field to your User model if possible
+        requestDetails: {
+          path: req.path,
+          method: req.method,
+          body: req.body,
+        },
+      });
+
       return res.status(401).json({
         error: true,
         message: "User account is disabled",
         code: "ACCOUNT_DISABLED",
+        details: {
+          userId: decoded.userId,
+          email: decoded.email,
+        },
       });
     }
 
