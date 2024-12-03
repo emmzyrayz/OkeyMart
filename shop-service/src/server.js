@@ -11,6 +11,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/shopping/cart", require("./routes/cart"));
+app.use("/api/shopping/tokens", require("./routes/token"));
 // Add other route imports
 
 // Database Connection

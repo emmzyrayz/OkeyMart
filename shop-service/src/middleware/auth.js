@@ -1,55 +1,37 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User"); // Adjust path as needed
+const Token = require("../models/Token");
 
 const authMiddleware = async (req, res, next) => {
   try {
     // Get token from Authorization header
     const token = req.headers.authorization?.split(" ")[1];
+    const userId = req.headers["x-user-id"];
+    const userEmail = req.headers["x-user-email"];
 
-    if (!token) {
+    if (!token || !userId || !userEmail) {
       return res.status(401).json({
-        message: "No token provided",
-        code: "TOKEN_MISSING",
+        message: "Authentication credentials missing",
+        code: "AUTH_CREDENTIALS_MISSING",
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Validate token
+    const isValidToken = await Token.validateToken(token, userId, userEmail);
 
-    // Check if user exists
-    const user = await User.findById(decoded.id);
-    if (!user) {
+    if (!isValidToken) {
       return res.status(401).json({
-        message: "Invalid token",
+        message: "Invalid or expired token",
         code: "TOKEN_INVALID",
       });
     }
 
-    // Check user account status
-    if (user.status !== "active") {
-      return res.status(403).json({
-        message: "Account is not active",
-        code: "ACCOUNT_INACTIVE",
-        details: {
-          status: user.status,
-        },
-      });
-    }
-
-    // Attach user to request
-    req.user = user;
+    // Attach user info to request
+    req.user = {id: userId, email: userEmail};
     next();
   } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        message: "Token expired",
-        code: "TOKEN_EXPIRED",
-      });
-    }
-
     res.status(401).json({
       message: "Authentication failed",
       code: "AUTH_FAILED",
+      error: error.message,
     });
   }
 };
