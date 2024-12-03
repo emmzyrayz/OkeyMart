@@ -4,6 +4,11 @@ const UserShopping = require("../models/usershopping"); // New model
 const Product = require("../models/products")
 const User = require("../models/User");
 const rateLimit = require("express-rate-limit");
+const {
+  authMiddleware,
+  generateToken,
+  authorizeRole,
+} = require("../middleware/auth");
 
 // Enhanced rate limiting
 const createLimiter = (windowMs, max, message) =>
