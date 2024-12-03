@@ -9,37 +9,84 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
+import {Types} from "mongoose";
 import {Product} from "@/types/product";
 import authApi from "@/utils/authApi";
 import axios from "axios";
-import { useUser } from "./userContext/UserContext";
-import router from "next/router";
+import {useUser} from "./userContext/UserContext";
+import {
+  UserShopping,
+  CartItem as CartItems,
+  UserActivityType,
+  WishlistItem,
+  ViewedProduct,
+  SearchHistory,
+  UserActivity as ServerUserActivity,
+} from "@/types/usershopping";
 
 // Helper function for getting product ID
 const getProductId = (product: Product): string | null => {
   return product._id || product.id || null;
 };
 
+const isObjectId = (id: any): id is Types.ObjectId => {
+  return id instanceof Types.ObjectId;
+};
+
+function isFullProduct(
+  product: Types.ObjectId | Product
+): product is Product {
+  return typeof product === "object" && "_id" in product;
+}
+
 // Generic additional data type that can accommodate different product types
 export interface ProductAdditionalData {
   [key: string]: string | number | boolean;
 }
 
+// Extend Product to match server-side requirements
 export interface CartItem extends Product {
+  product?: Product | Types.ObjectId;
+  productId?: string;
   quantity: number;
-  additionalData: ProductAdditionalData;
+  additionalData?: Record<string, string | number | boolean>;
+  addedAt?: Date;
 }
+
+// Mapping function to convert client-side types to server-side types
+const mapToServerCartItem = (item: CartItem): CartItems => {
+  // Ensure we have a product ID
+  const productId =
+    item._id ||
+    (typeof item.product === "object" && "_id" in item.product
+      ? (item.product as Product)._id
+      : null);
+
+
+  return {
+    product: isObjectId(productId)
+      ? productId
+      : new Types.ObjectId(productId as string),
+    quantity: item.quantity,
+    additionalData: item.additionalData,
+    addedAt: item.addedAt || new Date(),
+  };
+};
+
+
+const mapToServerWishlistItem = (item: Product): WishlistItem => ({
+  product: new Types.ObjectId(item._id),
+  addedAt: new Date(),
+});
+
+const mapToServerViewedProduct = (item: Product): ViewedProduct => ({
+  product: new Types.ObjectId(item._id),
+  viewedAt: new Date(),
+});
 
 // New interfaces for search and activity logging
 export interface SearchEntry {
   keyword: string;
-  timestamp: number;
-}
-
-export interface UserActivity {
-  type: "SEARCH" | "VIEW_PRODUCT" | "ADD_TO_CART" | "ADD_TO_WISHLIST";
-  productId?: string;
-  details?: any;
   timestamp: number;
 }
 
@@ -81,6 +128,14 @@ type ShoppingAction =
         userActivities?: UserActivity[];
       };
     };
+
+// Define a more flexible UserActivity to bridge client and server
+interface UserActivity {
+  type: UserActivityType;
+  productId?: string;
+  details?: Record<string, any>;
+  timestamp: number;
+}
 
 interface ShoppingContextType {
   // Cart methods
@@ -336,7 +391,7 @@ const shoppingReducer = (
 export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
   children,
 }) => {
-  const {user, logout} = useUser();
+  const {user} = useUser();
   const [userInfo, setUserInfo] = useState<UserInfo>({
     id: user.id,
     email: user.email,
@@ -365,106 +420,105 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
     });
   }, [user]);
 
-  const syncShoppingContext = useCallback(async () => {
-    // Only attempt sync if user is authenticated
-    if (!userInfo.isAuthenticated) return;
+  // Sync shopping context with server-side UserShopping model
+ const syncShoppingContext = useCallback(async () => {
+   if (!userInfo.isAuthenticated) return;
 
-    try {
-      const response = await authApi.get(
-        `/api/shopping/user-data/${userInfo.id}`,
-        {
-          params: {
-            email: userInfo.email,
-          },
-        }
-      );
+   try {
+     const response = await authApi.get<UserShopping>(
+       `/api/shopping/user-data/${userInfo.id}`
+     );
 
-      const {
-        cart = [],
-        wishlist = [],
-        viewedProducts = [],
-        searchHistory = [],
-        userActivities = [],
-      } = response.data;
+     // Populate products if they're not already populated
+     const populatedCart = response.data.cart.map((item) => ({
+       ...(item.product as Product),
+       quantity: item.quantity,
+       additionalData: item.additionalData,
+       addedAt: item.addedAt,
+     }));
 
-      // Safely calculate cart details
-      const cartItems = Array.isArray(cart) ? cart : [];
-      const cartTotal = calculateTotal(cartItems);
-      const cartItemCount = cartItems.reduce(
-        (count, item) => count + (item.quantity || 1),
-        0
-      );
+     dispatch({
+       type: "BULK_UPDATE",
+       payload: {
+         cart: {
+           items: populatedCart,
+           total: calculateTotal(populatedCart),
+           itemCount: populatedCart.reduce(
+             (sum, item) => sum + item.quantity,
+             0
+           ),
+         },
+         wishlist:
+           response.data.wishlist?.map((item) => item.product as Product) || [],
+         viewedProducts:
+           response.data.viewedProducts?.map(
+             (item) => item.product as Product
+           ) || [],
+         searchHistory: response.data.searchHistory.map((entry) => ({
+           keyword: entry.keyword,
+           timestamp: entry.timestamp ? entry.timestamp.getTime() : Date.now(),
+         })),
+         userActivities: response.data.userActivities.map((activity) => ({
+           type: activity.type,
+           productId: activity.details?.productId,
+           details: activity.details,
+           timestamp: activity.timestamp
+             ? activity.timestamp.getTime()
+             : Date.now(),
+         })),
+       },
+     });
+   } catch (error) {
+     console.error("Error syncing shopping context:", error);
+   }
+ }, [userInfo.isAuthenticated, userInfo.id]);
 
-      dispatch({
-        type: "BULK_UPDATE",
-        payload: {
-          cart: {
-            items: cartItems,
-            total: cartTotal,
-            itemCount: cartItemCount,
-          },
-          wishlist,
-          viewedProducts,
-          searchHistory,
-          userActivities,
-        },
-      });
-    } catch (error) {
-      console.error("Error syncing shopping context:", error);
+ const saveShoppingContextToServer = useCallback(async () => {
+   if (!userInfo.isAuthenticated) return;
 
-      // Optional: Implement more sophisticated error handling
-      if (error instanceof Error) {
-        // Log specific error details
-        console.error({
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-        });
-      }
-    }
-  }, [userInfo.isAuthenticated, userInfo.id, userInfo.email]);
-
-  const saveShoppingContextToServer = useCallback(async () => {
-    // Only save if user is authenticated
-    if (!userInfo.isAuthenticated) return;
-
-    try {
-      await authApi.post(`/api/shopping/update-context/${userInfo.id}`, {
-        email: userInfo.email,
-        cart: shoppingState.cart.items,
-        wishlist: shoppingState.wishlist,
-        viewedProducts: shoppingState.viewedProducts,
-        searchHistory: shoppingState.searchHistory,
-        userActivities: shoppingState.userActivities,
-      });
-    } catch (error) {
-      console.error("Error saving shopping context to server:", error);
-    }
-  }, [userInfo.isAuthenticated, userInfo.id, userInfo.email, shoppingState]);
+   try {
+     await authApi.post<UserShopping>(
+       `/api/shopping/update-context/${userInfo.id}`,
+       {
+         user: new Types.ObjectId(userInfo.id),
+         cart: shoppingState.cart.items.map(mapToServerCartItem),
+         wishlist: shoppingState.wishlist.map(mapToServerWishlistItem),
+         viewedProducts: shoppingState.viewedProducts.map(
+           mapToServerViewedProduct
+         ),
+         searchHistory: shoppingState.searchHistory.map((entry) => ({
+           keyword: entry.keyword,
+           timestamp: new Date(entry.timestamp),
+         })),
+         userActivities: shoppingState.userActivities.map((activity) => ({
+           type: activity.type,
+           details: {
+             ...activity.details,
+             productId: activity.productId,
+           },
+           timestamp: new Date(activity.timestamp),
+         })),
+       }
+     );
+   } catch (error) {
+     console.error("Error saving shopping context to server:", error);
+   }
+ }, [userInfo.isAuthenticated, userInfo.id, shoppingState]);
 
   // Enhanced Cart Methods with Server Sync
   const addToCart = useCallback(
     async (product: CartItem) => {
       // Use user from UserContext directly
-      if (!user.isAuthenticated) {
-        console.warn("User not authenticated. Cannot add to cart.");
-        // Optional: Redirect to login or show login modal
-        // router.push("/signin");
-        return;
-      }
+      if (!userInfo.isAuthenticated) return;
 
       try {
         // Optimistically update local state
         dispatch({type: "ADD_TO_CART", payload: product});
 
+        // Map to server-side cart item
         await authApi.post(
           `/api/shopping/add-to-cart/${userInfo.id}`,
-          {
-            email: userInfo.email,
-            product,
-            quantity: product.quantity,
-            additionalData: product.additionalData,
-          }
+          mapToServerCartItem(product)
         );
 
         // Log user activity
@@ -563,18 +617,29 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       }
 
       // Check if product is already in wishlist
-      const productId = getProductId(product);
+      const productId = product._id;
       if (!productId) return;
 
       // Prevent duplicate entries
       if (
-        shoppingState.wishlist.some((item) => getProductId(item) === productId)
+        shoppingState.wishlist.some((wishlistItem) => {
+
+          const itemProduct = wishlistItem;
+
+          if (!itemProduct) {
+            return false; // Skip items without a product
+          }
+          // Safely extract wishlist item's product ID
+          const itemProductId =
+      typeof itemProduct === "object" && "_id" in itemProduct
+        ? itemProduct._id
+        : itemProduct.toString();
+
+          return itemProductId === productId;
+        })
       ) {
-        // toast.info("Product already in wishlist");
         return;
       }
-
-      
 
       try {
         // Optimistically add to local state
