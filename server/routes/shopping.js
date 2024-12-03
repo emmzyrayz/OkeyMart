@@ -382,8 +382,18 @@ router.get("/user-data/:userId", generalLimiter, async (req, res) => {
     }
 
     const userShopping = await UserShopping.findOne({user: userId})
-      .populate("cart.product")
-      .populate("wishlist.product")
+      .populate({
+        path: "cart.product",
+        model: "Product",
+      })
+      .populate({
+        path: "wishlist.product",
+        model: "Product",
+      })
+      .populate({
+        path: "viewedProducts.product",
+        model: "Product",
+      })
       .lean();
 
     if (!userShopping) {
