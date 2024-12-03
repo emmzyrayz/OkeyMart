@@ -212,6 +212,13 @@ const authorizeRole = (allowedRoles) => {
       });
     }
 
+    // Add more detailed logging
+    console.log("Auth Middleware User:", {
+      userId: req.user?.userId,
+      email: req.user?.email,
+      role: req.user?.role,
+    });
+
     next();
   };
 };
