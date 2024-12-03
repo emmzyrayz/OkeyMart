@@ -192,10 +192,33 @@ router.post(
       const {email, product} = req.body;
       const userId = req.params.userId;
 
+      // Comprehensive authentication check
+      if (!req.user) {
+        return res.status(401).json({
+          message: "Authentication required",
+          code: "NO_USER_CONTEXT",
+        });
+      }
+
       // Verify user matches the authenticated user
       if (req.user.userId !== userId) {
-        return res.status(403).json({message: "Unauthorized"});
+        return res.status(403).json({
+          message: "Unauthorized access",
+          code: "USER_MISMATCH",
+          requestedUserId: userId,
+          authenticatedUserId: req.user.userId,
+        });
       }
+
+      // Detailed logging
+      console.log("Add to Wishlist Request:", {
+        authenticatedUser: req.user,
+        requestParams: {
+          userId,
+          email,
+          productId: product?._id,
+        },
+      });
 
       // Validate product data
       if (!product || !product._id) {
@@ -433,15 +456,31 @@ router.get("/user-data/:userId", generalLimiter, async (req, res) => {
 });
 
 // Update Entire Shopping Context
-router.post("/update-context/:userId", generalLimiter, async (req, res) => {
+router.post("/update-context/:userId", authMiddleware, async (req, res) => {
   try {
-    const {cart, wishlist, viewedProducts, searchHistory, userActivities} =
-      req.body;
     const userId = req.params.userId;
 
-    // Verify user matches the authenticated user
+    // Validate that the authenticated user matches the userId in the route
     if (req.user.userId !== userId) {
-      return res.status(403).json({message: "Unauthorized"});
+      return res.status(403).json({
+        message: "Unauthorized access",
+        error: "User ID mismatch",
+      });
+    }
+
+    const {cart, wishlist, viewedProducts, searchHistory, userActivities} =
+      req.body;
+
+    // Validate input data
+    if (
+      !Array.isArray(cart) ||
+      !Array.isArray(wishlist) ||
+      !Array.isArray(viewedProducts)
+    ) {
+      return res.status(400).json({
+        message: "Invalid input data",
+        error: "Arrays expected for cart, wishlist, and viewed products",
+      });
     }
 
     let userShopping = await UserShopping.findOne({user: userId});
@@ -449,31 +488,39 @@ router.post("/update-context/:userId", generalLimiter, async (req, res) => {
       userShopping = new UserShopping({user: userId});
     }
 
-    // Update cart
+    // Safely update each section
     userShopping.cart = cart;
-
-    // Update wishlist
     userShopping.wishlist = wishlist;
-
-    // Update viewed products
     userShopping.viewedProducts = viewedProducts;
-
-    // Update search history
     userShopping.searchHistory = searchHistory;
-
-    // Update user activities
     userShopping.userActivities = userActivities;
 
     await userShopping.save();
 
     res.status(200).json({
       message: "Shopping context updated successfully",
+      updatedSections: Object.keys({
+        cart,
+        wishlist,
+        viewedProducts,
+        searchHistory,
+        userActivities,
+      }).filter((key) => req.body[key]?.length > 0),
     });
   } catch (error) {
-    console.error("Update shopping context error:", error);
+    console.error("Update Context Error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      input: req.body,
+    });
+
     res.status(500).json({
       message: "Error updating shopping context",
-      error: error.message,
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 });
