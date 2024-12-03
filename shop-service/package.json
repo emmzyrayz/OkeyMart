@@ -2,7 +2,7 @@
   "name": "shopping-service",
   "version": "1.0.0",
   "keywords": [],
-  "main": "server.js",
+  "main": "src/server.js",
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -26,7 +26,11 @@
     "start": "node src/server.js",
     "build": "echo 'No build step needed'",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix"
+  },
+  "devDependencies": {
+    "eslint": "^9.16.0",
+    "eslint-plugin-import": "^2.31.0"
   }
 }
