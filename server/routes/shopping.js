@@ -178,66 +178,71 @@ router.delete(
 );
 
 // Add to Wishlist
-router.post("/add-to-wishlist/:userId", generalLimiter, async (req, res) => {
-  try {
-    const {email, product} = req.body;
-    const userId = req.params.userId;
+router.post(
+  "/add-to-wishlist/:userId",
+  authMiddleware,
+  generalLimiter,
+  async (req, res) => {
+    try {
+      const {email, product} = req.body;
+      const userId = req.params.userId;
 
-    // Verify user matches the authenticated user
-    if (req.user.userId !== userId) {
-      return res.status(403).json({message: "Unauthorized"});
-    }
+      // Verify user matches the authenticated user
+      if (req.user.userId !== userId) {
+        return res.status(403).json({message: "Unauthorized"});
+      }
 
-    // Validate product data
-    if (!product || !product._id) {
-      return res.status(400).json({
-        message: "Invalid product data",
-        error: "Product ID is required",
+      // Validate product data
+      if (!product || !product._id) {
+        return res.status(400).json({
+          message: "Invalid product data",
+          error: "Product ID is required",
+        });
+      }
+
+      // Validate product exists
+      const existingProduct = await Product.findById(product._id);
+      if (!existingProduct) {
+        return res.status(404).json({message: "Product not found"});
+      }
+
+      let userShopping = await UserShopping.findOne({user: userId});
+      if (!userShopping) {
+        userShopping = new UserShopping({user: userId});
+      }
+
+      // Prevent duplicate wishlist items
+      const existingWishlistItem = userShopping.wishlist.find(
+        (item) => item.product.toString() === product._id
+      );
+
+      if (!existingWishlistItem) {
+        userShopping.wishlist.push({
+          product: product._id,
+          addedAt: new Date(),
+        });
+      }
+
+      await userShopping.save();
+
+      res.status(200).json({
+        message: "Product added to wishlist",
+        wishlist: userShopping.wishlist,
+      });
+    } catch (error) {
+      console.error("Add to Wishlist Error:", {
+        error: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+
+      res.status(500).json({
+        message: "Error adding to wishlist",
+        error: error.message,
       });
     }
-
-    // Validate product exists
-    const existingProduct = await Product.findById(product._id);
-    if (!existingProduct) {
-      return res.status(404).json({message: "Product not found"});
-    }
-
-    let userShopping = await UserShopping.findOne({user: userId});
-    if (!userShopping) {
-      userShopping = new UserShopping({user: userId});
-    }
-
-    // Prevent duplicate wishlist items
-    const existingWishlistItem = userShopping.wishlist.find(
-      (item) => item.product.toString() === product._id
-    );
-
-    if (!existingWishlistItem) {
-      userShopping.wishlist.push({
-        product: product._id,
-        addedAt: new Date(),
-      });
-    }
-
-    await userShopping.save();
-
-    res.status(200).json({
-      message: "Product added to wishlist",
-      wishlist: userShopping.wishlist,
-    });
-  } catch (error) {
-    console.error("Add to Wishlist Error:", {
-      error: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
-
-    res.status(500).json({
-      message: "Error adding to wishlist",
-      error: error.message,
-    });
   }
-});
+);
 
 // Remove from Wishlist
 router.delete(

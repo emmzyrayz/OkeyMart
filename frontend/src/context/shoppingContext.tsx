@@ -642,6 +642,14 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
       }
 
       try {
+        console.log("Adding to Wishlist - Request Details:", {
+        userId: userInfo.id,
+        email: userInfo.email,
+        productId: productId,
+        isAuthenticated: userInfo.isAuthenticated,
+      });
+
+
         // Optimistically add to local state
         dispatch({type: "ADD_TO_WISHLIST", payload: product});
 
@@ -669,6 +677,15 @@ export const ShoppingProvider: React.FC<{children: ReactNode}> = ({
           },
         });
       } catch (error) {
+        console.error("Detailed Wishlist Add Error:", {
+        error,
+        userId: userInfo.id,
+        productId,
+        isAxiosError: axios.isAxiosError(error),
+        // responseData: error.response?.data,
+        // responseStatus: error.response?.status,
+      });
+
         // More detailed error handling
         if (axios.isAxiosError(error)) {
           console.error("Wishlist Add Error:", {
