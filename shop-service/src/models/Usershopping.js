@@ -10,15 +10,27 @@ const UserShoppingSchema = new mongoose.Schema(
     },
     cart: [
       {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+        productId: {
+          type: String,
           required: true,
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+        image: {
+          type: String,
+          default: "",
         },
         quantity: {
           type: Number,
           required: true,
           min: 1,
+          default: 1,
         },
         additionalData: {
           type: mongoose.Schema.Types.Mixed,
@@ -30,54 +42,21 @@ const UserShoppingSchema = new mongoose.Schema(
         },
       },
     ],
-    wishlist: [
-      {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        addedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    viewedProducts: [
-      {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        viewedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    searchHistory: [
-      {
-        keyword: {
-          type: String,
-          required: true,
-        },
-        timestamp: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
     userActivities: [
       {
         type: {
           type: String,
-          enum: ["SEARCH", "VIEW_PRODUCT", "ADD_TO_CART", "ADD_TO_WISHLIST"],
+          enum: [
+            "ADD_TO_CART",
+            "REMOVE_FROM_CART",
+            "UPDATE_CART_QUANTITY",
+            "CLEAR_CART",
+            "BULK_ADD_TO_CART",
+          ],
           required: true,
         },
         details: {
           type: mongoose.Schema.Types.Mixed,
-          default: {},
         },
         timestamp: {
           type: Date,
@@ -90,8 +69,5 @@ const UserShoppingSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-// Ensure unique user constraint
-UserShoppingSchema.index({user: 1}, {unique: true});
 
 module.exports = mongoose.model("UserShopping", UserShoppingSchema);

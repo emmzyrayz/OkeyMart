@@ -1,4 +1,4 @@
-const UserShopping = require("../models/UserShopping");
+const UserShopping = require("../models/Usershopping");
 
 exports.addToCart = async (req, res) => {
   try {
