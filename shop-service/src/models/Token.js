@@ -1,22 +1,28 @@
+// models/Token.js
 const mongoose = require("mongoose");
-const crypto = require("crypto");
+const {generateToken} = require("../utils/encryption");
 
 const TokenSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
-      unique: true,
+      index: true,
     },
     email: {
       type: String,
       required: true,
       lowercase: true,
-      trim: true,
     },
     token: {
       type: String,
       required: true,
+      unique: true,
+    },
+    expiresAt: {
+      type: Date,
+      default: () => new Date(+new Date() + 24 * 60 * 60 * 1000), // 24 hours from now
+      index: {expires: "0"}, // Automatically delete after expiration
     },
     createdAt: {
       type: Date,
@@ -33,30 +39,33 @@ const TokenSchema = new mongoose.Schema(
   }
 );
 
-// Method to generate a secure token
+// Method to generate a token using user ID and email
 TokenSchema.statics.generateToken = function (userId, email) {
-  // Create a secure, unique token
-  const tokenData = `${userId}:${email}:${Date.now()}`;
-  return crypto.createHash("sha256").update(tokenData).digest("hex");
+  return generateToken(userId, email);
 };
 
 // Method to validate token
 TokenSchema.statics.validateToken = async function (token, userId, email) {
-  const tokenDoc = await this.findOne({
-    token,
-    userId,
-    email: email.toLowerCase(),
-  });
+  try {
+    // Validate token against stored token document
+    const tokenDoc = await this.findOne({
+      token,
+      userId,
+      email: email.toLowerCase(),
+    });
 
-  if (!tokenDoc) {
+    if (!tokenDoc) {
+      return false;
+    }
+
+    // Update last used timestamp
+    tokenDoc.lastUsed = new Date();
+    await tokenDoc.save();
+
+    return true;
+  } catch (error) {
     return false;
   }
-
-  // Update last used timestamp
-  tokenDoc.lastUsed = new Date();
-  await tokenDoc.save();
-
-  return true;
 };
 
 module.exports = mongoose.model("Token", TokenSchema);

@@ -253,6 +253,25 @@ export const ProductInfo = ({product}: {product: Product}) => {
           </div>
         </div>
       </div>
+      <div className="product-info_deskription flex flex-col items-left justify-center gap-2 mt-2">
+        <div className="related_top flex flex-row items-center gap-2">
+          <div className="today_red"></div>
+          <h2>Product Description</h2>
+        </div>
+        <div className="deskription_con flex flex-col p-1 items-center ">
+          <div className="desk-desript">
+            <h2>Description</h2>
+            <p>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Unde non
+              perferendis dicta quod aut perspiciatis accusantium dolore quia
+              ratione, quo officia aliquid animi rem maxime omnis! Commodi iste
+              nisi ex earum magnam dignissimos doloribus officiis atque. Dolore
+              in quo laboriosam, a odit saepe dicta nobis error voluptates nam,
+              numquam illum ad quam illo animi nesciunt?
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -3,9 +3,12 @@ import {Product} from "./product";
 
 export interface CartItem {
   product?: Types.ObjectId | Product;
+  productId: string; // Make it required and always a string
   quantity: number;
-  additionalData?: Record<string, string | number | boolean>;
+  additionalData?: Record<string, any>;
   addedAt?: Date;
+  name: string;
+  price: number;
 }
 
 export interface WishlistItem {

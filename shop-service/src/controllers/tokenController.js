@@ -11,6 +11,9 @@ exports.createToken = async (req, res) => {
       });
     }
 
+    // Optional: Add token expiration
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     // Remove any existing tokens for this user
     await Token.deleteMany({userId});
 
@@ -22,6 +25,7 @@ exports.createToken = async (req, res) => {
       userId,
       email,
       token: tokenString,
+      expiresAt, // Optional expiration
     });
 
     await newToken.save();
@@ -29,8 +33,10 @@ exports.createToken = async (req, res) => {
     res.status(201).json({
       message: "Token created successfully",
       token: tokenString,
+      expiresAt,
     });
   } catch (error) {
+    console.error("Error creating token:", error);
     res.status(500).json({
       message: "Error creating token",
       error: error.message,
@@ -49,6 +55,7 @@ exports.validateToken = async (req, res) => {
       message: isValid ? "Token is valid" : "Token is invalid",
     });
   } catch (error) {
+    console.error("Error validating token:", error);
     res.status(500).json({
       message: "Error validating token",
       error: error.message,

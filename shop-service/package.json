@@ -2,6 +2,7 @@
   "name": "shopping-service",
   "version": "1.0.0",
   "keywords": [],
+  "description": "Independent Shopping Microservice",
   "main": "src/server.js",
   "author": "",
   "license": "ISC",

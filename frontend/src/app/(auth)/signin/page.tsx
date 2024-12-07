@@ -60,7 +60,9 @@ export default function SignIn() {
       localStorage.setItem("token", token);
       localStorage.setItem("tokenTimestamp", Date.now().toString());
 
-      // Store user data for persistence
+      // Store user details with more comprehensive information
+      localStorage.setItem("userId", user.id);
+      localStorage.setItem("userEmail", user.email);
       localStorage.setItem(
         "userData",
         JSON.stringify({
@@ -68,6 +70,8 @@ export default function SignIn() {
           name: user.name,
           email: user.email,
           role: user.role,
+          phone: user.phone,
+          verificationStatus: user.verificationStatus,
         })
       );
 

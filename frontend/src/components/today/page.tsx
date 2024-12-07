@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa6";
 import Link from "next/link";
 import { createCartItem, useShoppingContext } from "@/context/shoppingContext";
+import {useCart} from "@/context/commerce logic/cartcontext";
 
 const getProductId = (product: Product) => {
   return product._id || product.id || null;
@@ -72,7 +73,7 @@ export default function Today() {
   const router = useRouter();
   const {products, loading} = useProductContext();
   const {
-    addToCart,
+    // addToCart,
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
@@ -80,10 +81,11 @@ export default function Today() {
     addToViewed,
     removeFromViewlist,
   } = useShoppingContext();
+  const {cartState, addToCart, removeFromCart} = useCart();
 
-  const [selectedColor] = useState("purple");
-  const [selectedSize] = useState("M");
-  const [quantity] = useState(1);
+  // const [selectedColor] = useState("purple");
+  // const [selectedSize] = useState("M");
+  // const [quantity] = useState(1);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -137,17 +139,22 @@ export default function Today() {
     [addToViewed, removeFromViewlist, viewedProducts]
   );
 
-  const handleAddToCart = useCallback(
-    (e: React.MouseEvent, product: Product) => {
-      e.preventDefault();
-      const cartItem = createCartItem(product, quantity, {
-        color: selectedColor,
-        size: selectedSize,
+const handleAddToCart = useCallback(
+  (product: Product) => {
+    const productId = getProductId(product);
+    if (productId) {
+      addToCart({
+        ...product,
+        _id: productId, // Ensure _id is set
+        id: productId,
+        quantity: 1,
+        selectedColor: "default",
+        selectedSize: "M",
       });
-      addToCart(cartItem);
-    },
-    [addToCart, selectedColor, selectedSize, quantity]
-  );
+    }
+  },
+  [addToCart]
+);
 
   // Set the end date here (e.g., Dec 31, 2024)
   const endDate = useMemo(() => new Date("2024-12-31T23:59:59").getTime(), []);
@@ -311,7 +318,7 @@ export default function Today() {
                   </div>
                   <div
                     className="product_btn"
-                    onClick={(e) => handleAddToCart(e, product)}
+                    onClick={() => handleAddToCart(product)}
                   >
                     <span>Add To Cart</span>
                   </div>
