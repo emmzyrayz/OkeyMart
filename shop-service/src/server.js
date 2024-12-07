@@ -38,9 +38,9 @@ connectDB();
 
 // Routes
 app.use("/api/cart", cartRoutes);
-app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/viewed-products", viewedProductsRoutes);
-app.use("/api/user-activity", userActivityRoutes);
+// app.use("/api/wishlist", wishlistRoutes);
+// app.use("/api/viewed-products", viewedProductsRoutes);
+// app.use("/api/user-activity", userActivityRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
