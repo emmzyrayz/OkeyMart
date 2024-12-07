@@ -1,39 +1,21 @@
-// src/routes/cart.ts
-import express from "express";
-import {
-  addToCart,
-  getCart,
-  removeFromCart,
-} from "../controllers/cartcontroller";
-import {
-  authenticateShoppingUser,
-  validateShoppingUserPassword,
-} from "../middleware/auth";
-
+const express = require("express");
 const router = express.Router();
+const CartController = require("../controllers/cartcontroller");
+const authMiddleware = require("../middleware/auth");
 
-// Add to cart (requires email authentication)
-router.post(
-  "/",
-  authenticateShoppingUser,
-  validateShoppingUserPassword,
-  addToCart
-);
+// Apply auth middleware to all cart routes
+router.use(authMiddleware);
 
-// Get user's cart
-router.get(
-  "/",
-  authenticateShoppingUser,
-  validateShoppingUserPassword,
-  getCart
-);
+// Add to cart
+router.post("/add", CartController.addToCart);
+
+// Get cart
+router.get("/", CartController.getCart);
 
 // Remove from cart
-router.delete(
-  "/:productId",
-  authenticateShoppingUser,
-  validateShoppingUserPassword,
-  removeFromCart
-);
+router.delete("/remove", CartController.removeFromCart);
 
-export default router;
+// Update cart item quantity
+router.patch("/update-quantity", CartController.updateCartItemQuantity);
+
+module.exports = router;
