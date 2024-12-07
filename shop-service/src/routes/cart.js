@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const CartController = require("../controllers/cartcontroller");
+const CartController = require("../controllers/cartcontrollers");
 const authMiddleware = require("../middleware/auth");
 
 // Apply auth middleware to all cart routes
