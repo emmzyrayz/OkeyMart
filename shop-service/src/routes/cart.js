@@ -1,30 +1,39 @@
-const express = require("express");
+// src/routes/cart.ts
+import express from "express";
+import {
+  addToCart,
+  getCart,
+  removeFromCart,
+} from "../controllers/cartcontroller";
+import {
+  authenticateShoppingUser,
+  validateShoppingUserPassword,
+} from "../middleware/auth";
+
 const router = express.Router();
-const cartController = require("../controllers/cartcontrollers");
-const authMiddleware = require("../middleware/auth");
 
-// Apply auth middleware to all routes
-router.use(authMiddleware);
-
-// Add product to cart
-router.post("/add", cartController.addToCart);
-
-// Remove product from cart
-router.delete("/remove/:productId", cartController.removeFromCart);
-
-// Update cart item quantity
-router.patch(
-  "/update-quantity/:productId",
-  cartController.updateCartItemQuantity
+// Add to cart (requires email authentication)
+router.post(
+  "/",
+  authenticateShoppingUser,
+  validateShoppingUserPassword,
+  addToCart
 );
 
-// Get user's entire cart
-router.get("/", cartController.getCart);
+// Get user's cart
+router.get(
+  "/",
+  authenticateShoppingUser,
+  validateShoppingUserPassword,
+  getCart
+);
 
-// Clear entire cart
-router.delete("/clear", cartController.clearCart);
+// Remove from cart
+router.delete(
+  "/:productId",
+  authenticateShoppingUser,
+  validateShoppingUserPassword,
+  removeFromCart
+);
 
-// Bulk add items to cart
-router.post("/bulk-add", cartController.bulkAddToCart);
-
-module.exports = router;
+export default router;

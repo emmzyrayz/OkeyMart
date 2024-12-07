@@ -88,7 +88,10 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
     } finally {
       handleLogout();
       localStorage.removeItem("token");
+      localStorage.removeItem("tokenTimestamp");
       localStorage.removeItem("userData");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userEmail");
       setUser(defaultUser);
       window.location.href = "/signin";
     }

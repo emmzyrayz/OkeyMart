@@ -5,6 +5,7 @@ import { ShoppingProvider } from "@/context/shoppingContext";
 import { ProductProvider } from "@/context/productContext/productcontext";
 import {SearchProvider} from "@/context/searchcontext/searchcontext";
 import {ProductUploadProvider} from "@/context/productUpload/productUploadContext";
+import { CartProvider } from "@/context/commerce logic/cartcontext";
 
 // Define the list of providers
 const contextProviders = [
@@ -13,6 +14,7 @@ const contextProviders = [
   ProductProvider,
   SearchProvider,
   ProductUploadProvider,
+  CartProvider,
 ] as const;
 
 interface ProvidersProps {
