@@ -160,65 +160,6 @@ authApi.interceptors.request.use(
   }
 );
 
-// Response interceptor
-// authApi.interceptors.response.use(
-//   (response) => {
-//     // Log successful responses
-//     console.log("Response Interceptor Success:", {
-//       url: response.config.url,
-//       status: response.status,
-//     });
-//     return response;
-//   },
-//   async (error) => {
-//     const originalRequest = error.config;
-
-    
-
-//     // Detailed error logging
-//     console.error("Response Interceptor Error:", {
-//       status: error.response?.status,
-//       data: error.response?.data,
-//       url: error.config?.url,
-//       method: error.config?.method,
-//     });
-
-//     // Handle 401 unauthorized errors
-//     if (error.response?.status === 401 && !originalRequest._retry) {
-//       originalRequest._retry = true;
-//       try {
-//         console.log("Attempting token refresh");
-
-//         // Attempt to refresh the token
-//         const response = await authApi.post("/api/auth/refresh-token");
-//         const {token, user} = response.data;
-
-//         // Update token in storage
-//         localStorage.setItem("token", token);
-
-//         // Optional: Update user data
-//         if (user) {
-//           localStorage.setItem("userData", JSON.stringify(user));
-//         }
-
-//         // Update axios and original request headers
-//         authApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-//         originalRequest.headers["Authorization"] = `Bearer ${token}`;
-
-//         // Retry the original request
-//         return authApi(originalRequest);
-//       } catch (refreshError) {
-//         console.error("Token refresh failed:", refreshError);
-
-//         // Logout user if refresh fails
-//         localStorage.removeItem("token");
-//         window.location.href = "/signin";
-//         return Promise.reject(refreshError);
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
 
 authApi.interceptors.response.use(
   (response) => response,

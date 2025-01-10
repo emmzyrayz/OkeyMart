@@ -1,107 +1,277 @@
 // context/UserContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import {User, UserRole} from "@/types/user";
-import {
-  initializeTokenManagement,
-  initializeActivityTracking,
-  cleanupActivityTracking,
-  handleLogout,
-} from "@/utils/tokenManager";
-import authApi from '@/utils/authApi';
-import router from 'next/router';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import {IUser, UserRole, UserStatus, VerificationStatus} from "@/models/user";
+import {TokenManager} from "@/utils/middle-utils";
+import {EncryptionUtility} from "@/utils/encryption";
+import authApi from "@/utils/authApi";
+import {sendVerificationEmail, sendResetPasswordEmail} from "@/utils/email";
+import {useRouter} from "next/navigation";
 
-// Define the shape of the user context
 interface UserContextType {
-  user: User;
-  setUser: React.Dispatch<React.SetStateAction<User>>;
-  updateUserRole: (role: UserRole) => void;
-  logout: () => void;
+  user: IUser | null;
+  setUser: React.Dispatch<React.SetStateAction<IUser | null>>;
+  register: (userData: RegistrationData) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  verifyEmail: (code: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (
+    email: string,
+    code: string,
+    newPassword: string
+  ) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
 }
 
-const defaultUser: User = {
-  id: "",
-  name: "",
-  email: "",
-  role: null,
-  isAuthenticated: false,
-};
+interface RegistrationData {
+  email: string;
+  password: string;
+  name: string;
+  phone?: string;
+}
+
+// Initialize encryption utility
+const encryptionUtil = new EncryptionUtility({
+  key: process.env.NEXT_PUBLIC_ENCRYPTION_KEY!,
+  iv: process.env.NEXT_PUBLIC_DETERMINISTIC_IV,
+});
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
-  const [user, setUser] = useState<User>(defaultUser);
+  const [user, setUser] = useState<IUser | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
- useEffect(() => {
-   const token = localStorage.getItem("token");
-   const tokenTimestamp = localStorage.getItem("tokenTimestamp");
-   const storedUserData = localStorage.getItem("userData");
+  // Initialize token manager
+  const tokenManager = TokenManager.getInstance();
 
-   // Check if token exists and is within valid time
-   if (token && tokenTimestamp) {
-     const currentTime = Date.now();
-     const tokenAge = currentTime - parseInt(tokenTimestamp, 10);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("userData");
 
-     // Define your token expiry time (e.g., 30 minutes)
-     const TOKEN_EXPIRY = 30 * 60 * 1000; // 30 minutes
+      if (token && userData) {
+        try {
+          // Verify token
+          const decoded = tokenManager.verifyToken(token);
+          if (decoded) {
+            const parsedUserData = JSON.parse(userData);
 
-     if (tokenAge > TOKEN_EXPIRY) {
-       // Token has expired
-       handleLogout();
-       return;
-     }
+            // Verify user status
+            if (parsedUserData.status !== UserStatus.Active) {
+              await logout();
+              return;
+            }
 
-     if (storedUserData) {
-       const userData = JSON.parse(storedUserData);
-       setUser({
-         id: userData.id,
-         name: userData.name,
-         email: userData.email,
-         role: userData.role,
-         isAuthenticated: true,
-       });
+            setUser(parsedUserData);
+            tokenManager.updateTokenActivity(parsedUserData.id);
+          }
+        } catch (error) {
+          console.error("Token verification failed:", error);
+          await logout();
+        }
+      }
+    };
 
-       initializeTokenManagement();
-       const cleanup = initializeActivityTracking();
+    initializeAuth();
+  }, []);
 
-       // Cleanup function
-       return () => {
-         cleanup();
-         cleanupActivityTracking();
-       };
-     }
-   }
+  const register = async (userData: RegistrationData) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // Encrypt sensitive data
+      const encryptedEmail = encryptionUtil.encryptDetermined(userData.email);
+      const {encryptedData: encryptedPassword, iv: passwordIv} =
+        encryptionUtil.encryptRandom(userData.password);
 
-   // Cleanup if no valid token
-   return () => cleanupActivityTracking();
- }, []);
+      const encryptedPhone = userData.phone
+        ? encryptionUtil.encryptDetermined(userData.phone)
+        : undefined;
 
+      const response = await authApi.post("/api/auth/register", {
+        email: encryptedEmail,
+        password: encryptedPassword,
+        passwordIv,
+        name: userData.name,
+        phone: encryptedPhone,
+        role: UserRole.Buyer,
+      });
 
-  const updateUserRole = (role: UserRole) => {
-    setUser((prev) => ({...prev, role}));
+      if (response.data.verificationToken) {
+        await sendVerificationEmail(
+          userData.email,
+          response.data.verificationToken
+        );
+      }
+
+      router.push("/verify-email");
+    } catch (error) {
+      setError("Registration failed. Please try again.");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const encryptedEmail = encryptionUtil.encryptDetermined(email);
+
+      const response = await authApi.post("/api/auth/login", {
+        email: encryptedEmail,
+        password,
+      });
+
+      const {token, user: userData} = response.data;
+
+      if (!userData.emailVerification.isVerified) {
+        await resendVerification(email);
+        router.push("/verify-email");
+        return;
+      }
+
+      if (token) {
+        localStorage.setItem("token", token);
+        localStorage.setItem("userData", JSON.stringify(userData));
+
+        setUser(userData);
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setError("Invalid email or password");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = async () => {
     try {
       await authApi.post("/api/auth/logout");
+      tokenManager.revokeToken(user?.id || "");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userData");
+      setUser(null);
+      router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
-    } finally {
-      handleLogout();
-      localStorage.removeItem("token");
-      localStorage.removeItem("tokenTimestamp");
-      localStorage.removeItem("userData");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userEmail");
-      setUser(defaultUser);
-      window.location.href = "/signin";
     }
   };
 
-  return (
-    <UserContext.Provider value={{user, setUser, updateUserRole, logout}}>
-      {children}
-    </UserContext.Provider>
-  );
+  const verifyEmail = async (code: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authApi.post("/api/auth/verify-email", {code});
+
+      if (response.data.user) {
+        setUser(response.data.user);
+        router.push("/login");
+      }
+    } catch (error) {
+      setError("Invalid verification code");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const encryptedEmail = encryptionUtil.encryptDetermined(email);
+      const response = await authApi.post("/api/auth/forgot-password", {
+        email: encryptedEmail,
+      });
+
+      if (response.data.resetCode) {
+        await sendResetPasswordEmail(email, response.data.resetCode);
+      }
+    } catch (error) {
+      setError("Error processing request");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (
+    email: string,
+    code: string,
+    newPassword: string
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const encryptedEmail = encryptionUtil.encryptDetermined(email);
+      const {encryptedData: encryptedPassword, iv: passwordIv} =
+        encryptionUtil.encryptRandom(newPassword);
+
+      await authApi.post("/api/auth/reset-password", {
+        email: encryptedEmail,
+        code,
+        password: encryptedPassword,
+        passwordIv,
+      });
+
+      router.push("/login");
+    } catch (error) {
+      setError("Password reset failed");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const encryptedEmail = encryptionUtil.encryptDetermined(email);
+      const response = await authApi.post("/api/auth/resend-verification", {
+        email: encryptedEmail,
+      });
+
+      if (response.data.verificationToken) {
+        await sendVerificationEmail(email, response.data.verificationToken);
+      }
+    } catch (error) {
+      setError("Failed to resend verification email");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value = {
+    user,
+    setUser,
+    register,
+    login,
+    logout,
+    verifyEmail,
+    forgotPassword,
+    resetPassword,
+    resendVerification,
+    isLoading,
+    error,
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
 
 export const useUser = () => {
@@ -111,3 +281,5 @@ export const useUser = () => {
   }
   return context;
 };
+
+export default UserProvider;

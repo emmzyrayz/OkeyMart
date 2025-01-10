@@ -27,11 +27,6 @@ function encrypt(text) {
   return encrypted;
 }
 
-// const searchUser = async (email) => {
-//   const encryptedEmail = encrypt(email.toLowerCase());
-//   return await User.findOne({email: encryptedEmail});
-// };
-
 function decrypt(encrypted) {
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
   let decrypted = decipher.update(encrypted, "hex", "utf8");
