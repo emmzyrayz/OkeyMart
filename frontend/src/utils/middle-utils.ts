@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
-import {TokenData, DecodedToken} from "@/types/middleware";
+import { DecodedToken} from "@/types/middleware";
 import {IUser} from "@/models/user";
 
 // Constants
@@ -11,12 +11,25 @@ export const ACTIVITY_CHECK_INTERVAL = 60000; // 1 minute in milliseconds
 // Token cache
 export const activeTokens = new NodeCache();
 
+interface TokenData {
+  token: string;
+  expiryTime: number;
+  lastActivity: number;
+}
+
 export class TokenManager {
   private static instance: TokenManager;
+  private tokenStore: Map<string, TokenData>;
+  private readonly JWT_SECRET: string;
   private cleanupInterval!: NodeJS.Timeout;
 
   private constructor() {
     this.startCleanupInterval();
+    this.tokenStore = new Map();
+    this.JWT_SECRET = process.env.JWT_SECRET || "";
+    if (!this.JWT_SECRET) {
+      throw new Error("JWT_SECRET environment variable is not set");
+    }
   }
 
   public static getInstance(): TokenManager {
@@ -59,16 +72,20 @@ export class TokenManager {
     return this.generateToken(userId, user.email, user.role);
   }
 
-  public revokeToken(userId: string): boolean {
-    return activeTokens.del(userId) > 0;
+  public revokeToken(userId: string): void {
+    this.tokenStore.delete(userId);
   }
 
   public verifyToken(token: string): DecodedToken {
-    return jwt.verify(token, process.env.JWT_SECRET as string) as DecodedToken;
+    try {
+      return jwt.verify(token, this.JWT_SECRET) as DecodedToken;
+    } catch (error) {
+      throw error;
+    }
   }
 
   public getTokenData(userId: string): TokenData | undefined {
-    return activeTokens.get<TokenData>(userId);
+    return this.tokenStore.get(userId);
   }
 
   private startCleanupInterval(): void {
