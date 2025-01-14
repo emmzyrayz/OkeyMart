@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useState, ChangeEvent, FormEvent} from "react";
+import React, { useState, ChangeEvent, FormEvent} from "react";
 
 import {useRouter} from "next/navigation";
 import authApi from "@/utils/authApi";
@@ -13,6 +13,7 @@ import SignImg from "../../../assets/img/products/signin-img.png";
 import {FaEye, FaEyeSlash} from "react-icons/fa6";
 import PhoneInput from "@/components/input/phoneinput";
 import { GridLoad } from "@/components/fetchloading/btnloading";
+import { useUser } from "@/context/userContext/UserContext";
 
 interface FormData {
   name: string;
@@ -36,6 +37,7 @@ interface FormState {
 }
 
 export default function SignUp() {
+  const {register, isLoading, error: contextError} = useUser();
   const [formState, setFormState] = useState<FormState>({
     name: {value: "", touched: false, error: ""},
     email: {value: "", touched: false, error: ""},
@@ -43,14 +45,42 @@ export default function SignUp() {
     password: {value: "", touched: false, error: ""},
     confirm_password: {value: "", touched: false, error: ""},
   });
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]); // Set default country
 
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]); // Set default country
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
-  // const [inputErrors, setInputErrors] = useState<{[key: string]: string}>({});
   const router = useRouter();
+
+  const validateField = (
+    name: string,
+    value: string,
+    compareValue?: string
+  ): string => {
+    switch (name) {
+      case "email":
+        if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+          return "Please enter a valid email address";
+        }
+        break;
+      case "password":
+        if (value.length < 8) {
+          return "Password must be at least 8 characters long";
+        }
+        break;
+      case "confirm_password":
+        if (value !== compareValue) {
+          return "Passwords do not match";
+        }
+        break;
+      case "phone":
+        if (value && !value.match(/^\+?[\d\s-]{10,}$/)) {
+          return "Please enter a valid phone number";
+        }
+        break;
+    }
+    return "";
+  };
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string): string => {
@@ -101,32 +131,32 @@ export default function SignUp() {
     return "";
   };
 
-  const validateField = (
-    name: string,
-    value: string,
-    compareValue?: string
-  ): string => {
-    switch (name) {
-      case "email":
-        if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-          return "Please enter a valid email address";
-        }
-        break;
-      case "password":
-        if (value.length < 8) {
-          return "Password must be at least 8 characters long";
-        }
-        break;
-      case "confirm_password":
-        if (value !== compareValue) {
-          return "Passwords do not match";
-        }
-        break;
-      case "phone":
-        return validatePhoneNumber(value);
-    }
-    return "";
-  };
+  // const validateField = (
+  //   name: string,
+  //   value: string,
+  //   compareValue?: string
+  // ): string => {
+  //   switch (name) {
+  //     case "email":
+  //       if (!value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+  //         return "Please enter a valid email address";
+  //       }
+  //       break;
+  //     case "password":
+  //       if (value.length < 8) {
+  //         return "Password must be at least 8 characters long";
+  //       }
+  //       break;
+  //     case "confirm_password":
+  //       if (value !== compareValue) {
+  //         return "Passwords do not match";
+  //       }
+  //       break;
+  //     case "phone":
+  //       return validatePhoneNumber(value);
+  //   }
+  //   return "";
+  // };
 
   const getInputClassName = (fieldName: string): string => {
     const field = formState[fieldName];
@@ -205,11 +235,74 @@ export default function SignUp() {
     return "bg-green-500"; // All bars are green
   };
 
+  // const handleSubmit = async (e: FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
+
+  //   // Mark all fields as touched
+  //   const updatedFormState = Object.keys(formState).reduce(
+  //     (acc, key) => ({
+  //       ...acc,
+  //       [key]: {
+  //         ...formState[key],
+  //         touched: true,
+  //         error: validateField(
+  //           key,
+  //           formState[key].value,
+  //           key === "confirm_password" ? formState.password.value : undefined
+  //         ),
+  //       },
+  //     }),
+  //     formState
+  //   );
+
+  //   setFormState(updatedFormState);
+
+  //   // Check for any errors
+  //   const hasErrors = Object.values(updatedFormState).some(
+  //     (field) => field.error
+  //   );
+  //   if (hasErrors) {
+  //     setError("Please fix the errors before submitting");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await authApi.post("/api/auth/register", {
+  //       name: formState.name.value,
+  //       email: formState.email.value,
+  //       phone: formState.phone.value.replace(/\D/g, ""),
+  //       password: formState.password.value,
+  //     });
+
+  //     if (response.data) {
+  //       router.push("/signin");
+  //     }
+  //   } catch (err: any) {
+  //     console.error("Registration error:", err);
+  //     if (
+  //       err.response?.status === 400 &&
+  //       err.response?.data?.message === "Email already registered"
+  //     ) {
+  //       setError(
+  //         "This email is already registered. Please use a different email."
+  //       );
+  //     } else {
+  //       setError(
+  //         err.response?.data?.message ||
+  //           "Error during registration. Please try again."
+  //       );
+  //     }
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    // Mark all fields as touched
+    // Mark all fields as touched and validate
     const updatedFormState = Object.keys(formState).reduce(
       (acc, key) => ({
         ...acc,
@@ -237,35 +330,16 @@ export default function SignUp() {
       return;
     }
 
-    setIsLoading(true);
     try {
-      const response = await authApi.post("/api/auth/register", {
+      await register({
         name: formState.name.value,
         email: formState.email.value,
-        phone: formState.phone.value.replace(/\D/g, ""),
         password: formState.password.value,
+        phone: formState.phone.value,
       });
-
-      if (response.data) {
-        router.push("/signin");
-      }
+      // Registration successful - UserContext will handle the redirect
     } catch (err: any) {
-      console.error("Registration error:", err);
-      if (
-        err.response?.status === 400 &&
-        err.response?.data?.message === "Email already registered"
-      ) {
-        setError(
-          "This email is already registered. Please use a different email."
-        );
-      } else {
-        setError(
-          err.response?.data?.message ||
-            "Error during registration. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
+      setError(err.message || "Registration failed. Please try again.");
     }
   };
 
@@ -292,9 +366,9 @@ export default function SignUp() {
           onSubmit={handleSubmit}
           className="flex flex-col relative items-center sign-form"
         >
-          {error && (
+          {(error || contextError) && (
             <div className="error-message text-red-500 text-[12px] font-semibold w-full h-full flex items-center justify-center text-center">
-              {error}
+              {error || contextError}
             </div>
           )}
           <input

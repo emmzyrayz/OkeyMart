@@ -17,18 +17,126 @@ import {
 import {useUser} from "@/context/userContext/UserContext";
 
 export default function SignIn() {
-  const router = useRouter();
-  const {setUser} = useUser();
+  const {login, isLoading, error: contextError} = useUser();
   const [formData, setFormData] = useState({email: "", password: ""});
   const [error, setError] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
     // Clear error when user starts typing
     if (error) setError("");
   };
+
+  // const handleSubmit = async (e: FormEvent) => {
+  //   e.preventDefault();
+
+  //   // Validate input
+  //   if (!formData.email || !formData.password) {
+  //     setError("Please enter both email and password");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setError("");
+
+  //   try {
+  //     // const response = await authApi.post("/api/auth/login", formData);
+  //     const response = await authApi.post("/api/auth/login", {
+  //       email: formData.email.trim(),
+  //       password: formData.password,
+  //     });
+
+  //     const {token, user} = response.data;
+
+  //     // Validate token and user data
+  //     if (!token || !user) {
+  //       throw new Error("Invalid response from server");
+  //     }
+
+  //     // Store token with timestamp for expiry tracking
+  //     localStorage.setItem("token", token);
+  //     localStorage.setItem("tokenTimestamp", Date.now().toString());
+
+  //     // Store user details with more comprehensive information
+  //     localStorage.setItem("userId", user.id);
+  //     localStorage.setItem("userEmail", user.email);
+  //     localStorage.setItem(
+  //       "userData",
+  //       JSON.stringify({
+  //         id: user.id,
+  //         name: user.name,
+  //         email: user.email,
+  //         role: user.role,
+  //         phone: user.phone,
+  //         verificationStatus: user.verificationStatus,
+  //       })
+  //     );
+
+  //     setAuthToken(token);
+
+  //     // Update user context with full user object
+  //     setUser({
+  //       id: user.id,
+  //       name: user.name,
+  //       email: user.email,
+  //       role: user.role,
+  //       isAuthenticated: true,
+  //     });
+
+  //     // Initialize token management
+  //     initializeTokenManagement();
+  //     startTokenRefreshTimer();
+
+  //     // Role-based redirection
+  //     switch (user.role) {
+  //       case "Buyer":
+  //         router.push("/");
+  //         break;
+  //       case "Seller":
+  //         router.push("/store");
+  //         break;
+  //       case "Admin":
+  //         router.push("/admin-dashboard");
+  //         break;
+  //       default:
+  //         router.push("/");
+  //     }
+  //   } catch (error: any) {
+  //     // Comprehensive error handling
+  //     console.error("Login Error:", error);
+
+  //     let errorMessage = "An unexpected error occurred";
+
+  //     if (error.response) {
+  //       // The request was made and the server responded with a status code
+  //       switch (error.response.status) {
+  //         case 401:
+  //           errorMessage = "Invalid email or password";
+  //           break;
+  //         case 403:
+  //           errorMessage = "Account is suspended or not verified";
+  //           break;
+  //         case 500:
+  //           errorMessage = "Server error. Please try again later.";
+  //           break;
+  //         default:
+  //           errorMessage = error.response.data.message || errorMessage;
+  //       }
+  //     } else if (error.request) {
+  //       // The request was made but no response was received
+  //       errorMessage = "No response from server. Please check your connection.";
+  //     } else {
+  //       // Something happened in setting up the request
+  //       errorMessage = error.message || "Login failed. Please try again.";
+  //     }
+
+  //     setError("Invalid email or password");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,135 +147,14 @@ export default function SignIn() {
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-
     try {
-      // const response = await authApi.post("/api/auth/login", formData);
-      const response = await authApi.post("/api/auth/login", {
-        email: formData.email.trim(),
-        password: formData.password,
-      });
-
-      const {token, user} = response.data;
-
-      // Validate token and user data
-      if (!token || !user) {
-        throw new Error("Invalid response from server");
-      }
-
-      // Store token with timestamp for expiry tracking
-      localStorage.setItem("token", token);
-      localStorage.setItem("tokenTimestamp", Date.now().toString());
-
-      // Store user details with more comprehensive information
-      localStorage.setItem("userId", user.id);
-      localStorage.setItem("userEmail", user.email);
-      localStorage.setItem(
-        "userData",
-        JSON.stringify({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          verificationStatus: user.verificationStatus,
-        })
-      );
-
-      setAuthToken(token);
-
-      // Update user context with full user object
-      setUser({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAuthenticated: true,
-      });
-
-      // Initialize token management
-      initializeTokenManagement();
-      startTokenRefreshTimer();
-
-      // Role-based redirection
-      switch (user.role) {
-        case "Buyer":
-          router.push("/");
-          break;
-        case "Seller":
-          router.push("/store");
-          break;
-        case "Admin":
-          router.push("/admin-dashboard");
-          break;
-        default:
-          router.push("/");
-      }
+      await login(formData.email.trim(), formData.password);
+      // The UserContext will handle the redirection based on user role
     } catch (error: any) {
-      // Comprehensive error handling
-      console.error("Login Error:", error);
-
-      let errorMessage = "An unexpected error occurred";
-
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        switch (error.response.status) {
-          case 401:
-            errorMessage = "Invalid email or password";
-            break;
-          case 403:
-            errorMessage = "Account is suspended or not verified";
-            break;
-          case 500:
-            errorMessage = "Server error. Please try again later.";
-            break;
-          default:
-            errorMessage = error.response.data.message || errorMessage;
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        errorMessage = "No response from server. Please check your connection.";
-      } else {
-        // Something happened in setting up the request
-        errorMessage = error.message || "Login failed. Please try again.";
-      }
-
-      setError("Invalid email or password");
-    } finally {
-      setIsLoading(false);
+      setError(error.message || "Invalid email or password");
     }
   };
 
-  // Check for existing token on mount
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const tokenTimestamp = localStorage.getItem("tokenTimestamp");
-
-    if (token && tokenTimestamp) {
-      const currentTime = Date.now();
-      const tokenAge = currentTime - parseInt(tokenTimestamp, 10);
-
-      // Define token expiry (30 minutes)
-      const TOKEN_EXPIRY = 30 * 60 * 1000; // 30 minutes
-
-      if (tokenAge > TOKEN_EXPIRY) {
-        // Token has expired
-        handleLogout();
-      } else {
-        // Token is still valid, try to initialize token management
-        try {
-          initializeTokenManagement();
-
-          // Optionally redirect to home or dashboard if already logged in
-          router.push("/");
-        } catch (error) {
-          console.error("Token initialization error:", error);
-          handleLogout();
-        }
-      }
-    }
-  }, [router]);
 
   return (
     <div className="signup_section flex flex-row w-full h-full items-center justify-center">
@@ -191,6 +178,11 @@ export default function SignIn() {
           onSubmit={handleSubmit}
           className="flex flex-col relative items-center sign-form"
         >
+          {(error || contextError) && (
+            <div className="error-message text-red-500 mb-4 w-full text-center">
+              {error || contextError}
+            </div>
+          )}
           <input
             type="email"
             name="email"

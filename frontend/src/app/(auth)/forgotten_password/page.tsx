@@ -6,10 +6,19 @@ import Image from "next/image";
 import SignImg from "../../../assets/img/products/signin-img.png";
 import { GridLoad } from "@/components/fetchloading/btnloading";
 import Link from "next/link";
+import { useUser } from "@/context/userContext/UserContext";
 
 
 
 export default function ForgotPassword() {
+  // Get context functions
+  const {
+    forgotPassword,
+    resetPassword,
+    error: contextError,
+    isLoading,
+  } = useUser();
+
   // Form states
   const [email, setEmail] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -18,12 +27,10 @@ export default function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // UI states
-  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "">("");
 
   // Timer states
-  const [codeExpiryTime, setCodeExpiryTime] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [resendTimeLeft, setResendTimeLeft] = useState(0);
   const [canResend, setCanResend] = useState(false);
@@ -69,6 +76,14 @@ export default function ForgotPassword() {
       if (resendTimer) clearInterval(resendTimer);
     };
   }, [resendTimeLeft]);
+
+  // Update message when context error changes
+  useEffect(() => {
+    if (contextError) {
+      setMessage(contextError);
+      setMessageType("error");
+    }
+  }, [contextError]);
 
   // Password validation
   const validatePassword = (password: string) => {
@@ -123,76 +138,48 @@ export default function ForgotPassword() {
   };
 
   const startTimers = () => {
-    // Set 30-minute expiry timer
-    const expiryTime = Date.now() + 30 * 60 * 1000;
-    setCodeExpiryTime(expiryTime);
-    setTimeLeft(30 * 60);
-
-    // Set resend cooldown timer (20 seconds)
-    setResendTimeLeft(20);
+    setTimeLeft(30 * 60); // 30 minutes
+    setResendTimeLeft(20); // 20 seconds cooldown
     setCanResend(false);
   };
 
-  const handleRequestReset = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage("");
-    setMessageType("");
+ const handleRequestReset = async (e: FormEvent) => {
+   e.preventDefault();
+   try {
+     await forgotPassword(email);
+     setMessage("Reset code sent successfully!");
+     setMessageType("success");
+     setCodeSent(true);
+     startTimers();
+   } catch (error) {
+     // Context error will be handled by the useEffect
+   }
+ };
 
-    try {
-      const response = await authApi.post("/api/auth/request-reset", {email});
-      setMessage(response.data.message);
-      setMessageType("success");
-      setCodeSent(true);
-      startTimers();
-    } catch (error: any) {
-      console.error("Reset request error:", error);
-      setMessage(
-        error.response?.data?.message ||
-          "Error requesting reset code. Please try again."
-      );
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleResendCode = async () => {
-    if (!canResend) return;
+ const handleResendCode = async () => {
+   if (!canResend) return;
 
-    setIsLoading(true);
-    setMessage("");
-    setMessageType("");
-
-    try {
-      const response = await authApi.post("/api/auth/request-reset", {email});
-      setMessage("New reset code sent successfully!");
-      setMessageType("success");
-      startTimers();
-      setResetCode(""); // Clear the previous code input
-    } catch (error: any) {
-      console.error("Resend code error:", error);
-      setMessage(
-        error.response?.data?.message ||
-          "Error sending new reset code. Please try again."
-      );
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+   try {
+     await forgotPassword(email);
+     setMessage("New reset code sent successfully!");
+     setMessageType("success");
+     startTimers();
+     setResetCode(""); // Clear the previous code input
+   } catch (error) {
+     // Context error will be handled by the useEffect
+   }
+ };
 
   const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Check if code has expired
-    if (Date.now() > codeExpiryTime) {
+    if (timeLeft === 0) {
       setMessage("Reset code has expired. Please request a new code.");
       setMessageType("error");
       return;
     }
 
-    // Validate password
     const validationError = validatePassword(newPassword);
     if (validationError) {
       setMessage(validationError);
@@ -206,35 +193,12 @@ export default function ForgotPassword() {
       return;
     }
 
-    setIsLoading(true);
-    setMessage("");
-    setMessageType("");
-
     try {
-      const response = await authApi.post("/api/auth/reset-password", {
-        email,
-        resetCode,
-        newPassword,
-      });
-
-      setMessage(
-        "Password reset successful! You can now login with your new password."
-      );
+      await resetPassword(email, resetCode, newPassword);
+      setMessage("Password reset successful! Redirecting to login...");
       setMessageType("success");
-
-      // Reset form after 3 seconds and redirect to login
-      setTimeout(() => {
-        window.location.href = "/signin";
-      }, 3000);
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      setMessage(
-        error.response?.data?.message ||
-          "Error resetting password. Please try again."
-      );
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      // Context error will be handled by the useEffect
     }
   };
 
