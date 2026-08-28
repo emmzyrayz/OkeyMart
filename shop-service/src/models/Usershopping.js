@@ -71,7 +71,10 @@ UserShoppingSchema.methods.generateEncryptedPassword = function (
   email,
   id
 ) {
-  const secret = process.env.PASSWORD_SECRET || "default_secret";
+  const secret = process.env.PASSWORD_SECRET;
+if (!secret) {
+  throw new Error("PASSWORD_SECRET environment variable is not set");
+}
   const combinedString = `${email}:${id}:${secret}`;
   return crypto.createHash("sha256").update(combinedString).digest("hex");
 };

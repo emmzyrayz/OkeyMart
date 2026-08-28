@@ -5,12 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
-  api_secret: process.env.NEXT_PUBLIC_CLOUDINARY_API_SECRET,
-  cloud_url: process.env.NEXT_PUBLIC_CLOUDINARY_URL,
-});
+// Cloudinary config removed - use server-side operations
 
 // console.log("Cloudinary Config:", {
 //   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

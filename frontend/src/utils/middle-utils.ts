@@ -26,7 +26,7 @@ export class TokenManager {
   private constructor() {
     this.startCleanupInterval();
     this.tokenStore = new Map();
-    this.JWT_SECRET = process.env.JWT_SECRET || "";
+    this.JWT_SECRET = process.env.JWT_SECRET;
     if (!this.JWT_SECRET) {
       throw new Error("JWT_SECRET environment variable is not set");
     }

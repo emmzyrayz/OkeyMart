@@ -39,10 +39,8 @@ interface RegistrationData {
 }
 
 // Initialize encryption utility
-const encryptionUtil = new EncryptionUtility({
-  key: process.env.NEXT_PUBLIC_ENCRYPTION_KEY!,
-  iv: process.env.NEXT_PUBLIC_DETERMINISTIC_IV,
-});
+// Encryption handled via server API calls
+const encryptionUtil = null;
 
 const UserContext = createContext<UserContextType | null>(null);
 
@@ -91,7 +89,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
     setError(null);
     try {
       // Encrypt sensitive data
-      const encryptedEmail = encryptionUtil.encryptDetermined(userData.email);
+      const encryptedEmail = await encryptData(userData.email);
       const {encryptedData: encryptedPassword, iv: passwordIv} =
         encryptionUtil.encryptRandom(userData.password);
 
