@@ -38,3 +38,8 @@ next-env.d.ts
 .vercel
 dist/
 build/
+# Security - BLOCK ALL .env FILES
+.env
+.env.*
+!.env.example
+
