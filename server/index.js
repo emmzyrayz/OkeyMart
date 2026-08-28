@@ -26,11 +26,12 @@ const allowedOrigins = [
   "http://localhost:3000", 
   "https://okeymart.vercel.app",
   process.env.FRONTEND_URL // Add your frontend URL from .env
-  const frontendUrl = process.env.FRONTEND_URL;
-  if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
-    allowedOrigins.push(frontendUrl);
-  }
 ].filter(Boolean); // Remove any undefined values
+
+const frontendUrl = process.env.FRONTEND_URL;
+if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
+  allowedOrigins.push(frontendUrl);
+}
 
 // Global rate limiter
 const globalLimiter = rateLimit({
