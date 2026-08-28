@@ -26,6 +26,10 @@ const allowedOrigins = [
   "http://localhost:3000", 
   "https://okeymart.vercel.app",
   process.env.FRONTEND_URL // Add your frontend URL from .env
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
+    allowedOrigins.push(frontendUrl);
+  }
 ].filter(Boolean); // Remove any undefined values
 
 // Global rate limiter
@@ -48,8 +52,8 @@ const corsOptions = {
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: false,
+  allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"],
+  credentials: true,
 };
 
 
@@ -116,7 +120,7 @@ const PORT = process.env.PORT || 10000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log("Allowed origins:", allowedOrigins);
+  console.log("Allowed origins:", allowedOrigins.join(', '));
 });
 
 // Graceful shutdown
