@@ -1,3 +1,20 @@
+// Existing server setup code
+const express = require('express');
+const app = express();
+
+// ... other middleware and configurations
+
+// Validate environment variables for email
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    throw new Error('Missing required environment variables: EMAIL_USER and EMAIL_PASSWORD');
+}
+
+// ... rest of the server setup
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
 const express = require("express");
 const connectDB = require("./config/db");
 const dotenv = require("dotenv");
