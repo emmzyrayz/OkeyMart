@@ -661,7 +661,6 @@ router.post("/request-reset", resetLimiter, async (req, res) => {
 
     // console.log(`Processing reset request for email: ${email}`);
 
-    const {email} = req.body;
     const encryptedEmail = encrypt(email.toLowerCase());
     const user = await User.findOne({email: encryptedEmail});
 
@@ -737,7 +736,7 @@ router.post("/reset-password", async (req, res) => {
 
     // Update user's password and reset token
     user.password = hashedPassword;
-    user.resetPassword.used = true;
+    user.resetPasswordUsed = true;
     user.resetPassword.attempts = 0;
 
     // Add to password history
@@ -843,13 +842,14 @@ router.post("/refresh-token", authMiddleware, async (req, res) => {
         },
       });
     }
-
     // Generate new token
-    const newToken = generateToken(user._id, decrypt(user.email));
+
+    const decryptedEmail = decrypt(user.email);
+    const newToken = generateToken(user._id, decryptedEmail, user.role);
 
     console.log("Token Refresh Successful:", {
       userId: user._id,
-      email: decrypt(user.email),
+      email: decryptedEmail,
       role: user.role,
     });
 
