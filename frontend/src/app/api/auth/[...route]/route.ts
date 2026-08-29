@@ -12,7 +12,6 @@ import User, {
   UserStatus,
   VerificationStatus,
 } from "@/models/user";
-import {sendVerificationEmail, sendResetPasswordEmail} from "@/utils/email";
 
 import crypto from 'crypto';
 import {Types, Document} from 'mongoose';
@@ -143,8 +142,7 @@ async function handleRegister(request: NextRequest) {
 
   await user.save();
 
-  // Now TypeScript knows verificationToken is definitely a string
-  await sendVerificationEmail(email, verificationToken);
+ 
 
   return NextResponse.json(
     {
@@ -277,7 +275,6 @@ async function handleResendVerification(request: NextRequest) {
   const verificationToken = user.generateVerificationToken();
   await user.save();
 
-  await sendVerificationEmail(email, verificationToken);
 
   return NextResponse.json({message: "Verification email sent"});
 }

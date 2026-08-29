@@ -201,15 +201,12 @@ UserSchema.methods.verifyEmail = function () {
 
 // Generate password reset token
 UserSchema.methods.generateResetToken = function () {
-  // Generate a 6-digit code
   const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  this.resetPassword = {
-    code: resetCode,
-    expires: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
-    used: false,
-    attempts: 0,
-  };
+  this.resetPasswordCode = resetCode;
+  this.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000);
+  this.resetPasswordUsed = false;
+  this.resetPasswordAttempts = 0;
 
   return resetCode;
 };

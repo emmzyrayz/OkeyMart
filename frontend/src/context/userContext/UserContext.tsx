@@ -10,7 +10,6 @@ import {IUser, UserRole, UserStatus, VerificationStatus} from "@/models/user";
 import {TokenManager} from "@/utils/middle-utils";
 import {EncryptionUtility} from "@/utils/encryption";
 import authApi from "@/utils/authApi";
-import {sendVerificationEmail, sendResetPasswordEmail} from "@/utils/email";
 import {useRouter} from "next/navigation";
 
 interface UserContextType {
@@ -105,13 +104,6 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
         phone: encryptedPhone,
         role: UserRole.Buyer,
       });
-
-      if (response.data.verificationToken) {
-        await sendVerificationEmail(
-          userData.email,
-          response.data.verificationToken
-        );
-      }
 
       router.push("/verify-email");
     } catch (error) {
@@ -244,9 +236,7 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({children}) => {
         email: encryptedEmail,
       });
 
-      if (response.data.verificationToken) {
-        await sendVerificationEmail(email, response.data.verificationToken);
-      }
+      
     } catch (error) {
       setError("Failed to resend verification email");
       throw error;
